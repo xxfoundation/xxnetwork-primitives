@@ -22,7 +22,7 @@ const (
 	DATA_START uint64 = PIV_END
 	DATA_END   uint64 = DATA_START + DATA_LEN
 
-	SID_LEN   uint64 = id.UserIDLen
+	SID_LEN   uint64 = userid.UserIDLen
 	SID_START uint64 = DATA_END
 	SID_END   uint64 = SID_START + SID_LEN
 
@@ -41,7 +41,7 @@ type Payload struct {
 
 // Makes a new message for a certain sender.
 // Splits the message into multiple if it is too long
-func NewPayload(sender *id.UserID, text []byte) []Payload {
+func NewPayload(sender *userid.UserID, text []byte) []Payload {
 	// Split the payload into multiple sub-payloads if it is longer than the
 	// maximum allowed
 	var dataLst [][]byte
@@ -80,8 +80,8 @@ func (p Payload) GetSenderID() *cyclic.Int {
 	return p.senderID
 }
 
-func (p Payload) GetSender() *id.UserID {
-	result := new(id.UserID).SetBytes(p.senderID.LeftpadBytes(id.UserIDLen))
+func (p Payload) GetSender() *userid.UserID {
+	result := new(userid.UserID).SetBytes(p.senderID.LeftpadBytes(userid.UserIDLen))
 	return result
 }
 

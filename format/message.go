@@ -43,8 +43,8 @@ type Message struct {
 }
 
 //Returns a serialized sender ID for the message interface
-func (m Message) GetSender() *id.UserID {
-	result := new(id.UserID).SetBytes(m.senderID.LeftpadBytes(SID_LEN))
+func (m Message) GetSender() *userid.UserID {
+	result := new(userid.UserID).SetBytes(m.senderID.LeftpadBytes(SID_LEN))
 	return result
 }
 
@@ -55,13 +55,13 @@ func (m Message) GetPayload() []byte {
 
 //Returns a serialized recipient id for the message interface
 // FIXME Two copies for this isn't great
-func (m Message) GetRecipient() *id.UserID {
-	result := new(id.UserID).SetBytes(m.recipientID.LeftpadBytes(RID_LEN))
+func (m Message) GetRecipient() *userid.UserID {
+	result := new(userid.UserID).SetBytes(m.recipientID.LeftpadBytes(RID_LEN))
 	return result
 }
 
 // Makes a new message for a certain sender and recipient
-func NewMessage(sender, recipient *id.UserID, text []byte) ([]Message, error) {
+func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error) {
 
 	//build the recipient payload
 	recipientPayload, err := NewRecipientPayload(recipient)

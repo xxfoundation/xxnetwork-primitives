@@ -20,7 +20,7 @@ const (
 	RIV_END   uint64 = RIV_LEN
 
 	// Length and Position of the Recipient ID
-	RID_LEN   uint64 = id.UserIDLen
+	RID_LEN   uint64 = userid.UserIDLen
 	RID_START uint64 = REMPTY_END
 	RID_END   uint64 = RID_START + RID_LEN
 
@@ -44,8 +44,8 @@ type Recipient struct {
 }
 
 //Builds a recipient payload object
-func NewRecipientPayload(ID *id.UserID) (Recipient, error) {
-	if *ID == *id.ZeroID {
+func NewRecipientPayload(ID *userid.UserID) (Recipient, error) {
+	if *ID == *userid.ZeroID {
 		return Recipient{}, errors.New(fmt.Sprintf(
 			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
 			ID))
