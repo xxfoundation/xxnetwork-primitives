@@ -9,7 +9,7 @@ package format
 import (
 	"errors"
 	"fmt"
-	"gitlab.com/elixxir/crypto/cyclic"
+	// TODO Should we also delete this to completely remove the crypto dependency?
 	"gitlab.com/elixxir/crypto/hash"
 )
 
@@ -31,8 +31,14 @@ const REGKEY_END uint64 = REGKEY_START + REGKEY_LEN
 // Takes a Registration Code and returns the Registration Key and
 // Registration Pin
 func DisassembleRegistrationCode(regcode []byte) ([]byte, uint32) {
-	return regcode[REGKEY_START:REGKEY_END], uint32(cyclic.NewIntFromBytes(
-		regcode[REGPIN_START:REGPIN_END]).Uint64())
+	// convert byteslice to uint32 manually because binary.BigEndian expects
+	// a slice with a particular length
+	var pin uint32
+	for i := uint64(0); i < REGPIN_LEN; i++ {
+		pin <<= 8
+		pin |= uint32(regcode[REGPIN_START+i])
+	}
+	return regcode[REGKEY_START:REGKEY_END], pin
 }
 
 // Takes a Registration Key and Registration Pin, combines them,
@@ -50,8 +56,12 @@ func RegistrationHash(regkey []byte, regpin uint32) ([]byte, error) {
 	regcode := make([]byte, REGCODE_LEN)
 
 	//Turn the pin into a byte slice and copy it into the registration code
-	copy(regcode[REGPIN_START:REGPIN_END], cyclic.NewIntFromUInt(uint64(regpin)).
-		LeftpadBytes(REGPIN_LEN))
+	regpinBytes := make([]byte, REGPIN_LEN)
+	for i := int(REGPIN_LEN-1); i >= 0; i-- {
+		regpinBytes[i] = byte(regpin)
+		regpin >>= 8
+	}
+	copy(regcode[REGPIN_START:REGPIN_END], regpinBytes)
 
 	copy(regcode[REGKEY_START:REGKEY_END], regkey)
 

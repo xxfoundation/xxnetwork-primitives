@@ -7,9 +7,10 @@
 package format
 
 import (
-	"gitlab.com/elixxir/crypto/cyclic"
 	"testing"
 	"gitlab.com/elixxir/primitives/userid"
+	"bytes"
+	"encoding/hex"
 )
 
 func TestRecipientPayload(t *testing.T) {
@@ -17,21 +18,34 @@ func TestRecipientPayload(t *testing.T) {
 
 	rids := []uint64{10, 5, 1000, 3, 0}
 
-	initVects := []*cyclic.Int{cyclic.NewInt(5), cyclic.NewInt(34),
-		cyclic.NewInt(89), cyclic.NewInt(77), cyclic.NewInt(10)}
+	// Set the last byte of each item
+	initVectBytes := []byte{5, 34, 89, 77, 10}
+	initVects := [][]byte{}
+	for i := range initVectBytes {
+		initVects = append(initVects, make([]byte, RIV_LEN))
+		initVects[i][len(initVects[i]) - 1] = initVectBytes[i]
+	}
 
-	emptys := []*cyclic.Int{cyclic.NewInt(22), cyclic.NewInt(40),
-		cyclic.NewInt(53), cyclic.NewInt(17), cyclic.NewInt(14)}
+	emptyBytes := []byte{22, 40, 53, 17, 14}
+	emptys := [][]byte{}
+	for i := range emptyBytes {
+		emptys = append(emptys, make([]byte, REMPTY_LEN))
+		emptys[i][len(emptys[i]) - 1] = emptyBytes[i]
+	}
 
-	mics := []*cyclic.Int{cyclic.NewInt(54), cyclic.NewInt(52),
-		cyclic.NewInt(43), cyclic.NewInt(27), cyclic.NewInt(12)}
+	micBytes := []byte{54, 52, 43, 27, 12}
+	mics := [][]byte{}
+	for i := range micBytes {
+		mics = append(mics, make([]byte, RMIC_LEN))
+		mics[i][len(mics[i]) - 1] = micBytes[i]
+	}
 
 	recipients := make([]Recipient, numRecpts)
 
 	var err error
 
 	for i := 0; i < numRecpts; i++ {
-		recipients[i], err = NewRecipientPayload(id.NewUserIDFromUint(rids[i], t))
+		recipients[i], err = NewRecipientPayload(userid.NewUserIDFromUint(rids[i], t))
 
 		if err != nil && rids[i] != 0 {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
@@ -45,108 +59,112 @@ func TestRecipientPayload(t *testing.T) {
 			continue
 		}
 
-		if recipients[i].GetRecipientID().Uint64() != rids[i] {
+		e := hex.EncodeToString
+		if !bytes.Equal(recipients[i].GetRecipientID(),
+			userid.NewUserIDFromUint(rids[i], t).Bytes()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient ID did not match;\n  Expected: %v, "+
 				"Recieved: %v ", i, rids[i],
-				recipients[i].GetRecipientID().Text(10))
+				e(recipients[i].GetRecipientID()))
 		}
 
-		recipients[i].recipientInitVect.Set(initVects[i])
+		copy(recipients[i].recipientInitVect, initVects[i])
 
-		if recipients[i].GetRecipientInitVect().Cmp(initVects[i]) != 0 {
+		if !bytes.Equal(recipients[i].GetRecipientInitVect(), initVects[i]) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Initialization Vectors did not match;\n  Expected: %v, "+
-				"Recieved: %v ", i, initVects[i].Text(16),
-				recipients[i].GetRecipientInitVect().Text(16))
+				"Recieved: %v ", i, e(initVects[i]),
+				e(recipients[i].GetRecipientInitVect()))
 		}
 
-		recipients[i].recipientEmpty.Set(emptys[i])
+		copy(recipients[i].recipientEmpty, emptys[i])
 
-		if recipients[i].GetRecipientEmpty().Cmp(emptys[i]) != 0 {
+		if !bytes.Equal(recipients[i].GetRecipientEmpty(), emptys[i]) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Empty Regions did not match;\n  Expected: %v, "+
-				"Recieved: %v ", i, emptys[i].Text(16),
-				recipients[i].GetRecipientEmpty().Text(16))
+				"Recieved: %v ", i, e(emptys[i]),
+				e(recipients[i].GetRecipientEmpty()))
 		}
 
-		recipients[i].recipientMIC.Set(mics[i])
+		copy(recipients[i].recipientMIC, mics[i])
 
-		if recipients[i].GetRecipientMIC().Cmp(mics[i]) != 0 {
+		if !bytes.Equal(recipients[i].GetRecipientMIC(), mics[i]) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"MICs did not match;\n  Expected: %v, "+
-				"Recieved: %v ", i, mics[i].Text(16),
-				recipients[i].GetRecipientMIC().Text(16))
+				"Recieved: %v ", i, e(mics[i]),
+				e(recipients[i].GetRecipientMIC()))
 		}
 
-		serial := recipients[i].SerializeRecipient()
+		// Make sure that things are still accessible after serialization/deserialization
+		serial := recipients[i].serializeRecipient()
 
-		deserial := DeserializeRecipient(serial)
+		deserial := deserializeRecipient(serial)
 
-		if deserial.GetRecipientID().Cmp(recipients[i].GetRecipientID()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientID(), recipients[i].GetRecipientID()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient ID did not match post serialization;\n  Expected"+
 				": %v, Recieved: %v ", i,
-				recipients[i].GetRecipientID().Text(10),
-				deserial.GetRecipientID().Text(10))
+				e(recipients[i].GetRecipientID()),
+				e(deserial.GetRecipientID()))
 		}
 
-		if deserial.GetRecipientInitVect().Cmp(recipients[i].GetRecipientInitVect()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientInitVect(), recipients[i].GetRecipientInitVect()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient InitVect did not match post serialization;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				recipients[i].GetRecipientInitVect().Text(16),
-				deserial.GetRecipientInitVect().Text(16))
+				e(recipients[i].GetRecipientInitVect()),
+				e(deserial.GetRecipientInitVect()))
 		}
 
-		if deserial.GetRecipientEmpty().Cmp(recipients[i].GetRecipientEmpty()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientEmpty(), recipients[i].GetRecipientEmpty()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient Empty did not match post serialization;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				recipients[i].GetRecipientEmpty().Text(16),
-				deserial.GetRecipientEmpty().Text(16))
+				e(recipients[i].GetRecipientEmpty()),
+				e(deserial.GetRecipientEmpty()))
 		}
 
-		if deserial.GetRecipientMIC().Cmp(recipients[i].GetRecipientMIC()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientMIC(), recipients[i].GetRecipientMIC()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient MIC did not match post serialization;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				recipients[i].GetRecipientMIC().Text(16),
-				deserial.GetRecipientMIC().Text(16))
+				e(recipients[i].GetRecipientMIC()),
+				e(deserial.GetRecipientMIC()))
 		}
 
 		dcopy := deserial.DeepCopy()
 
-		if deserial.GetRecipientID().Cmp(dcopy.GetRecipientID()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientID(), dcopy.GetRecipientID()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient ID did not match post deep copy;\n  Expected"+
 				": %v, Recieved: %v ", i,
-				deserial.GetRecipientID().Text(10),
-				dcopy.GetRecipientID().Text(10))
+				e(deserial.GetRecipientID()),
+				e(dcopy.GetRecipientID()))
 		}
 
-		if deserial.GetRecipientInitVect().Cmp(dcopy.GetRecipientInitVect()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientInitVect(), dcopy.GetRecipientInitVect()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient InitVect did not match post deep copy;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				deserial.GetRecipientInitVect().Text(16),
-				deserial.GetRecipientInitVect().Text(16))
+				e(deserial.GetRecipientInitVect()),
+				e(deserial.GetRecipientInitVect()))
 		}
 
-		if deserial.GetRecipientEmpty().Cmp(dcopy.GetRecipientEmpty()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientEmpty(), dcopy.
+			GetRecipientEmpty()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient Empty did not match post deep copy;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				deserial.GetRecipientEmpty().Text(16),
-				deserial.GetRecipientEmpty().Text(16))
+				e(deserial.GetRecipientEmpty()),
+				e(deserial.GetRecipientEmpty()))
 		}
 
-		if deserial.GetRecipientMIC().Cmp(dcopy.GetRecipientMIC()) != 0 {
+		if !bytes.Equal(deserial.GetRecipientMIC(), dcopy.GetRecipientMIC()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient MIC did not match post deep copy;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				deserial.GetRecipientMIC().Text(16),
-				deserial.GetRecipientMIC().Text(16))
+				e(deserial.GetRecipientMIC()),
+				e(deserial.GetRecipientMIC()))
 		}
 	}
 }

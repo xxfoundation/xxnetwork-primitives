@@ -7,7 +7,6 @@
 package format
 
 import (
-	"gitlab.com/elixxir/crypto/cyclic"
 	"gitlab.com/elixxir/primitives/userid"
 )
 
@@ -33,14 +32,16 @@ const (
 )
 
 type Payload struct {
-	payloadInitVect *cyclic.Int
-	senderID        *cyclic.Int
-	data            *cyclic.Int
-	payloadMIC      *cyclic.Int
+	payloadInitVect []byte
+	senderID        []byte
+	data            []byte
+	payloadMIC      []byte
 }
 
 // Makes a new message for a certain sender.
 // Splits the message into multiple if it is too long
+// TODO Doing message splitting here didn't end up meeting the needs of the
+// client. Maybe we should remove it from here to simplify things.
 func NewPayload(sender *userid.UserID, text []byte) []Payload {
 	// Split the payload into multiple sub-payloads if it is longer than the
 	// maximum allowed
@@ -58,10 +59,10 @@ func NewPayload(sender *userid.UserID, text []byte) []Payload {
 
 	for _, datum := range dataLst {
 		payload := Payload{
-			cyclic.NewInt(0),
-			cyclic.NewIntFromBytes(sender[:]),
-			cyclic.NewIntFromBytes(datum),
-			cyclic.NewInt(0)}
+			make([]byte, PIV_LEN),
+			sender[:],
+			datum[:],
+			make([]byte, PMIC_LEN)}
 		payloadLst = append(payloadLst, payload)
 	}
 
@@ -70,65 +71,63 @@ func NewPayload(sender *userid.UserID, text []byte) []Payload {
 
 // This function returns a pointer to the Payload Initialization Vector
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetPayloadInitVect() *cyclic.Int {
+func (p Payload) GetPayloadInitVect() []byte {
 	return p.payloadInitVect
 }
 
 // This function returns a pointer to the Sender ID
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetSenderID() *cyclic.Int {
+func (p Payload) GetSenderID() []byte {
 	return p.senderID
 }
 
 func (p Payload) GetSender() *userid.UserID {
-	result := new(userid.UserID).SetBytes(p.senderID.LeftpadBytes(userid.UserIDLen))
+	result := new(userid.UserID).SetBytes(p.senderID[:])
 	return result
 }
 
 // This function returns a pointer to the data payload
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetData() *cyclic.Int {
+func (p Payload) GetData() []byte {
 	return p.data
 }
 
 // This function returns a pointer to the payload MIC
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetPayloadMIC() *cyclic.Int {
+func (p Payload) GetPayloadMIC() []byte {
 	return p.payloadMIC
 }
 
 // Returns the serialized message payload
-// Returns as a cyclic int because it is expected that the message will be
-// immediately encrypted via cyclic int multiplication
-func (p Payload) SerializePayload() *cyclic.Int {
+// TODO Does it make sense to make this an internal method?
+func (p Payload) serializePayload() []byte {
 	pbytes := make([]byte, TOTAL_LEN)
 
 	// Copy the Payload Initialization Vector into the serialization
-	copy(pbytes[PIV_START:PIV_END], p.payloadInitVect.LeftpadBytes(PIV_LEN))
+	copy(pbytes[PIV_START:PIV_END], p.payloadInitVect[:])
 
 	// Copy the Sender ID into the serialization
-	copy(pbytes[SID_START:SID_END], p.senderID.LeftpadBytes(SID_LEN))
+	copy(pbytes[SID_START:SID_END], p.senderID[:])
 
 	// Copy the payload data into the serialization
-	copy(pbytes[DATA_START:DATA_END], p.data.LeftpadBytes(DATA_LEN))
+	copy(pbytes[DATA_START:DATA_END], p.data[:])
 
 	// Copy the payloac MIC into the serialization
-	copy(pbytes[PMIC_START:PMIC_END], p.payloadMIC.LeftpadBytes(PMIC_LEN))
+	copy(pbytes[PMIC_START:PMIC_END], p.payloadMIC[:])
 
 	//Make sure the highest bit of the serialization is zero
 	pbytes[0] = pbytes[0] & ZEROER
 
-	return cyclic.NewIntFromBytes(pbytes)
+	return pbytes
 }
 
 //Returns a Deserialized Message Payload
-func DeserializePayload(pSerial *cyclic.Int) Payload {
-	pbytes := pSerial.LeftpadBytes(TOTAL_LEN)
+func deserializePayload(pSerial []byte) Payload {
 
 	return Payload{
-		cyclic.NewIntFromBytes(pbytes[PIV_START:PIV_END]),
-		cyclic.NewIntFromBytes(pbytes[SID_START:SID_END]),
-		cyclic.NewIntFromBytes(pbytes[DATA_START:DATA_END]),
-		cyclic.NewIntFromBytes(pbytes[RMIC_START:RMIC_END]),
+		pSerial[PIV_START:PIV_END],
+		pSerial[SID_START:SID_END],
+		pSerial[DATA_START:DATA_END],
+		pSerial[RMIC_START:RMIC_END],
 	}
 }

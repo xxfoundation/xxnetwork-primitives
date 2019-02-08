@@ -7,9 +7,10 @@
 package format
 
 import (
-	"gitlab.com/elixxir/crypto/cyclic"
 	"testing"
 	"gitlab.com/elixxir/primitives/userid"
+	"bytes"
+	"encoding/hex"
 )
 
 func TestMessagePayload(t *testing.T) {
@@ -38,61 +39,67 @@ func TestMessagePayload(t *testing.T) {
 	expectedSlices[2][1] = ([]byte(testStrings[2]))[DATA_LEN : 2*DATA_LEN]
 	expectedSlices[2][2] = ([]byte(testStrings[2]))[2*DATA_LEN:]
 
+	e := hex.EncodeToString
+
 	for i := uint64(0); i < uint64(tests); i++ {
-		pldSlc := NewPayload(id.NewUserIDFromUint(i+1, t), testStrings[i])
+		pldSlc := NewPayload(userid.NewUserIDFromUint(i+1, t), testStrings[i])
 
 		for indx, pld := range pldSlc {
-			if *id.NewUserIDFromUint(i+1, t) != *pld.GetSender() {
+			if *userid.NewUserIDFromUint(i+1, t) != *pld.GetSender() {
 				t.Errorf("Test of Payload failed on test %v:%v, sID did not "+
 					"match;\n  Expected: %v, Received: %v", i, indx, i,
-					pld.GetSender())
+					e(pld.GetSender().Bytes()))
 			}
 
-			expct := cyclic.NewIntFromBytes(expectedSlices[i][indx])
+			expct := expectedSlices[i][indx]
 
-			if pld.data.Cmp(expct) != 0 {
+			if !bytes.Equal(pld.data, expct) {
 				t.Errorf("Test of Payload failed on test %v:%v, "+
 					"bytes did not "+
 					"match;\n Value Expected: %v, Value Received: %v", i, indx,
-					string(expct.Bytes()), string(pld.data.Bytes()))
+					string(expct), string(pld.data))
 			}
 
-			pld.GetPayloadMIC().SetUint64(uint64(i))
-			pld.GetPayloadInitVect().SetUint64(uint64(i * 5))
+			pld.GetPayloadMIC()[PMIC_LEN-1] = uint8(i)
+			pld.GetPayloadInitVect()[PMIC_LEN-1] = uint8(i * 5)
 
-			serial := pld.SerializePayload()
-			deserial := DeserializePayload(serial)
+			serial := pld.serializePayload()
+			deserial := deserializePayload(serial)
 
-			if deserial.GetPayloadInitVect().Cmp(pld.GetPayloadInitVect()) != 0 {
+			if !bytes.Equal(deserial.GetPayloadInitVect(),
+				pld.GetPayloadInitVect()) {
 				t.Errorf("Test of Payload failed on "+
 					"test %v: %v, Init Vect did not match post serialization;\n"+
 					"  Expected: %v, Recieved: %v ", i, indx,
-					pld.GetPayloadInitVect().Text(16),
-					deserial.GetPayloadInitVect().Text(16))
+					e(pld.GetPayloadInitVect()),
+					e(deserial.GetPayloadInitVect()))
 			}
 
-			if deserial.GetSenderID().Cmp(pld.GetSenderID()) != 0 {
+			if !bytes.Equal(deserial.GetSenderID(), pld.GetSenderID()) {
 				t.Errorf("Test of Payload failed on test %v:%v, "+
 					"Sender ID did not match post serialization;\n"+
 					"  Expected: %v, Recieved: %v ", i, indx,
-					pld.GetSenderID().Text(10),
-					deserial.GetSenderID().Text(10))
+					e(pld.GetSenderID()),
+					e(deserial.GetSenderID()))
 			}
 
-			if deserial.GetData().Cmp(pld.GetData()) != 0 {
+			// Use Contains instead of Equal here because the deserialized
+			// data string will include trailing zeroes. Maybe GetData should
+			// trim trailing zeroes?
+			if !bytes.Contains(deserial.GetData(), pld.GetData()) {
 				t.Errorf("Test of Payload failed on test %v:%v, "+
 					"Data did not match post serialization;\n"+
 					"  Expected: %v, Recieved: %v ", i, indx,
-					pld.GetData().Text(16),
-					deserial.GetData().Text(16))
+					e(pld.GetData()),
+					e(deserial.GetData()))
 			}
 
-			if deserial.GetPayloadMIC().Cmp(pld.GetPayloadMIC()) != 0 {
+			if !bytes.Equal(deserial.GetPayloadMIC(), pld.GetPayloadMIC()) {
 				t.Errorf("Test of Payload failed on test %v:%v, "+
 					"Payload MIC did not match post serialization;\n"+
 					"  Expected: %v, Recieved: %v ", i, indx,
-					pld.GetPayloadMIC().Text(16),
-					deserial.GetPayloadMIC().Text(16))
+					e(pld.GetPayloadMIC()),
+					e(deserial.GetPayloadMIC()))
 			}
 		}
 

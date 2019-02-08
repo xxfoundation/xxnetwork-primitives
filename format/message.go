@@ -9,11 +9,8 @@ package format
 import (
 	"errors"
 	"fmt"
-	// TODO Should this dependency remain? Since we're mostly using cyclic ints
-	// as a placeholder, it would surely make more sense to use byte arrays,
-	// and each subrange would just be a slice into that array.
-	"gitlab.com/elixxir/crypto/cyclic"
 	"gitlab.com/elixxir/primitives/userid"
+	"bytes"
 )
 
 // Defines message structure.  Based the "Basic Message Structure" doc
@@ -31,8 +28,8 @@ const (
 
 // Holds the payloads once they have been serialized
 type MessageSerial struct {
-	Payload   *cyclic.Int
-	Recipient *cyclic.Int
+	Payload   []byte
+	Recipient []byte
 }
 
 // Structure which contains a message payload and the recipient payload in an
@@ -44,19 +41,20 @@ type Message struct {
 
 //Returns a serialized sender ID for the message interface
 func (m Message) GetSender() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.senderID.LeftpadBytes(SID_LEN))
+	result := new(userid.UserID).SetBytes(m.senderID[:])
 	return result
 }
 
 //Returns the payload for the message interface
+// Automatically trims trailing zeroes
 func (m Message) GetPayload() []byte {
-	return m.data.Bytes()
+	return bytes.TrimRight(m.data, "\x00")
 }
 
 //Returns a serialized recipient id for the message interface
 // FIXME Two copies for this isn't great
 func (m Message) GetRecipient() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.recipientID.LeftpadBytes(RID_LEN))
+	result := new(userid.UserID).SetBytes(m.recipientID[:])
 	return result
 }
 
@@ -86,11 +84,11 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error
 }
 
 func (m Message) SerializeMessage() MessageSerial {
-	return MessageSerial{m.Payload.SerializePayload(),
-		m.Recipient.SerializeRecipient()}
+	return MessageSerial{m.Payload.serializePayload(),
+		m.Recipient.serializeRecipient()}
 }
 
 func DeserializeMessage(ms MessageSerial) Message {
-	return Message{DeserializePayload(ms.Payload),
-		DeserializeRecipient(ms.Recipient)}
+	return Message{deserializePayload(ms.Payload),
+		deserializeRecipient(ms.Recipient)}
 }

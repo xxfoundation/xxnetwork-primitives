@@ -9,7 +9,6 @@ package format
 import (
 	"errors"
 	"fmt"
-	"gitlab.com/elixxir/crypto/cyclic"
 	"gitlab.com/elixxir/primitives/userid"
 )
 
@@ -37,10 +36,10 @@ const (
 
 // Structure containing the components of the recipient payload
 type Recipient struct {
-	recipientInitVect *cyclic.Int
-	recipientEmpty    *cyclic.Int
-	recipientID       *cyclic.Int
-	recipientMIC      *cyclic.Int
+	recipientInitVect []byte
+	recipientEmpty    []byte
+	recipientID       []byte
+	recipientMIC      []byte
 }
 
 //Builds a recipient payload object
@@ -51,83 +50,86 @@ func NewRecipientPayload(ID *userid.UserID) (Recipient, error) {
 			ID))
 	}
 
-	//TODO: initialize the components at their max lengths
 	return Recipient{
-		cyclic.NewInt(0),
-		cyclic.NewInt(0),
-		cyclic.NewIntFromBytes(ID[:]),
-		cyclic.NewInt(0),
+		make([]byte, RIV_LEN),
+		make([]byte, REMPTY_LEN),
+		ID.Bytes(),
+		make([]byte, RMIC_LEN),
 	}, nil
 }
 
 // This function returns a pointer to the recipient ID
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientID() *cyclic.Int {
+func (r Recipient) GetRecipientID() []byte {
 	return r.recipientID
 }
 
 // This function returns a pointer to the unused component of the recipient ID
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientEmpty() *cyclic.Int {
+func (r Recipient) GetRecipientEmpty() []byte {
 	return r.recipientEmpty
 }
 
 // This function returns a pointer to the recipient Initialization Vector
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientInitVect() *cyclic.Int {
+func (r Recipient) GetRecipientInitVect() []byte {
 	return r.recipientInitVect
 }
 
 // This function returns a pointer to the recipient Initialization MIC
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientMIC() *cyclic.Int {
+func (r Recipient) GetRecipientMIC() []byte {
 	return r.recipientMIC
 }
 
 // Returns the serialized recipient payload
-// Returns as a cyclic int because it is expected that the message will be
-// immediately encrypted via cyclic int multiplication
-func (r Recipient) SerializeRecipient() *cyclic.Int {
+func (r Recipient) serializeRecipient() []byte {
 	rbytes := make([]byte, TOTAL_LEN)
 
 	//Copy the Recipient Initialization Vector into the serialization
-	copy(rbytes[RIV_START:RIV_END], r.recipientInitVect.LeftpadBytes(RIV_LEN))
+	copy(rbytes[RIV_START:RIV_END], r.recipientInitVect[:])
 
 	//Copy the empty region into the serialization
-	copy(rbytes[REMPTY_START:REMPTY_END], r.recipientEmpty.LeftpadBytes(
-		REMPTY_LEN))
+	copy(rbytes[REMPTY_START:REMPTY_END], r.recipientEmpty[:])
 
 	//Copy the recipient ID into the serialization
-	copy(rbytes[RID_START:RID_END], r.recipientID.LeftpadBytes(RID_LEN))
+	copy(rbytes[RID_START:RID_END], r.recipientID[:])
 
 	//Copy the Recipient MIC into the serialization
-	copy(rbytes[RMIC_START:RMIC_END], r.recipientMIC.LeftpadBytes(RMIC_LEN))
+	copy(rbytes[RMIC_START:RMIC_END], r.recipientMIC[:])
 
 	//Make sure the highest bit of the serialization is zero
 	rbytes[0] = rbytes[0] & ZEROER
 
-	return cyclic.NewIntFromBytes(rbytes)
+	return rbytes
 }
 
 //Returns a Deserialized recipient id
-func DeserializeRecipient(rSerial *cyclic.Int) Recipient {
-	rbytes := rSerial.LeftpadBytes(TOTAL_LEN)
-
+func deserializeRecipient(rSerial []byte) Recipient {
 	return Recipient{
-		cyclic.NewIntFromBytes(rbytes[RIV_START:RIV_END]),
-		cyclic.NewIntFromBytes(rbytes[REMPTY_START:REMPTY_END]),
-		cyclic.NewIntFromBytes(rbytes[RID_START:RID_END]),
-		cyclic.NewIntFromBytes(rbytes[RMIC_START:RMIC_END]),
+		rSerial[RIV_START:RIV_END],
+		rSerial[REMPTY_START:REMPTY_END],
+		rSerial[RID_START:RID_END],
+		rSerial[RMIC_START:RMIC_END],
 	}
 
 }
 
 // Creates a deep copy of the recipient, used for sending multiple messages
 func (r Recipient) DeepCopy() Recipient {
+	riv := make([]byte, RIV_LEN)
+	rempty := make([]byte, REMPTY_LEN)
+	rid := make([]byte, RID_LEN)
+	rmic := make([]byte, RMIC_LEN)
+	copy(riv, r.GetRecipientInitVect())
+	copy(rempty, r.GetRecipientEmpty())
+	copy(rid, r.GetRecipientID())
+	copy(rmic, r.GetRecipientMIC())
+
 	return Recipient{
-		cyclic.NewInt(0).Set(r.GetRecipientInitVect()),
-		cyclic.NewInt(0).Set(r.GetRecipientEmpty()),
-		cyclic.NewInt(0).Set(r.GetRecipientID()),
-		cyclic.NewInt(0).Set(r.GetRecipientMIC()),
+		riv,
+		rempty,
+		rid,
+		rmic,
 	}
 }

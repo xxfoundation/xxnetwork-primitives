@@ -8,11 +8,11 @@ package format
 
 import (
 	"fmt"
-	"gitlab.com/elixxir/crypto/cyclic"
 	"testing"
 	"gitlab.com/elixxir/primitives/userid"
 	"math/rand"
 	"bytes"
+	"encoding/hex"
 )
 
 func TestNewMessage(t *testing.T) {
@@ -43,30 +43,32 @@ func TestNewMessage(t *testing.T) {
 	expectedSlices[2][2] = ([]byte(testStrings[2]))[2*DATA_LEN:]
 
 	for i := uint64(0); i < tests; i++ {
-		msglst, _ := NewMessage(id.NewUserIDFromUint(i+1, t),
-			id.NewUserIDFromUint(i+1, t),
+		msglst, _ := NewMessage(userid.NewUserIDFromUint(i+1, t),
+			userid.NewUserIDFromUint(i+1, t),
 			testStrings[i])
 
 		for indx, msg := range msglst {
 
-			if uint64(i+1) != msg.senderID.Uint64() {
+			expectedSender := userid.NewUserIDFromUint(i+1, t)
+			if !bytes.Equal(msg.GetSender().Bytes(), expectedSender.Bytes()) {
 				t.Errorf("Test of NewMessage failed on test %v:%v, "+
 					"sID did not match;\n  Expected: %v, Received: %v", i,
 					indx, i, msg.senderID)
 			}
 
-			if uint64(i+1) != msg.recipientID.Uint64() {
+			expectedRecipient := userid.NewUserIDFromUint(i+1, t)
+			if !bytes.Equal(expectedRecipient.Bytes(), msg.GetRecipient().Bytes()) {
 				t.Errorf("Test of NewMessage failed on test %v:%v, "+
 					"rID did not match;\n  Expected: %v, Received: %v", i,
 					indx, i, msg.recipientID)
 			}
 
-			expct := cyclic.NewIntFromBytes(expectedSlices[i][indx])
+			expct := expectedSlices[i][indx]
 
-			if msg.data.Cmp(expct) != 0 {
+			if !bytes.Equal(msg.data, expct) {
 				t.Errorf("Test of NewMessage failed on test %v:%v, "+
 					"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
-					indx, expct.Text(16), msg.data.Text(16))
+					indx, hex.EncodeToString(expct), hex.EncodeToString(msg.data))
 			}
 
 			serial := msg.SerializeMessage()
@@ -94,49 +96,54 @@ func TestNewMessage(t *testing.T) {
 }
 
 func payloadEqual(p1 Payload, p2 Payload) (bool, string) {
-	if p1.data.Cmp(p2.data) != 0 {
+	e := hex.EncodeToString
+	// Use Contains instead of Equal here because the byte slice includes
+	// trailing zeroes after the end of the string. Package users are
+	// responsible for trimming these trailing zeroes if necessary, and can call
+	// GetPayload() to trim the zeroes correctly
+	if !bytes.Contains(p2.data, p1.data) {
 		return false, fmt.Sprintf("data; Expected %v, Recieved: %v",
-			p1.data.Text(16), p2.data.Text(16))
+			e(p1.data), e(p2.data))
 	}
 
-	if p1.senderID.Cmp(p2.senderID) != 0 {
+	if !bytes.Equal(p1.senderID, p2.senderID) {
 		return false, fmt.Sprintf("sender; Expected %v, Recieved: %v",
-			p1.senderID.Text(16), p2.senderID.Text(16))
+			e(p1.senderID), e(p2.senderID))
 	}
 
-	if p1.payloadMIC.Cmp(p2.payloadMIC) != 0 {
+	if !bytes.Equal(p1.payloadMIC, p2.payloadMIC) {
 		return false, fmt.Sprintf("payloadMIC; Expected %v, Recieved: %v",
-			p1.payloadMIC.Text(16), p2.payloadMIC.Text(16))
+			e(p1.payloadMIC), e(p2.payloadMIC))
 	}
 
-	if p1.payloadInitVect.Cmp(p2.payloadInitVect) != 0 {
+	if !bytes.Equal(p1.payloadInitVect, p2.payloadInitVect)  {
 		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
-			p1.payloadInitVect.Text(16), p2.payloadInitVect.Text(16))
+			e(p1.payloadInitVect), e(p2.payloadInitVect))
 	}
 
 	return true, ""
-
 }
 
 func recipientEqual(r1 Recipient, r2 Recipient) (bool, string) {
-	if r1.recipientID.Cmp(r2.recipientID) != 0 {
+	e := hex.EncodeToString
+	if !bytes.Equal(r1.recipientID, r2.recipientID) {
 		return false, fmt.Sprintf("recipientID; Expected %v, Recieved: %v",
-			r1.recipientID.Text(16), r2.recipientID.Text(16))
+			e(r1.recipientID), e(r2.recipientID))
 	}
 
-	if r1.recipientEmpty.Cmp(r2.recipientEmpty) != 0 {
+	if !bytes.Equal(r1.recipientEmpty, r2.recipientEmpty) {
 		return false, fmt.Sprintf("empty; Expected %v, Recieved: %v",
-			r1.recipientEmpty.Text(16), r2.recipientEmpty.Text(16))
+			e(r1.recipientEmpty), e(r2.recipientEmpty))
 	}
 
-	if r1.recipientMIC.Cmp(r2.recipientMIC) != 0 {
+	if !bytes.Equal(r1.recipientMIC, r2.recipientMIC) {
 		return false, fmt.Sprintf("recipientMIC; Expected %v, Recieved: %v",
-			r1.recipientMIC.Text(16), r2.recipientMIC.Text(16))
+			e(r1.recipientMIC), e(r2.recipientMIC))
 	}
 
-	if r1.recipientInitVect.Cmp(r2.recipientInitVect) != 0 {
+	if !bytes.Equal(r1.recipientInitVect, r2.recipientInitVect) {
 		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
-			r1.recipientInitVect.Text(16), r2.recipientInitVect.Text(16))
+			e(r1.recipientInitVect), e(r2.recipientInitVect))
 	}
 
 	return true, ""
@@ -182,7 +189,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// The test should rely on comparing the underlying data,
 	// not the memory address
 	// Creating message designated for sending to zero user ID should fail
-	_, err := NewMessage(new(id.UserID), new(id.UserID), []byte("some text"))
+	_, err := NewMessage(new(userid.UserID), new(userid.UserID), []byte("some text"))
 	if err == nil {
 		t.Error("Didn't get an expected error from creating new message to" +
 			" zero user")
@@ -193,7 +200,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// use cases (untraceable return address, for example.) At the time of
 	// writing, the infrastructure required to support communications that don't
 	// specify a return ID hasn't been built.
-	_, err2 := NewMessage(new(id.UserID), id.NewUserIDFromUint(5,
+	_, err2 := NewMessage(new(userid.UserID), userid.NewUserIDFromUint(5,
 		t), []byte("some more text"))
 	if err2 != nil {
 		t.Errorf("Got an unexpected error from creating new message from zero"+
@@ -212,7 +219,7 @@ func TestMessage_GetPayload(t *testing.T) {
 	}
 	msg := Message{
 		Payload: Payload{
-			data: cyclic.NewIntFromBytes(data),
+			data: data,
 		},
 		Recipient: Recipient{},
 	}
@@ -230,7 +237,7 @@ func TestMessage_GetRecipient(t *testing.T) {
 	}
 	msg := Message{Payload: Payload{},
 		Recipient: Recipient{
-			recipientID: cyclic.NewIntFromBytes(recipient),
+			recipientID: recipient,
 		}}
 	if !bytes.Equal(recipient, msg.GetRecipient()[:]) {
 		t.Errorf("Message recipient was %q, expected %q",
@@ -245,7 +252,7 @@ func TestMessage_GetSender(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := Message{Payload: Payload{senderID: cyclic.NewIntFromBytes(sender)},
+	msg := Message{Payload: Payload{senderID: sender},
 		Recipient: Recipient{}}
 	if !bytes.Equal(sender, msg.GetSender()[:]) {
 		t.Errorf("Message sender was %q, expected %q",
