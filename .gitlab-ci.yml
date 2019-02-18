@@ -1,0 +1,114 @@
+# From: https://about.gitlab.com/2017/09/21/how-to-create-ci-cd-pipeline-with-autodeploy-to-kubernetes-using-gitlab-and-helm/
+
+cache:
+  untracked: true
+  key: "$CI_BUILD_REF_NAME"
+  paths:
+    - vendor/
+
+variables:
+  REPO_DIR: gitlab.com/elixxir
+  REPO_NAME: primitives
+  DOCKER_IMAGE: carback1/golang-glide:1.9-4a49ace8cac8
+  MIN_CODE_COVERAGE: "90.0"
+
+before_script:
+  - go version || echo "Go executable not found."
+  - echo $CI_BUILD_REF
+  - echo $CI_PROJECT_DIR
+  - mkdir -p $GOPATH/src/$REPO_DIR
+  - ln -s $CI_PROJECT_DIR $GOPATH/src/$REPO_DIR/$REPO_NAME
+  - cd $GOPATH/src/$REPO_DIR/$REPO_NAME
+  - echo $PWD
+
+stages:
+  - setup
+  - test
+  - build
+  - release
+  - deploy
+  - trigger_integration
+
+setup:
+  stage: setup
+  image: $DOCKER_IMAGE
+  script:
+    - git clean -ffdx
+    - glide install -v
+  artifacts:
+    paths:
+     - vendor/
+
+test:
+  stage: test
+  image: $DOCKER_IMAGE
+  script:
+    - mkdir -p testdata
+    - goverage -coverprofile=testdata/coverage.out -v ./... | grep -v "no packages being tested depend on"
+    - go tool cover -func=testdata/coverage.out
+    - go tool cover -html=testdata/coverage.out -o testdata/coverage.html
+
+    # Test Coverage Check
+    - go tool cover -func=testdata/coverage.out | grep "total:" | awk '{print $3}' | sed 's/\%//g' > testdata/coverage-percentage.txt
+    - export CODE_CHECK=$(echo "$(cat testdata/coverage-percentage.txt) >= $MIN_CODE_COVERAGE" | bc -l)
+    - (if [ "$CODE_CHECK" == "1" ]; then echo "Minimum coverage of $MIN_CODE_COVERAGE succeeded"; else echo "Minimum coverage of $MIN_CODE_COVERAGE failed"; exit 1; fi);
+
+  artifacts:
+    paths:
+      - testdata/
+
+build:
+  stage: build
+  image: $DOCKER_IMAGE
+  script:
+    - mkdir -p release
+    - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' ./...
+    - cd release
+  artifacts:
+    paths:
+     - release/
+
+release:
+  stage: release
+  image: docker:latest
+  script:
+    - cd release
+    # - docker login -u gitlab-ci-token -p ${CI_BUILD_TOKEN} ${CI_REGISTRY}
+    # - docker build -t ${CONTAINER_IMAGE} .
+    # - docker tag ${CONTAINER_IMAGE} ${CONTAINER_IMAGE_LATEST}
+    # - docker push ${CONTAINER_IMAGE}
+    # - docker push ${CONTAINER_IMAGE_LATEST}
+
+deploy_staging:
+  stage: deploy
+  image: lwolf/helm-kubectl-docker:v152_213
+  before_script:
+    - mkdir -p /etc/deploy
+    # - echo ${kube_config} | base64 -d > ${KUBECONFIG}
+    # - kubectl config use-context homekube
+    # - helm init --client-only
+    # - helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+    # - helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+    # - helm repo update
+  script:
+    - cd /etc/deploy
+    # - helm dep build
+    # - export API_VERSION="$(grep "appVersion" Chart.yaml | cut -d" " -f2)"
+    # - export RELEASE_NAME="libr-files-v${API_VERSION/./-}"
+    # - export DEPLOYS=$(helm ls | grep $RELEASE_NAME | wc -l)
+    # - if [ ${DEPLOYS}  -eq 0 ]; then helm install --name=${RELEASE_NAME} . --namespace=${STAGING_NAMESPACE}; else helm upgrade ${RELEASE_NAME} . --namespace=${STAGING_NAMESPACE}; fi
+  environment:
+    name: staging
+    # url: https://librerio.example.com
+  only:
+  - master
+
+trigger_integration:
+  stage: trigger_integration
+  script:
+    # Server
+    - "curl -X POST -F token=719da505f58f77e042deaf6e2617f2 -F ref=master https://gitlab.com/api/v4/projects/5014439/trigger/pipeline"
+    # Client
+    - "curl -X POST -F token=49d8780aca37fe7dabd6faecee913c -F ref=master https://gitlab.com/api/v4/projects/5454785/trigger/pipeline"
+  only:
+    - master
