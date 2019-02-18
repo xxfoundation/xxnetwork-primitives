@@ -68,30 +68,30 @@ func NewPayload(sender *userid.UserID, text []byte) (*Payload, error) {
 
 // This function returns a pointer to the Payload Initialization Vector
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetPayloadInitVect() []byte {
+func (p *Payload) GetPayloadInitVect() []byte {
 	return p.payloadInitVect
 }
 
 // This function returns a pointer to the Sender ID
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetSenderID() []byte {
+func (p *Payload) GetSenderID() []byte {
 	return p.senderID
 }
 
-func (p Payload) GetSender() *userid.UserID {
+func (p *Payload) GetSender() *userid.UserID {
 	result := new(userid.UserID).SetBytes(p.senderID[:])
 	return result
 }
 
 // This function returns a pointer to the data payload
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetData() []byte {
+func (p *Payload) GetData() []byte {
 	return p.data
 }
 
 // This function returns a pointer to the payload MIC
 // This ensures that while the data can be edited, it cant be reallocated
-func (p Payload) GetPayloadMIC() []byte {
+func (p *Payload) GetPayloadMIC() []byte {
 	return p.payloadMIC
 }
 
