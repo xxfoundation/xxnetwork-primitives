@@ -7,88 +7,81 @@
 package format
 
 import (
-	"fmt"
-	"testing"
-	"gitlab.com/elixxir/primitives/userid"
-	"math/rand"
 	"bytes"
 	"encoding/hex"
+	"fmt"
+	"gitlab.com/elixxir/primitives/userid"
+	"math/rand"
+	"testing"
 )
 
 func TestNewMessage(t *testing.T) {
 
 	tests := uint64(3)
 
-	testStrings := make([][]byte, tests)
+	testStrings := [][]byte{
+		testText[0 : DATA_LEN/2],
+		testText[0:DATA_LEN],
+		testText[0 : 2*DATA_LEN],
+	}
 
-	testStrings[0] = testText[0 : DATA_LEN/2]
-	testStrings[1] = testText[0:DATA_LEN]
+	expectedSlices := make([][]byte, tests)
 
-	testStrings[2] = testText[0 : 2*DATA_LEN]
+	expectedSlices[0] = []byte(testStrings[0])
+	expectedSlices[1] = []byte(testStrings[1])[0:DATA_LEN]
+	expectedSlices[2] = []byte(testStrings[2])[0:DATA_LEN]
 
-	expectedSlices := make([][][]byte, tests)
-
-	expectedSlices[0] = make([][]byte, 1)
-
-	expectedSlices[0][0] = []byte(testStrings[0])
-
-	expectedSlices[1] = make([][]byte, 2)
-
-	expectedSlices[1][0] = ([]byte(testStrings[1]))[0:DATA_LEN]
-
-	expectedSlices[2] = make([][]byte, 3)
-
-	expectedSlices[2][0] = ([]byte(testStrings[2]))[0:DATA_LEN]
-	expectedSlices[2][1] = ([]byte(testStrings[2]))[DATA_LEN : 2*DATA_LEN]
-	expectedSlices[2][2] = ([]byte(testStrings[2]))[2*DATA_LEN:]
+	expectedErrors := []bool{false, false, true}
 
 	for i := uint64(0); i < tests; i++ {
-		msglst, _ := NewMessage(userid.NewUserIDFromUint(i+1, t),
+		msg, err := NewMessage(userid.NewUserIDFromUint(i+1, t),
 			userid.NewUserIDFromUint(i+1, t),
 			testStrings[i])
 
-		for indx, msg := range msglst {
+		// Make sure we get an error on the third string, which is too long
+		if (err != nil) != expectedErrors[i] {
+			t.Errorf("Didn't get the expected error from NewMessage at index"+
+				" %v", i)
+		}
 
-			expectedSender := userid.NewUserIDFromUint(i+1, t)
-			if !bytes.Equal(msg.GetSender().Bytes(), expectedSender.Bytes()) {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"sID did not match;\n  Expected: %v, Received: %v", i,
-					indx, i, msg.senderID)
-			}
+		expectedSender := userid.NewUserIDFromUint(i+1, t)
+		if !bytes.Equal(msg.GetSender().Bytes(), expectedSender.Bytes()) {
+			t.Errorf("Test of NewMessage failed on test %v: "+
+				"sID did not match;\n  Expected: %v, Received: %v", i,
+				i, msg.senderID)
+		}
 
-			expectedRecipient := userid.NewUserIDFromUint(i+1, t)
-			if !bytes.Equal(expectedRecipient.Bytes(), msg.GetRecipient().Bytes()) {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"rID did not match;\n  Expected: %v, Received: %v", i,
-					indx, i, msg.recipientID)
-			}
+		expectedRecipient := userid.NewUserIDFromUint(i+1, t)
+		if !bytes.Equal(expectedRecipient.Bytes(), msg.GetRecipient().Bytes()) {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"rID did not match;\n  Expected: %v, Received: %v", i,
+				i, msg.recipientID)
+		}
 
-			expct := expectedSlices[i][indx]
+		expct := expectedSlices[i]
 
-			if !bytes.Equal(msg.data, expct) {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
-					indx, hex.EncodeToString(expct), hex.EncodeToString(msg.data))
-			}
+		if !bytes.Contains(msg.data, expct) {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
+				hex.EncodeToString(expct), hex.EncodeToString(msg.data))
+		}
 
-			serial := msg.SerializeMessage()
-			deserial := DeserializeMessage(serial)
+		serial := msg.SerializeMessage()
+		deserial := DeserializeMessage(serial)
 
-			pldSuccess, pldErr := payloadEqual(msg.Payload, deserial.Payload)
+		pldSuccess, pldErr := payloadEqual(msg.Payload, deserial.Payload)
 
-			if !pldSuccess {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"postserial Payload did not match: %s", i, indx, pldErr)
-			}
+		if !pldSuccess {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"postserial Payload did not match: %s", i, pldErr)
+		}
 
-			rcpSuccess, rcpErr := recipientEqual(msg.Recipient,
-				deserial.Recipient)
+		rcpSuccess, rcpErr := recipientEqual(msg.Recipient,
+			deserial.Recipient)
 
-			if !rcpSuccess {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"postserial Recipient did not match: %s", i, indx, rcpErr)
-			}
-
+		if !rcpSuccess {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"postserial Recipient did not match: %s", i, rcpErr)
 		}
 
 	}
@@ -116,7 +109,7 @@ func payloadEqual(p1 Payload, p2 Payload) (bool, string) {
 			e(p1.payloadMIC), e(p2.payloadMIC))
 	}
 
-	if !bytes.Equal(p1.payloadInitVect, p2.payloadInitVect)  {
+	if !bytes.Equal(p1.payloadInitVect, p2.payloadInitVect) {
 		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
 			e(p1.payloadInitVect), e(p2.payloadInitVect))
 	}

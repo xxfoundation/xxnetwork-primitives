@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"gitlab.com/elixxir/primitives/userid"
-	"bytes"
 )
 
 // Defines message structure.  Based the "Basic Message Structure" doc
@@ -46,9 +45,8 @@ func (m Message) GetSender() *userid.UserID {
 }
 
 //Returns the payload for the message interface
-// Automatically trims trailing zeroes
 func (m Message) GetPayload() []byte {
-	return bytes.TrimRight(m.data, "\x00")
+	return m.data
 }
 
 //Returns a serialized recipient id for the message interface
@@ -59,7 +57,7 @@ func (m Message) GetRecipient() *userid.UserID {
 }
 
 // Makes a new message for a certain sender and recipient
-func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error) {
+func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error) {
 
 	//build the recipient payload
 	recipientPayload, err := NewRecipientPayload(recipient)
@@ -72,23 +70,19 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error
 	}
 
 	//Build the message Payloads
-	messagePayload := NewPayload(sender, text)
+	messagePayload, err := NewPayload(sender, text)
 
-	messageList := make([]Message, len(messagePayload))
+	message := Message{*messagePayload, *recipientPayload}
 
-	for indx, pld := range messagePayload {
-		messageList[indx] = Message{pld, recipientPayload.DeepCopy()}
-	}
-
-	return messageList, nil
+	return &message, err
 }
 
 func (m Message) SerializeMessage() MessageSerial {
-	return MessageSerial{m.Payload.serializePayload(),
-		m.Recipient.serializeRecipient()}
+	return MessageSerial{m.Payload.SerializePayload(),
+		m.Recipient.SerializeRecipient()}
 }
 
 func DeserializeMessage(ms MessageSerial) Message {
-	return Message{deserializePayload(ms.Payload),
-		deserializeRecipient(ms.Recipient)}
+	return Message{DeserializePayload(ms.Payload),
+		DeserializeRecipient(ms.Recipient)}
 }

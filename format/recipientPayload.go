@@ -43,14 +43,14 @@ type Recipient struct {
 }
 
 //Builds a recipient payload object
-func NewRecipientPayload(ID *userid.UserID) (Recipient, error) {
+func NewRecipientPayload(ID *userid.UserID) (*Recipient, error) {
 	if *ID == *userid.ZeroID {
-		return Recipient{}, errors.New(fmt.Sprintf(
+		return &Recipient{}, errors.New(fmt.Sprintf(
 			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
 			ID))
 	}
 
-	return Recipient{
+	return &Recipient{
 		make([]byte, RIV_LEN),
 		make([]byte, REMPTY_LEN),
 		ID.Bytes(),
@@ -83,7 +83,7 @@ func (r Recipient) GetRecipientMIC() []byte {
 }
 
 // Returns the serialized recipient payload
-func (r Recipient) serializeRecipient() []byte {
+func (r Recipient) SerializeRecipient() []byte {
 	rbytes := make([]byte, TOTAL_LEN)
 
 	//Copy the Recipient Initialization Vector into the serialization
@@ -105,7 +105,7 @@ func (r Recipient) serializeRecipient() []byte {
 }
 
 //Returns a Deserialized recipient id
-func deserializeRecipient(rSerial []byte) Recipient {
+func DeserializeRecipient(rSerial []byte) Recipient {
 	return Recipient{
 		rSerial[RIV_START:RIV_END],
 		rSerial[REMPTY_START:REMPTY_END],

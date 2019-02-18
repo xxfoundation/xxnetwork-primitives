@@ -40,7 +40,7 @@ func TestRecipientPayload(t *testing.T) {
 		mics[i][len(mics[i]) - 1] = micBytes[i]
 	}
 
-	recipients := make([]Recipient, numRecpts)
+	recipients := make([]*Recipient, numRecpts)
 
 	var err error
 
@@ -96,9 +96,9 @@ func TestRecipientPayload(t *testing.T) {
 		}
 
 		// Make sure that things are still accessible after serialization/deserialization
-		serial := recipients[i].serializeRecipient()
+		serial := recipients[i].SerializeRecipient()
 
-		deserial := deserializeRecipient(serial)
+		deserial := DeserializeRecipient(serial)
 
 		if !bytes.Equal(deserial.GetRecipientID(), recipients[i].GetRecipientID()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+

@@ -8,6 +8,7 @@ package format
 
 import (
 	"gitlab.com/elixxir/primitives/userid"
+	"errors"
 )
 
 const (
@@ -39,34 +40,24 @@ type Payload struct {
 }
 
 // Makes a new message for a certain sender.
-// Splits the message into multiple if it is too long
-// TODO Doing message splitting here didn't end up meeting the needs of the
-// client. Maybe we should remove it from here to simplify things.
-func NewPayload(sender *userid.UserID, text []byte) []Payload {
-	// Split the payload into multiple sub-payloads if it is longer than the
-	// maximum allowed
-	var dataLst [][]byte
-
-	for uint64(len(text)) > DATA_LEN {
-		dataLst = append(dataLst, text[0:DATA_LEN])
-		text = text[DATA_LEN:]
+// Only takes the first DATA_LEN bytes for the payload.
+// Split into multiple messages elsewhere or use less space if the message is
+// too long to fit.
+// Will return an error if the message was too long to fit in one payload
+// Make sure to populate the initialization vector and the MIC later
+func NewPayload(sender *userid.UserID, text []byte) (*Payload, error) {
+	var datum [DATA_LEN]byte
+	copyLen := copy(datum[:], text)
+	var err error
+	if copyLen != len(text) {
+		err = errors.New("Couldn't fit text in one payload")
 	}
 
-	dataLst = append(dataLst, text)
-
-	//Create a message payload for every sub-payload
-	var payloadLst []Payload
-
-	for _, datum := range dataLst {
-		payload := Payload{
-			make([]byte, PIV_LEN),
-			sender[:],
-			datum[:],
-			make([]byte, PMIC_LEN)}
-		payloadLst = append(payloadLst, payload)
-	}
-
-	return payloadLst
+	return &Payload{
+		make([]byte, PIV_LEN),
+		sender[:],
+		datum[:],
+		make([]byte, PMIC_LEN)}, err
 }
 
 // This function returns a pointer to the Payload Initialization Vector
@@ -100,7 +91,7 @@ func (p Payload) GetPayloadMIC() []byte {
 
 // Returns the serialized message payload
 // TODO Does it make sense to make this an internal method?
-func (p Payload) serializePayload() []byte {
+func (p Payload) SerializePayload() []byte {
 	pbytes := make([]byte, TOTAL_LEN)
 
 	// Copy the Payload Initialization Vector into the serialization
@@ -112,7 +103,7 @@ func (p Payload) serializePayload() []byte {
 	// Copy the payload data into the serialization
 	copy(pbytes[DATA_START:DATA_END], p.data[:])
 
-	// Copy the payloac MIC into the serialization
+	// Copy the payload MIC into the serialization
 	copy(pbytes[PMIC_START:PMIC_END], p.payloadMIC[:])
 
 	//Make sure the highest bit of the serialization is zero
@@ -122,12 +113,12 @@ func (p Payload) serializePayload() []byte {
 }
 
 //Returns a Deserialized Message Payload
-func deserializePayload(pSerial []byte) Payload {
+func DeserializePayload(pSerial []byte) Payload {
 
 	return Payload{
 		pSerial[PIV_START:PIV_END],
 		pSerial[SID_START:SID_END],
 		pSerial[DATA_START:DATA_END],
-		pSerial[RMIC_START:RMIC_END],
+		pSerial[PMIC_START:PMIC_END],
 	}
 }
