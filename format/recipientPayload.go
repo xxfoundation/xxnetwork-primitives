@@ -36,100 +36,65 @@ const (
 
 // Structure containing the components of the recipient payload
 type Recipient struct {
+	recipientSerial   [TOTAL_LEN]byte
 	recipientInitVect []byte
-	recipientEmpty    []byte
 	recipientID       []byte
 	recipientMIC      []byte
 }
 
 //Builds a recipient payload object
 func NewRecipientPayload(ID *userid.UserID) (*Recipient, error) {
-	if *ID == *userid.ZeroID {
-		return &Recipient{}, errors.New(fmt.Sprintf(
+	if ID == nil || *ID == *userid.ZeroID {
+		return nil, errors.New(fmt.Sprintf(
 			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
 			ID))
 	}
+	result := Recipient{recipientSerial: [TOTAL_LEN]byte{}}
+	result.recipientID = result.recipientSerial[RID_START:RID_END]
+	copy(result.recipientID, ID.Bytes())
+	result.recipientInitVect = result.recipientSerial[RIV_START:RIV_END]
+	result.recipientMIC = result.recipientSerial[RMIC_START:RMIC_END]
 
-	return &Recipient{
-		make([]byte, RIV_LEN),
-		make([]byte, REMPTY_LEN),
-		ID.Bytes(),
-		make([]byte, RMIC_LEN),
-	}, nil
+	return &result, nil
 }
 
 // This function returns a pointer to the recipient ID
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientID() []byte {
+func (r *Recipient) GetRecipientID() []byte {
 	return r.recipientID
-}
-
-// This function returns a pointer to the unused component of the recipient ID
-// This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientEmpty() []byte {
-	return r.recipientEmpty
 }
 
 // This function returns a pointer to the recipient Initialization Vector
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientInitVect() []byte {
+func (r *Recipient) GetRecipientInitVect() []byte {
 	return r.recipientInitVect
 }
 
 // This function returns a pointer to the recipient Initialization MIC
 // This ensures that while the data can be edited, it cant be reallocated
-func (r Recipient) GetRecipientMIC() []byte {
+func (r *Recipient) GetRecipientMIC() []byte {
 	return r.recipientMIC
 }
 
-// Returns the serialized recipient payload
-func (r Recipient) SerializeRecipient() []byte {
-	rbytes := make([]byte, TOTAL_LEN)
-
-	//Copy the Recipient Initialization Vector into the serialization
-	copy(rbytes[RIV_START:RIV_END], r.recipientInitVect[:])
-
-	//Copy the empty region into the serialization
-	copy(rbytes[REMPTY_START:REMPTY_END], r.recipientEmpty[:])
-
-	//Copy the recipient ID into the serialization
-	copy(rbytes[RID_START:RID_END], r.recipientID[:])
-
-	//Copy the Recipient MIC into the serialization
-	copy(rbytes[RMIC_START:RMIC_END], r.recipientMIC[:])
-
-	//Make sure the highest bit of the serialization is zero
-	rbytes[0] = rbytes[0] & ZEROER
-
-	return rbytes
+// Returns the serialized recipient payload, without copying
+func (r *Recipient) SerializeRecipient() []byte {
+	return r.recipientSerial[:]
 }
 
 //Returns a Deserialized recipient id
-func DeserializeRecipient(rSerial []byte) Recipient {
-	return Recipient{
-		rSerial[RIV_START:RIV_END],
-		rSerial[REMPTY_START:REMPTY_END],
-		rSerial[RID_START:RID_END],
-		rSerial[RMIC_START:RMIC_END],
+func DeserializeRecipient(rSerial []byte) *Recipient {
+	var rBytes [TOTAL_LEN]byte
+	copy(rBytes[:], rSerial)
+	return &Recipient{
+		rBytes,
+		rBytes[RIV_START:RIV_END],
+		rBytes[RID_START:RID_END],
+		rBytes[RMIC_START:RMIC_END],
 	}
 
 }
 
 // Creates a deep copy of the recipient, used for sending multiple messages
-func (r Recipient) DeepCopy() Recipient {
-	riv := make([]byte, RIV_LEN)
-	rempty := make([]byte, REMPTY_LEN)
-	rid := make([]byte, RID_LEN)
-	rmic := make([]byte, RMIC_LEN)
-	copy(riv, r.GetRecipientInitVect())
-	copy(rempty, r.GetRecipientEmpty())
-	copy(rid, r.GetRecipientID())
-	copy(rmic, r.GetRecipientMIC())
-
-	return Recipient{
-		riv,
-		rempty,
-		rid,
-		rmic,
-	}
+func (r *Recipient) DeepCopy() *Recipient {
+	return DeserializeRecipient(r.recipientSerial[:])
 }

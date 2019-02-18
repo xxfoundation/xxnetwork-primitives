@@ -34,8 +34,8 @@ type MessageSerial struct {
 // Structure which contains a message payload and the recipient payload in an
 // easily accessible format
 type Message struct {
-	Payload
-	Recipient
+	*Payload
+	*Recipient
 }
 
 //Returns a serialized sender ID for the message interface
@@ -50,7 +50,6 @@ func (m Message) GetPayload() []byte {
 }
 
 //Returns a serialized recipient id for the message interface
-// FIXME Two copies for this isn't great
 func (m Message) GetRecipient() *userid.UserID {
 	result := new(userid.UserID).SetBytes(m.recipientID[:])
 	return result
@@ -72,7 +71,7 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error)
 	//Build the message Payloads
 	messagePayload, err := NewPayload(sender, text)
 
-	message := Message{*messagePayload, *recipientPayload}
+	message := Message{messagePayload, recipientPayload}
 
 	return &message, err
 }

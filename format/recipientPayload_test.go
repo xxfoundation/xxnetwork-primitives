@@ -77,15 +77,6 @@ func TestRecipientPayload(t *testing.T) {
 				e(recipients[i].GetRecipientInitVect()))
 		}
 
-		copy(recipients[i].recipientEmpty, emptys[i])
-
-		if !bytes.Equal(recipients[i].GetRecipientEmpty(), emptys[i]) {
-			t.Errorf("Test of Recipient Payload failed on test %v, "+
-				"Empty Regions did not match;\n  Expected: %v, "+
-				"Recieved: %v ", i, e(emptys[i]),
-				e(recipients[i].GetRecipientEmpty()))
-		}
-
 		copy(recipients[i].recipientMIC, mics[i])
 
 		if !bytes.Equal(recipients[i].GetRecipientMIC(), mics[i]) {
@@ -116,14 +107,6 @@ func TestRecipientPayload(t *testing.T) {
 				e(deserial.GetRecipientInitVect()))
 		}
 
-		if !bytes.Equal(deserial.GetRecipientEmpty(), recipients[i].GetRecipientEmpty()) {
-			t.Errorf("Test of Recipient Payload failed on test %v, "+
-				"Recipient Empty did not match post serialization;\n"+
-				"  Expected: %v, Recieved: %v ", i,
-				e(recipients[i].GetRecipientEmpty()),
-				e(deserial.GetRecipientEmpty()))
-		}
-
 		if !bytes.Equal(deserial.GetRecipientMIC(), recipients[i].GetRecipientMIC()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient MIC did not match post serialization;\n"+
@@ -148,15 +131,6 @@ func TestRecipientPayload(t *testing.T) {
 				"  Expected: %v, Recieved: %v ", i,
 				e(deserial.GetRecipientInitVect()),
 				e(deserial.GetRecipientInitVect()))
-		}
-
-		if !bytes.Equal(deserial.GetRecipientEmpty(), dcopy.
-			GetRecipientEmpty()) {
-			t.Errorf("Test of Recipient Payload failed on test %v, "+
-				"Recipient Empty did not match post deep copy;\n"+
-				"  Expected: %v, Recieved: %v ", i,
-				e(deserial.GetRecipientEmpty()),
-				e(deserial.GetRecipientEmpty()))
 		}
 
 		if !bytes.Equal(deserial.GetRecipientMIC(), dcopy.GetRecipientMIC()) {

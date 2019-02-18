@@ -88,12 +88,12 @@ func TestNewMessage(t *testing.T) {
 
 }
 
-func payloadEqual(p1 Payload, p2 Payload) (bool, string) {
+func payloadEqual(p1 *Payload, p2 *Payload) (bool, string) {
 	e := hex.EncodeToString
 	// Use Contains instead of Equal here because the byte slice includes
 	// trailing zeroes after the end of the string. Package users are
-	// responsible for trimming these trailing zeroes if necessary, and can call
-	// GetPayload() to trim the zeroes correctly
+	// responsible for trimming these trailing zeroes currently. Once we migrate
+	// to a better padding scheme this will become unnecessary.
 	if !bytes.Contains(p2.data, p1.data) {
 		return false, fmt.Sprintf("data; Expected %v, Recieved: %v",
 			e(p1.data), e(p2.data))
@@ -117,16 +117,11 @@ func payloadEqual(p1 Payload, p2 Payload) (bool, string) {
 	return true, ""
 }
 
-func recipientEqual(r1 Recipient, r2 Recipient) (bool, string) {
+func recipientEqual(r1 *Recipient, r2 *Recipient) (bool, string) {
 	e := hex.EncodeToString
 	if !bytes.Equal(r1.recipientID, r2.recipientID) {
 		return false, fmt.Sprintf("recipientID; Expected %v, Recieved: %v",
 			e(r1.recipientID), e(r2.recipientID))
-	}
-
-	if !bytes.Equal(r1.recipientEmpty, r2.recipientEmpty) {
-		return false, fmt.Sprintf("empty; Expected %v, Recieved: %v",
-			e(r1.recipientEmpty), e(r2.recipientEmpty))
 	}
 
 	if !bytes.Equal(r1.recipientMIC, r2.recipientMIC) {
@@ -211,10 +206,10 @@ func TestMessage_GetPayload(t *testing.T) {
 		t.Errorf("Got error from data generation: %s", err.Error())
 	}
 	msg := Message{
-		Payload: Payload{
+		Payload: &Payload{
 			data: data,
 		},
-		Recipient: Recipient{},
+		Recipient: &Recipient{},
 	}
 	if !bytes.Equal(data, msg.GetPayload()) {
 		t.Errorf("Message payload was %q, expected %q", msg.GetPayload(), data)
@@ -228,8 +223,8 @@ func TestMessage_GetRecipient(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := Message{Payload: Payload{},
-		Recipient: Recipient{
+	msg := Message{Payload: &Payload{},
+		Recipient: &Recipient{
 			recipientID: recipient,
 		}}
 	if !bytes.Equal(recipient, msg.GetRecipient()[:]) {
@@ -245,8 +240,8 @@ func TestMessage_GetSender(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := Message{Payload: Payload{senderID: sender},
-		Recipient: Recipient{}}
+	msg := Message{Payload: &Payload{senderID: sender},
+		Recipient: &Recipient{}}
 	if !bytes.Equal(sender, msg.GetSender()[:]) {
 		t.Errorf("Message sender was %q, expected %q",
 			*msg.GetSender(), sender)
