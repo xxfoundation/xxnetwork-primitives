@@ -13,13 +13,13 @@ import (
 )
 
 // Defines message structure.  Based the "Basic Message Structure" doc
-// Defining rangings in slices in go is inclusive for the beginning but
+// Defining ranges in slices in go is inclusive for the beginning but
 // exclusive for the end, so the END consts are one more then the final
 // index.
 const (
 	TOTAL_LEN uint64 = 256
 
-	//Byte used to ensure the highest bit of a serilization is zero
+	//Byte used to ensure the highest bit of a serialization is zero
 	ZEROER byte = 0x7F
 )
 
@@ -27,29 +27,29 @@ const (
 
 // Holds the payloads once they have been serialized
 type MessageSerial struct {
-	Payload   []byte
-	Recipient []byte
+	MessagePayload   []byte
+	RecipientPayload []byte
 }
 
 // Structure which contains a message payload and the recipient payload in an
 // easily accessible format
 type Message struct {
-	*Payload
-	*Recipient
+	*MessagePayload
+	*RecipientPayload
 }
 
-//Returns a serialized sender ID for the message interface
+// Wrap the sender ID in its type
 func (m Message) GetSender() *userid.UserID {
 	result := new(userid.UserID).SetBytes(m.senderID[:])
 	return result
 }
 
-//Returns the payload for the message interface
+// Get the payload from a message
 func (m Message) GetPayload() []byte {
 	return m.data
 }
 
-//Returns a serialized recipient id for the message interface
+// Wrap the recipient ID in its type
 func (m Message) GetRecipient() *userid.UserID {
 	result := new(userid.UserID).SetBytes(m.recipientID[:])
 	return result
@@ -69,7 +69,7 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error)
 	}
 
 	//Build the message Payloads
-	messagePayload, err := NewPayload(sender, text)
+	messagePayload, err := NewMessagePayload(sender, text)
 
 	message := Message{messagePayload, recipientPayload}
 
@@ -77,11 +77,11 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error)
 }
 
 func (m Message) SerializeMessage() MessageSerial {
-	return MessageSerial{m.Payload.SerializePayload(),
-		m.Recipient.SerializeRecipient()}
+	return MessageSerial{m.MessagePayload.SerializePayload(),
+		m.RecipientPayload.SerializeRecipient()}
 }
 
 func DeserializeMessage(ms MessageSerial) Message {
-	return Message{DeserializePayload(ms.Payload),
-		DeserializeRecipient(ms.Recipient)}
+	return Message{DeserializeMessagePayload(ms.MessagePayload),
+		DeserializeRecipient(ms.RecipientPayload)}
 }

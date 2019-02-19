@@ -40,7 +40,7 @@ func TestRecipientPayload(t *testing.T) {
 		mics[i][len(mics[i]) - 1] = micBytes[i]
 	}
 
-	recipients := make([]*Recipient, numRecpts)
+	recipients := make([]*RecipientPayload, numRecpts)
 
 	var err error
 

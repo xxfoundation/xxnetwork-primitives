@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// Length and Position of the Recipeint Initialization Vector
+	// Length and Position of the Recipient Initialization Vector
 	RIV_LEN   uint64 = 9
 	RIV_START uint64 = 0
 	RIV_END   uint64 = RIV_LEN
@@ -35,7 +35,7 @@ const (
 )
 
 // Structure containing the components of the recipient payload
-type Recipient struct {
+type RecipientPayload struct {
 	recipientSerial   [TOTAL_LEN]byte
 	recipientInitVect []byte
 	recipientID       []byte
@@ -43,13 +43,13 @@ type Recipient struct {
 }
 
 //Builds a recipient payload object
-func NewRecipientPayload(ID *userid.UserID) (*Recipient, error) {
+func NewRecipientPayload(ID *userid.UserID) (*RecipientPayload, error) {
 	if ID == nil || *ID == *userid.ZeroID {
 		return nil, errors.New(fmt.Sprintf(
 			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
 			ID))
 	}
-	result := Recipient{recipientSerial: [TOTAL_LEN]byte{}}
+	result := RecipientPayload{recipientSerial: [TOTAL_LEN]byte{}}
 	result.recipientID = result.recipientSerial[RID_START:RID_END]
 	copy(result.recipientID, ID.Bytes())
 	result.recipientInitVect = result.recipientSerial[RIV_START:RIV_END]
@@ -58,34 +58,37 @@ func NewRecipientPayload(ID *userid.UserID) (*Recipient, error) {
 	return &result, nil
 }
 
-// This function returns a pointer to the recipient ID
-// This ensures that while the data can be edited, it cant be reallocated
-func (r *Recipient) GetRecipientID() []byte {
+// This function returns the recipient ID slice
+// The caller can read or write the data within this slice, but can't change
+// the slice header in the actual structure
+func (r *RecipientPayload) GetRecipientID() []byte {
 	return r.recipientID
 }
 
-// This function returns a pointer to the recipient Initialization Vector
-// This ensures that while the data can be edited, it cant be reallocated
-func (r *Recipient) GetRecipientInitVect() []byte {
+// Get the recipient initialization vector
+// The caller can read or write the data within this slice, but can't change
+// the slice header in the actual structure
+func (r *RecipientPayload) GetRecipientInitVect() []byte {
 	return r.recipientInitVect
 }
 
-// This function returns a pointer to the recipient Initialization MIC
-// This ensures that while the data can be edited, it cant be reallocated
-func (r *Recipient) GetRecipientMIC() []byte {
+// Get the recipient MIC
+// The caller can read or write the data within this slice, but can't change
+// the slice header in the actual structure
+func (r *RecipientPayload) GetRecipientMIC() []byte {
 	return r.recipientMIC
 }
 
 // Returns the serialized recipient payload, without copying
-func (r *Recipient) SerializeRecipient() []byte {
+func (r *RecipientPayload) SerializeRecipient() []byte {
 	return r.recipientSerial[:]
 }
 
-//Returns a Deserialized recipient id
-func DeserializeRecipient(rSerial []byte) *Recipient {
+// Slices a serialized recipient ID into its constituent fields
+func DeserializeRecipient(rSerial []byte) *RecipientPayload {
 	var rBytes [TOTAL_LEN]byte
 	copy(rBytes[:], rSerial)
-	return &Recipient{
+	return &RecipientPayload{
 		rBytes,
 		rBytes[RIV_START:RIV_END],
 		rBytes[RID_START:RID_END],
@@ -95,6 +98,6 @@ func DeserializeRecipient(rSerial []byte) *Recipient {
 }
 
 // Creates a deep copy of the recipient, used for sending multiple messages
-func (r *Recipient) DeepCopy() *Recipient {
+func (r *RecipientPayload) DeepCopy() *RecipientPayload {
 	return DeserializeRecipient(r.recipientSerial[:])
 }

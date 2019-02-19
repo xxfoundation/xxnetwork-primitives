@@ -33,7 +33,7 @@ func TestMessagePayload(t *testing.T) {
 	e := hex.EncodeToString
 
 	for i := uint64(0); i < uint64(tests); i++ {
-		pld, err := NewPayload(userid.NewUserIDFromUint(i+1, t),
+		pld, err := NewMessagePayload(userid.NewUserIDFromUint(i+1, t),
 			testStrings[i])
 
 		if (err != nil) != expectedErrors[i] {
@@ -56,19 +56,19 @@ func TestMessagePayload(t *testing.T) {
 				string(expct), string(pld.data), len(expct), len(pld.data))
 		}
 
-		pld.GetPayloadMIC()[PMIC_LEN-1] = uint8(i)
-		pld.GetPayloadInitVect()[PMIC_LEN-1] = uint8(i * 5)
+		pld.GetPayloadMIC()[MMIC_LEN-1] = uint8(i)
+		pld.GetMessagePayloadInitVect()[MMIC_LEN-1] = uint8(i * 5)
 
 		serial := pld.SerializePayload()
-		deserial := DeserializePayload(serial)
+		deserial := DeserializeMessagePayload(serial)
 
-		if !bytes.Equal(deserial.GetPayloadInitVect(),
-			pld.GetPayloadInitVect()) {
+		if !bytes.Equal(deserial.GetMessagePayloadInitVect(),
+			pld.GetMessagePayloadInitVect()) {
 			t.Errorf("Test of Payload failed on "+
 				"test %v: Init Vect did not match post serialization;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				e(pld.GetPayloadInitVect()),
-				e(deserial.GetPayloadInitVect()))
+				e(pld.GetMessagePayloadInitVect()),
+				e(deserial.GetMessagePayloadInitVect()))
 		}
 
 		if !bytes.Equal(deserial.GetSenderID(), pld.GetSenderID()) {
