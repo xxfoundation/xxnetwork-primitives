@@ -9,21 +9,17 @@ package format
 import (
 	"errors"
 	"fmt"
-	// TODO Should this dependency remain? Since we're mostly using cyclic ints
-	// as a placeholder, it would surely make more sense to use byte arrays,
-	// and each subrange would just be a slice into that array.
-	"gitlab.com/elixxir/crypto/cyclic"
 	"gitlab.com/elixxir/primitives/userid"
 )
 
 // Defines message structure.  Based the "Basic Message Structure" doc
-// Defining rangings in slices in go is inclusive for the beginning but
+// Defining ranges in slices in go is inclusive for the beginning but
 // exclusive for the end, so the END consts are one more then the final
 // index.
 const (
 	TOTAL_LEN uint64 = 256
 
-	//Byte used to ensure the highest bit of a serilization is zero
+	//Byte used to ensure the highest bit of a serialization is zero
 	ZEROER byte = 0x7F
 )
 
@@ -31,37 +27,36 @@ const (
 
 // Holds the payloads once they have been serialized
 type MessageSerial struct {
-	Payload   *cyclic.Int
-	Recipient *cyclic.Int
+	MessagePayload   []byte
+	RecipientPayload []byte
 }
 
 // Structure which contains a message payload and the recipient payload in an
 // easily accessible format
 type Message struct {
-	Payload
-	Recipient
+	*MessagePayload
+	*RecipientPayload
 }
 
-//Returns a serialized sender ID for the message interface
+// Wrap the sender ID in its type
 func (m Message) GetSender() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.senderID.LeftpadBytes(SID_LEN))
+	result := new(userid.UserID).SetBytes(m.senderID[:])
 	return result
 }
 
-//Returns the payload for the message interface
+// Get the payload from a message
 func (m Message) GetPayload() []byte {
-	return m.data.Bytes()
+	return m.data
 }
 
-//Returns a serialized recipient id for the message interface
-// FIXME Two copies for this isn't great
+// Wrap the recipient ID in its type
 func (m Message) GetRecipient() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.recipientID.LeftpadBytes(RID_LEN))
+	result := new(userid.UserID).SetBytes(m.recipientID[:])
 	return result
 }
 
 // Makes a new message for a certain sender and recipient
-func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error) {
+func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error) {
 
 	//build the recipient payload
 	recipientPayload, err := NewRecipientPayload(recipient)
@@ -74,23 +69,19 @@ func NewMessage(sender, recipient *userid.UserID, text []byte) ([]Message, error
 	}
 
 	//Build the message Payloads
-	messagePayload := NewPayload(sender, text)
+	messagePayload, err := NewMessagePayload(sender, text)
 
-	messageList := make([]Message, len(messagePayload))
+	message := Message{messagePayload, recipientPayload}
 
-	for indx, pld := range messagePayload {
-		messageList[indx] = Message{pld, recipientPayload.DeepCopy()}
-	}
-
-	return messageList, nil
+	return &message, err
 }
 
 func (m Message) SerializeMessage() MessageSerial {
-	return MessageSerial{m.Payload.SerializePayload(),
-		m.Recipient.SerializeRecipient()}
+	return MessageSerial{m.MessagePayload.SerializePayload(),
+		m.RecipientPayload.SerializeRecipient()}
 }
 
 func DeserializeMessage(ms MessageSerial) Message {
-	return Message{DeserializePayload(ms.Payload),
-		DeserializeRecipient(ms.Recipient)}
+	return Message{DeserializeMessagePayload(ms.MessagePayload),
+		DeserializeRecipient(ms.RecipientPayload)}
 }

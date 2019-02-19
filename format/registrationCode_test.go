@@ -7,21 +7,27 @@
 package format
 
 import (
-	"gitlab.com/elixxir/crypto/cyclic"
 	"gitlab.com/elixxir/crypto/hash"
 	"math"
 	"reflect"
 	"testing"
+	"encoding/hex"
+	"encoding/binary"
 )
 
 const REG_CODE string = "AB9DBDC17945CA1DECC31D8B8366337967E682252C71B956B7BAD49ABA69BF2A"
 
 func TestDisassembleRegistrationCode(t *testing.T) {
 
-	regcode := cyclic.NewIntFromString(REG_CODE, 16).LeftpadBytes(REGCODE_LEN)
+	regcode, err := hex.DecodeString(REG_CODE)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-	regpinExpected := uint32(cyclic.NewIntFromBytes(
-		regcode[REGPIN_START:REGPIN_END]).Uint64())
+	// Make a right-sized slice for bigendian encoding
+	regcode32Bits := make([]byte, 4)
+	copy(regcode32Bits[1:], regcode[REGPIN_START:REGPIN_END])
+	regpinExpected := binary.BigEndian.Uint32(regcode32Bits)
 
 	regkeyExpected := regcode[REGKEY_START:REGKEY_END]
 
@@ -29,21 +35,26 @@ func TestDisassembleRegistrationCode(t *testing.T) {
 
 	if regpin != regpinExpected {
 		t.Errorf("Test of DisassembleRegistrationCode failed: Regestration"+
-			" Pin codes did not match (%v) differed from expected (%v)", regpin,
+			" Pin codes did not match (%x) differed from expected (%x)", regpin,
 			regpinExpected)
 	}
 
 	if !reflect.DeepEqual(regkey, regkeyExpected) {
 		t.Errorf("Test of DisassembleRegistrationCode failed: Regestration"+
 			" key did not match (%v) differed from expected (%v)",
-			cyclic.NewIntFromBytes(regkey).Text(32),
-			cyclic.NewIntFromBytes(regkeyExpected).Text(32))
+			hex.EncodeToString(regkey),
+			hex.EncodeToString(regkeyExpected))
 	}
 }
 
 func TestRegistrationHash(t *testing.T) {
 
-	regcode := cyclic.NewIntFromString(REG_CODE, 16).LeftpadBytes(REGCODE_LEN)
+	regcode := make([]byte, REGCODE_LEN)
+	regBytes, err := hex.DecodeString(REG_CODE)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	copy(regcode[len(regcode)-len(regBytes):], regBytes)
 
 	hasher, _ := hash.NewCMixHash()
 
@@ -58,11 +69,11 @@ func TestRegistrationHash(t *testing.T) {
 	if !reflect.DeepEqual(h, expectedHash) {
 		t.Errorf("Test of RegistrationHash did not match: Regestration hash"+
 			" did not match (%v) differed from expected (%v)",
-			cyclic.NewIntFromBytes(h).Text(32),
-			cyclic.NewIntFromBytes(expectedHash).Text(32))
+			hex.EncodeToString(h),
+			hex.EncodeToString(expectedHash))
 	}
 
-	_, err := RegistrationHash(regkey, math.MaxUint32)
+	_, err = RegistrationHash(regkey, math.MaxUint32)
 
 	if err == nil {
 		t.Errorf("Test of RegistrationHash did not match: Out of Range pin" +

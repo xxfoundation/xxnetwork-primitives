@@ -7,136 +7,134 @@
 package format
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
-	"gitlab.com/elixxir/crypto/cyclic"
-	"testing"
 	"gitlab.com/elixxir/primitives/userid"
 	"math/rand"
-	"bytes"
+	"testing"
 )
 
 func TestNewMessage(t *testing.T) {
 
 	tests := uint64(3)
 
-	testStrings := make([][]byte, tests)
+	testStrings := [][]byte{
+		testText[0 : DATA_LEN/2],
+		testText[0:DATA_LEN],
+		testText[0 : 2*DATA_LEN],
+	}
 
-	testStrings[0] = testText[0 : DATA_LEN/2]
-	testStrings[1] = testText[0:DATA_LEN]
+	expectedSlices := make([][]byte, tests)
 
-	testStrings[2] = testText[0 : 2*DATA_LEN]
+	expectedSlices[0] = []byte(testStrings[0])
+	expectedSlices[1] = []byte(testStrings[1])[0:DATA_LEN]
+	// Since the third slice is too long to fit in one message, the third
+	// test case should result in a message including everything that can
+	// fit in one message, but also return an error.
+	expectedSlices[2] = []byte(testStrings[2])[0:DATA_LEN]
 
-	expectedSlices := make([][][]byte, tests)
-
-	expectedSlices[0] = make([][]byte, 1)
-
-	expectedSlices[0][0] = []byte(testStrings[0])
-
-	expectedSlices[1] = make([][]byte, 2)
-
-	expectedSlices[1][0] = ([]byte(testStrings[1]))[0:DATA_LEN]
-
-	expectedSlices[2] = make([][]byte, 3)
-
-	expectedSlices[2][0] = ([]byte(testStrings[2]))[0:DATA_LEN]
-	expectedSlices[2][1] = ([]byte(testStrings[2]))[DATA_LEN : 2*DATA_LEN]
-	expectedSlices[2][2] = ([]byte(testStrings[2]))[2*DATA_LEN:]
+	expectedErrors := []bool{false, false, true}
 
 	for i := uint64(0); i < tests; i++ {
-		msglst, _ := NewMessage(id.NewUserIDFromUint(i+1, t),
-			id.NewUserIDFromUint(i+1, t),
+		msg, err := NewMessage(userid.NewUserIDFromUint(i+1, t),
+			userid.NewUserIDFromUint(i+1, t),
 			testStrings[i])
 
-		for indx, msg := range msglst {
+		// Make sure we get an error on the third string, which is too long
+		if (err != nil) != expectedErrors[i] {
+			t.Errorf("Didn't get the expected error from NewMessage at index"+
+				" %v", i)
+		}
 
-			if uint64(i+1) != msg.senderID.Uint64() {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"sID did not match;\n  Expected: %v, Received: %v", i,
-					indx, i, msg.senderID)
-			}
+		expectedSender := userid.NewUserIDFromUint(i+1, t)
+		if !bytes.Equal(msg.GetSender().Bytes(), expectedSender.Bytes()) {
+			t.Errorf("Test of NewMessage failed on test %v: "+
+				"sID did not match;\n  Expected: %v, Received: %v", i,
+				i, msg.senderID)
+		}
 
-			if uint64(i+1) != msg.recipientID.Uint64() {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"rID did not match;\n  Expected: %v, Received: %v", i,
-					indx, i, msg.recipientID)
-			}
+		expectedRecipient := userid.NewUserIDFromUint(i+1, t)
+		if !bytes.Equal(expectedRecipient.Bytes(), msg.GetRecipient().Bytes()) {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"rID did not match;\n  Expected: %v, Received: %v", i,
+				i, msg.recipientID)
+		}
 
-			expct := cyclic.NewIntFromBytes(expectedSlices[i][indx])
+		expct := expectedSlices[i]
 
-			if msg.data.Cmp(expct) != 0 {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
-					indx, expct.Text(16), msg.data.Text(16))
-			}
+		if !bytes.Contains(msg.data, expct) {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
+				hex.EncodeToString(expct), hex.EncodeToString(msg.data))
+		}
 
-			serial := msg.SerializeMessage()
-			deserial := DeserializeMessage(serial)
+		serial := msg.SerializeMessage()
+		deserial := DeserializeMessage(serial)
 
-			pldSuccess, pldErr := payloadEqual(msg.Payload, deserial.Payload)
+		pldSuccess, pldErr := payloadEqual(msg.MessagePayload, deserial.MessagePayload)
 
-			if !pldSuccess {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"postserial Payload did not match: %s", i, indx, pldErr)
-			}
+		if !pldSuccess {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"postserial Payload did not match: %s", i, pldErr)
+		}
 
-			rcpSuccess, rcpErr := recipientEqual(msg.Recipient,
-				deserial.Recipient)
+		rcpSuccess, rcpErr := recipientEqual(msg.RecipientPayload,
+			deserial.RecipientPayload)
 
-			if !rcpSuccess {
-				t.Errorf("Test of NewMessage failed on test %v:%v, "+
-					"postserial Recipient did not match: %s", i, indx, rcpErr)
-			}
-
+		if !rcpSuccess {
+			t.Errorf("Test of NewMessage failed on test %v:, "+
+				"postserial Recipient did not match: %s", i, rcpErr)
 		}
 
 	}
 
 }
 
-func payloadEqual(p1 Payload, p2 Payload) (bool, string) {
-	if p1.data.Cmp(p2.data) != 0 {
+func payloadEqual(p1 *MessagePayload, p2 *MessagePayload) (bool, string) {
+	e := hex.EncodeToString
+	// Use Contains instead of Equal here because the byte slice includes
+	// trailing zeroes after the end of the string. Package users are
+	// responsible for trimming these trailing zeroes currently. Once we migrate
+	// to a better padding scheme this will become unnecessary.
+	if !bytes.Contains(p2.data, p1.data) {
 		return false, fmt.Sprintf("data; Expected %v, Recieved: %v",
-			p1.data.Text(16), p2.data.Text(16))
+			e(p1.data), e(p2.data))
 	}
 
-	if p1.senderID.Cmp(p2.senderID) != 0 {
+	if !bytes.Equal(p1.senderID, p2.senderID) {
 		return false, fmt.Sprintf("sender; Expected %v, Recieved: %v",
-			p1.senderID.Text(16), p2.senderID.Text(16))
+			e(p1.senderID), e(p2.senderID))
 	}
 
-	if p1.payloadMIC.Cmp(p2.payloadMIC) != 0 {
-		return false, fmt.Sprintf("payloadMIC; Expected %v, Recieved: %v",
-			p1.payloadMIC.Text(16), p2.payloadMIC.Text(16))
+	if !bytes.Equal(p1.messageMIC, p2.messageMIC) {
+		return false, fmt.Sprintf("messageMIC; Expected %v, Recieved: %v",
+			e(p1.messageMIC), e(p2.messageMIC))
 	}
 
-	if p1.payloadInitVect.Cmp(p2.payloadInitVect) != 0 {
-		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
-			p1.payloadInitVect.Text(16), p2.payloadInitVect.Text(16))
+	if !bytes.Equal(p1.messageInitVect, p2.messageInitVect) {
+		return false, fmt.Sprintf("messageInitVect; Expected %v, Recieved: %v",
+			e(p1.messageInitVect), e(p2.messageInitVect))
 	}
 
 	return true, ""
-
 }
 
-func recipientEqual(r1 Recipient, r2 Recipient) (bool, string) {
-	if r1.recipientID.Cmp(r2.recipientID) != 0 {
+func recipientEqual(r1 *RecipientPayload, r2 *RecipientPayload) (bool, string) {
+	e := hex.EncodeToString
+	if !bytes.Equal(r1.recipientID, r2.recipientID) {
 		return false, fmt.Sprintf("recipientID; Expected %v, Recieved: %v",
-			r1.recipientID.Text(16), r2.recipientID.Text(16))
+			e(r1.recipientID), e(r2.recipientID))
 	}
 
-	if r1.recipientEmpty.Cmp(r2.recipientEmpty) != 0 {
-		return false, fmt.Sprintf("empty; Expected %v, Recieved: %v",
-			r1.recipientEmpty.Text(16), r2.recipientEmpty.Text(16))
-	}
-
-	if r1.recipientMIC.Cmp(r2.recipientMIC) != 0 {
+	if !bytes.Equal(r1.recipientMIC, r2.recipientMIC) {
 		return false, fmt.Sprintf("recipientMIC; Expected %v, Recieved: %v",
-			r1.recipientMIC.Text(16), r2.recipientMIC.Text(16))
+			e(r1.recipientMIC), e(r2.recipientMIC))
 	}
 
-	if r1.recipientInitVect.Cmp(r2.recipientInitVect) != 0 {
-		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
-			r1.recipientInitVect.Text(16), r2.recipientInitVect.Text(16))
+	if !bytes.Equal(r1.recipientInitVect, r2.recipientInitVect) {
+		return false, fmt.Sprintf("messageInitVect; Expected %v, Recieved: %v",
+			e(r1.recipientInitVect), e(r2.recipientInitVect))
 	}
 
 	return true, ""
@@ -182,7 +180,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// The test should rely on comparing the underlying data,
 	// not the memory address
 	// Creating message designated for sending to zero user ID should fail
-	_, err := NewMessage(new(id.UserID), new(id.UserID), []byte("some text"))
+	_, err := NewMessage(new(userid.UserID), new(userid.UserID), []byte("some text"))
 	if err == nil {
 		t.Error("Didn't get an expected error from creating new message to" +
 			" zero user")
@@ -193,7 +191,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// use cases (untraceable return address, for example.) At the time of
 	// writing, the infrastructure required to support communications that don't
 	// specify a return ID hasn't been built.
-	_, err2 := NewMessage(new(id.UserID), id.NewUserIDFromUint(5,
+	_, err2 := NewMessage(new(userid.UserID), userid.NewUserIDFromUint(5,
 		t), []byte("some more text"))
 	if err2 != nil {
 		t.Errorf("Got an unexpected error from creating new message from zero"+
@@ -211,10 +209,10 @@ func TestMessage_GetPayload(t *testing.T) {
 		t.Errorf("Got error from data generation: %s", err.Error())
 	}
 	msg := Message{
-		Payload: Payload{
-			data: cyclic.NewIntFromBytes(data),
+		MessagePayload: &MessagePayload{
+			data: data,
 		},
-		Recipient: Recipient{},
+		RecipientPayload: &RecipientPayload{},
 	}
 	if !bytes.Equal(data, msg.GetPayload()) {
 		t.Errorf("Message payload was %q, expected %q", msg.GetPayload(), data)
@@ -228,9 +226,9 @@ func TestMessage_GetRecipient(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := Message{Payload: Payload{},
-		Recipient: Recipient{
-			recipientID: cyclic.NewIntFromBytes(recipient),
+	msg := Message{MessagePayload: &MessagePayload{},
+		RecipientPayload: &RecipientPayload{
+			recipientID: recipient,
 		}}
 	if !bytes.Equal(recipient, msg.GetRecipient()[:]) {
 		t.Errorf("Message recipient was %q, expected %q",
@@ -245,8 +243,8 @@ func TestMessage_GetSender(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := Message{Payload: Payload{senderID: cyclic.NewIntFromBytes(sender)},
-		Recipient: Recipient{}}
+	msg := Message{MessagePayload: &MessagePayload{senderID: sender},
+		RecipientPayload: &RecipientPayload{}}
 	if !bytes.Equal(sender, msg.GetSender()[:]) {
 		t.Errorf("Message sender was %q, expected %q",
 			*msg.GetSender(), sender)
