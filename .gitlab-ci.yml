@@ -33,6 +33,29 @@ setup:
   stage: setup
   image: $DOCKER_IMAGE
   script:
+    ##
+    ## Run ssh-agent (inside the build environment)
+    ##
+    - eval $(ssh-agent -s)
+
+    ##
+    ## Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+    ## We're using tr to fix line endings which makes ed25519 keys work
+    ## without extra base64 encoding.
+    ## https://gitlab.com/gitlab-examples/ssh-private-key/issues/1#note_48526556
+    ##
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+
+    ##
+    ## Create the SSH directory and give it the right permissions
+    ##
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+
+    ##
+    ## Add SSH key for gitlab.com
+    ##
+    - ssh-keyscan -t rsa gitlab.com > ~/.ssh/known_hosts
     - git clean -ffdx
     - glide install -v
   artifacts:
@@ -102,13 +125,3 @@ deploy_staging:
     # url: https://librerio.example.com
   only:
   - master
-
-trigger_integration:
-  stage: trigger_integration
-  script:
-    # Server
-    - "curl -X POST -F token=719da505f58f77e042deaf6e2617f2 -F ref=master https://gitlab.com/api/v4/projects/5014439/trigger/pipeline"
-    # Client
-    - "curl -X POST -F token=49d8780aca37fe7dabd6faecee913c -F ref=master https://gitlab.com/api/v4/projects/5454785/trigger/pipeline"
-  only:
-    - master
