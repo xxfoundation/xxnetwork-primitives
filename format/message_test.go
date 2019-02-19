@@ -29,6 +29,9 @@ func TestNewMessage(t *testing.T) {
 
 	expectedSlices[0] = []byte(testStrings[0])
 	expectedSlices[1] = []byte(testStrings[1])[0:DATA_LEN]
+	// Since the third slice is too long to fit in one message, the third
+	// test case should result in a message including everything that can
+	// fit in one message, but also return an error.
 	expectedSlices[2] = []byte(testStrings[2])[0:DATA_LEN]
 
 	expectedErrors := []bool{false, false, true}
