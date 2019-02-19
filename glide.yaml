@@ -1,0 +1,6 @@
+package: gitlab.com/elixxir/primitives
+import:
+- package: gitlab.com/elixxir/crypto
+  version: master
+  repo: git@gitlab.com:elixxir/crypto
+  vcs: git
