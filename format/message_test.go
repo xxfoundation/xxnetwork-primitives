@@ -104,14 +104,14 @@ func payloadEqual(p1 *MessagePayload, p2 *MessagePayload) (bool, string) {
 			e(p1.senderID), e(p2.senderID))
 	}
 
-	if !bytes.Equal(p1.payloadMIC, p2.payloadMIC) {
-		return false, fmt.Sprintf("payloadMIC; Expected %v, Recieved: %v",
-			e(p1.payloadMIC), e(p2.payloadMIC))
+	if !bytes.Equal(p1.messageMIC, p2.messageMIC) {
+		return false, fmt.Sprintf("messageMIC; Expected %v, Recieved: %v",
+			e(p1.messageMIC), e(p2.messageMIC))
 	}
 
-	if !bytes.Equal(p1.payloadInitVect, p2.payloadInitVect) {
-		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
-			e(p1.payloadInitVect), e(p2.payloadInitVect))
+	if !bytes.Equal(p1.messageInitVect, p2.messageInitVect) {
+		return false, fmt.Sprintf("messageInitVect; Expected %v, Recieved: %v",
+			e(p1.messageInitVect), e(p2.messageInitVect))
 	}
 
 	return true, ""
@@ -130,7 +130,7 @@ func recipientEqual(r1 *RecipientPayload, r2 *RecipientPayload) (bool, string) {
 	}
 
 	if !bytes.Equal(r1.recipientInitVect, r2.recipientInitVect) {
-		return false, fmt.Sprintf("payloadInitVect; Expected %v, Recieved: %v",
+		return false, fmt.Sprintf("messageInitVect; Expected %v, Recieved: %v",
 			e(r1.recipientInitVect), e(r2.recipientInitVect))
 	}
 

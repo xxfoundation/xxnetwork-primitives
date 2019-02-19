@@ -37,10 +37,10 @@ type MessagePayload struct {
 	payloadSerial [TOTAL_LEN]byte
 	// All other slices point to their respective parts of the array. So, the
 	// message is always serialized and ready to go, and no copies are required
-	payloadInitVect []byte
+	messageInitVect []byte
 	senderID        []byte
 	data            []byte
-	payloadMIC      []byte
+	messageMIC      []byte
 }
 
 // Makes a new message for a certain sender.
@@ -52,10 +52,10 @@ type MessagePayload struct {
 func NewMessagePayload(sender *userid.UserID, text []byte) (*MessagePayload, error) {
 	result := MessagePayload{payloadSerial: [TOTAL_LEN]byte{}}
 	result.data = result.payloadSerial[DATA_START:DATA_END]
-	result.payloadMIC = result.payloadSerial[MMIC_START:MMIC_END]
+	result.messageMIC = result.payloadSerial[MMIC_START:MMIC_END]
 	result.senderID = result.payloadSerial[SID_START:SID_END]
 	copy(result.senderID, sender.Bytes())
-	result.payloadInitVect = result.payloadSerial[MIV_START:MIV_END]
+	result.messageInitVect = result.payloadSerial[MIV_START:MIV_END]
 
 	copyLen := copy(result.data, text)
 	var err error
@@ -69,8 +69,8 @@ func NewMessagePayload(sender *userid.UserID, text []byte) (*MessagePayload, err
 // Get the initialization vector's slice
 // This allows reading and writing the correct section of memory, but
 // doesn't allow changing the slice header in the structure itself
-func (p *MessagePayload) GetMessagePayloadInitVect() []byte {
-	return p.payloadInitVect
+func (p *MessagePayload) GetMessageInitVect() []byte {
+	return p.messageInitVect
 }
 
 // Get the sender ID's slice
@@ -95,7 +95,7 @@ func (p *MessagePayload) GetData() []byte {
 // This function returns a pointer to the payload MIC
 // This ensures that while the data can be edited, it cant be reallocated
 func (p *MessagePayload) GetPayloadMIC() []byte {
-	return p.payloadMIC
+	return p.messageMIC
 }
 
 // Returns the serialized message payload

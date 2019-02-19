@@ -57,18 +57,18 @@ func TestMessagePayload(t *testing.T) {
 		}
 
 		pld.GetPayloadMIC()[MMIC_LEN-1] = uint8(i)
-		pld.GetMessagePayloadInitVect()[MMIC_LEN-1] = uint8(i * 5)
+		pld.GetMessageInitVect()[MMIC_LEN-1] = uint8(i * 5)
 
 		serial := pld.SerializePayload()
 		deserial := DeserializeMessagePayload(serial)
 
-		if !bytes.Equal(deserial.GetMessagePayloadInitVect(),
-			pld.GetMessagePayloadInitVect()) {
+		if !bytes.Equal(deserial.GetMessageInitVect(),
+			pld.GetMessageInitVect()) {
 			t.Errorf("Test of Payload failed on "+
 				"test %v: Init Vect did not match post serialization;\n"+
 				"  Expected: %v, Recieved: %v ", i,
-				e(pld.GetMessagePayloadInitVect()),
-				e(deserial.GetMessagePayloadInitVect()))
+				e(pld.GetMessageInitVect()),
+				e(deserial.GetMessageInitVect()))
 		}
 
 		if !bytes.Equal(deserial.GetSenderID(), pld.GetSenderID()) {
