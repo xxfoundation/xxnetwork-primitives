@@ -9,7 +9,7 @@ package format
 import (
 	"errors"
 	"fmt"
-	"gitlab.com/elixxir/primitives/userid"
+	"gitlab.com/elixxir/primitives/id"
 )
 
 // Defines message structure.  Based the "Basic Message Structure" doc
@@ -39,8 +39,8 @@ type Message struct {
 }
 
 // Wrap the sender ID in its type
-func (m Message) GetSender() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.senderID[:])
+func (m Message) GetSender() *id.User {
+	result := new(id.User).SetBytes(m.senderID[:])
 	return result
 }
 
@@ -50,13 +50,13 @@ func (m Message) GetPayload() []byte {
 }
 
 // Wrap the recipient ID in its type
-func (m Message) GetRecipient() *userid.UserID {
-	result := new(userid.UserID).SetBytes(m.recipientID[:])
+func (m Message) GetRecipient() *id.User {
+	result := new(id.User).SetBytes(m.recipientID[:])
 	return result
 }
 
 // Makes a new message for a certain sender and recipient
-func NewMessage(sender, recipient *userid.UserID, text []byte) (*Message, error) {
+func NewMessage(sender, recipient *id.User, text []byte) (*Message, error) {
 
 	//build the recipient payload
 	recipientPayload, err := NewRecipientPayload(recipient)

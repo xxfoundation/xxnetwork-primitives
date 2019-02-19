@@ -8,7 +8,7 @@ package format
 
 import (
 	"errors"
-	"gitlab.com/elixxir/primitives/userid"
+	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	DATA_START uint64 = MIV_END
 	DATA_END   uint64 = DATA_START + DATA_LEN
 
-	SID_LEN   uint64 = userid.UserIDLen
+	SID_LEN   uint64 = id.UserLen
 	SID_START uint64 = DATA_END
 	SID_END   uint64 = SID_START + SID_LEN
 
@@ -49,7 +49,7 @@ type MessagePayload struct {
 // too long to fit.
 // Will return an error if the message was too long to fit in one payload
 // Make sure to populate the initialization vector and the MIC later
-func NewMessagePayload(sender *userid.UserID, text []byte) (*MessagePayload, error) {
+func NewMessagePayload(sender *id.User, text []byte) (*MessagePayload, error) {
 	result := MessagePayload{payloadSerial: [TOTAL_LEN]byte{}}
 	result.data = result.payloadSerial[DATA_START:DATA_END]
 	result.messageMIC = result.payloadSerial[MMIC_START:MMIC_END]
@@ -81,8 +81,8 @@ func (p *MessagePayload) GetSenderID() []byte {
 }
 
 // Wrap the sender ID in its type
-func (p *MessagePayload) GetSender() *userid.UserID {
-	result := new(userid.UserID).SetBytes(p.senderID[:])
+func (p *MessagePayload) GetSender() *id.User {
+	result := new(id.User).SetBytes(p.senderID[:])
 	return result
 }
 

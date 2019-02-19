@@ -7,10 +7,10 @@
 package format
 
 import (
-	"testing"
-	"gitlab.com/elixxir/primitives/userid"
 	"bytes"
 	"encoding/hex"
+	"gitlab.com/elixxir/primitives/id"
+	"testing"
 )
 
 func TestRecipientPayload(t *testing.T) {
@@ -23,21 +23,21 @@ func TestRecipientPayload(t *testing.T) {
 	initVects := [][]byte{}
 	for i := range initVectBytes {
 		initVects = append(initVects, make([]byte, RIV_LEN))
-		initVects[i][len(initVects[i]) - 1] = initVectBytes[i]
+		initVects[i][len(initVects[i])-1] = initVectBytes[i]
 	}
 
 	emptyBytes := []byte{22, 40, 53, 17, 14}
 	emptys := [][]byte{}
 	for i := range emptyBytes {
 		emptys = append(emptys, make([]byte, REMPTY_LEN))
-		emptys[i][len(emptys[i]) - 1] = emptyBytes[i]
+		emptys[i][len(emptys[i])-1] = emptyBytes[i]
 	}
 
 	micBytes := []byte{54, 52, 43, 27, 12}
 	mics := [][]byte{}
 	for i := range micBytes {
 		mics = append(mics, make([]byte, RMIC_LEN))
-		mics[i][len(mics[i]) - 1] = micBytes[i]
+		mics[i][len(mics[i])-1] = micBytes[i]
 	}
 
 	recipients := make([]*RecipientPayload, numRecpts)
@@ -45,7 +45,8 @@ func TestRecipientPayload(t *testing.T) {
 	var err error
 
 	for i := 0; i < numRecpts; i++ {
-		recipients[i], err = NewRecipientPayload(userid.NewUserIDFromUint(rids[i], t))
+		recipients[i], err = NewRecipientPayload(id.NewUserFromUint(rids[i],
+			t))
 
 		if err != nil && rids[i] != 0 {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
@@ -61,7 +62,7 @@ func TestRecipientPayload(t *testing.T) {
 
 		e := hex.EncodeToString
 		if !bytes.Equal(recipients[i].GetRecipientID(),
-			userid.NewUserIDFromUint(rids[i], t).Bytes()) {
+			id.NewUserFromUint(rids[i], t).Bytes()) {
 			t.Errorf("Test of Recipient Payload failed on test %v, "+
 				"Recipient ID did not match;\n  Expected: %v, "+
 				"Recieved: %v ", i, rids[i],

@@ -7,12 +7,12 @@
 package format
 
 import (
+	"encoding/binary"
+	"encoding/hex"
 	"gitlab.com/elixxir/crypto/hash"
 	"math"
 	"reflect"
 	"testing"
-	"encoding/hex"
-	"encoding/binary"
 )
 
 const REG_CODE string = "AB9DBDC17945CA1DECC31D8B8366337967E682252C71B956B7BAD49ABA69BF2A"

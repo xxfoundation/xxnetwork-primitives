@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"gitlab.com/elixxir/primitives/userid"
+	"gitlab.com/elixxir/primitives/id"
 	"math/rand"
 	"testing"
 )
@@ -37,8 +37,8 @@ func TestNewMessage(t *testing.T) {
 	expectedErrors := []bool{false, false, true}
 
 	for i := uint64(0); i < tests; i++ {
-		msg, err := NewMessage(userid.NewUserIDFromUint(i+1, t),
-			userid.NewUserIDFromUint(i+1, t),
+		msg, err := NewMessage(id.NewUserFromUint(i+1, t),
+			id.NewUserFromUint(i+1, t),
 			testStrings[i])
 
 		// Make sure we get an error on the third string, which is too long
@@ -47,14 +47,14 @@ func TestNewMessage(t *testing.T) {
 				" %v", i)
 		}
 
-		expectedSender := userid.NewUserIDFromUint(i+1, t)
+		expectedSender := id.NewUserFromUint(i+1, t)
 		if !bytes.Equal(msg.GetSender().Bytes(), expectedSender.Bytes()) {
 			t.Errorf("Test of NewMessage failed on test %v: "+
 				"sID did not match;\n  Expected: %v, Received: %v", i,
 				i, msg.senderID)
 		}
 
-		expectedRecipient := userid.NewUserIDFromUint(i+1, t)
+		expectedRecipient := id.NewUserFromUint(i+1, t)
 		if !bytes.Equal(expectedRecipient.Bytes(), msg.GetRecipient().Bytes()) {
 			t.Errorf("Test of NewMessage failed on test %v:, "+
 				"rID did not match;\n  Expected: %v, Received: %v", i,
@@ -180,7 +180,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// The test should rely on comparing the underlying data,
 	// not the memory address
 	// Creating message designated for sending to zero user ID should fail
-	_, err := NewMessage(new(userid.UserID), new(userid.UserID), []byte("some text"))
+	_, err := NewMessage(new(id.User), new(id.User), []byte("some text"))
 	if err == nil {
 		t.Error("Didn't get an expected error from creating new message to" +
 			" zero user")
@@ -191,7 +191,7 @@ func TestNewMessage_Errors(t *testing.T) {
 	// use cases (untraceable return address, for example.) At the time of
 	// writing, the infrastructure required to support communications that don't
 	// specify a return ID hasn't been built.
-	_, err2 := NewMessage(new(userid.UserID), userid.NewUserIDFromUint(5,
+	_, err2 := NewMessage(new(id.User), id.NewUserFromUint(5,
 		t), []byte("some more text"))
 	if err2 != nil {
 		t.Errorf("Got an unexpected error from creating new message from zero"+

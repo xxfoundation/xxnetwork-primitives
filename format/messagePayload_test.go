@@ -9,7 +9,7 @@ package format
 import (
 	"bytes"
 	"encoding/hex"
-	"gitlab.com/elixxir/primitives/userid"
+	"gitlab.com/elixxir/primitives/id"
 	"testing"
 )
 
@@ -33,14 +33,14 @@ func TestMessagePayload(t *testing.T) {
 	e := hex.EncodeToString
 
 	for i := uint64(0); i < uint64(tests); i++ {
-		pld, err := NewMessagePayload(userid.NewUserIDFromUint(i+1, t),
+		pld, err := NewMessagePayload(id.NewUserFromUint(i+1, t),
 			testStrings[i])
 
 		if (err != nil) != expectedErrors[i] {
 			t.Errorf("Didn't expect error result on test %v", i)
 		}
 
-		if *userid.NewUserIDFromUint(i+1, t) != *pld.GetSender() {
+		if *id.NewUserFromUint(i+1, t) != *pld.GetSender() {
 			t.Errorf("Test of Payload failed on test %v, sID did not "+
 				"match;\n  Expected: %v, Received: %v", i, i,
 				e(pld.GetSender().Bytes()))
@@ -51,7 +51,7 @@ func TestMessagePayload(t *testing.T) {
 		if !bytes.Contains(pld.data, expct) {
 			t.Errorf("Test of Payload failed on test %v, "+
 				"bytes did not "+
-				"match;\n Value Expected: %v, " +
+				"match;\n Value Expected: %v, "+
 				"Value Received: %v; Lengths: %v, %v", i,
 				string(expct), string(pld.data), len(expct), len(pld.data))
 		}

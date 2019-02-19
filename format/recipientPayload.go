@@ -9,7 +9,7 @@ package format
 import (
 	"errors"
 	"fmt"
-	"gitlab.com/elixxir/primitives/userid"
+	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	RIV_END   uint64 = RIV_LEN
 
 	// Length and Position of the Recipient ID
-	RID_LEN   uint64 = userid.UserIDLen
+	RID_LEN   uint64 = id.UserLen
 	RID_START uint64 = REMPTY_END
 	RID_END   uint64 = RID_START + RID_LEN
 
@@ -43,8 +43,8 @@ type RecipientPayload struct {
 }
 
 //Builds a recipient payload object
-func NewRecipientPayload(ID *userid.UserID) (*RecipientPayload, error) {
-	if ID == nil || *ID == *userid.ZeroID {
+func NewRecipientPayload(ID *id.User) (*RecipientPayload, error) {
+	if ID == nil || *ID == *id.ZeroID {
 		return nil, errors.New(fmt.Sprintf(
 			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
 			ID))

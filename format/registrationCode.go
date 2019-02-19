@@ -57,7 +57,7 @@ func RegistrationHash(regkey []byte, regpin uint32) ([]byte, error) {
 
 	//Turn the pin into a byte slice and copy it into the registration code
 	regpinBytes := make([]byte, REGPIN_LEN)
-	for i := int(REGPIN_LEN-1); i >= 0; i-- {
+	for i := int(REGPIN_LEN - 1); i >= 0; i-- {
 		regpinBytes[i] = byte(regpin)
 		regpin >>= 8
 	}
