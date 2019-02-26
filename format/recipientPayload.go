@@ -98,7 +98,7 @@ func (r *AssociatedData) SetMAC(newMAC []byte) int {
 }
 
 // Returns the serialized recipient payload, without copying
-func (r *AssociatedData) SerializeRecipient() []byte {
+func (r *AssociatedData) SerializeAssociatedData() []byte {
 	return r.associatedDataSerial[:]
 }
 
