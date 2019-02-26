@@ -10,6 +10,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"gitlab.com/elixxir/crypto/hash"
+	"golang.org/x/crypto/blake2b"
 	"math"
 	"reflect"
 	"testing"
@@ -56,7 +57,7 @@ func TestRegistrationHash(t *testing.T) {
 	}
 	copy(regcode[len(regcode)-len(regBytes):], regBytes)
 
-	hasher, _ := hash.NewCMixHash()
+	hasher, _ := blake2b.New256(nil)
 
 	hasher.Write(regcode)
 
