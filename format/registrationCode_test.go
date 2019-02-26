@@ -9,7 +9,6 @@ package format
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"gitlab.com/elixxir/crypto/hash"
 	"golang.org/x/crypto/blake2b"
 	"math"
 	"reflect"
