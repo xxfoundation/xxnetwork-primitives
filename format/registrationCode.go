@@ -9,8 +9,7 @@ package format
 import (
 	"errors"
 	"fmt"
-	// TODO Should we also delete this to completely remove the crypto dependency?
-	"gitlab.com/elixxir/crypto/hash"
+	"golang.org/x/crypto/blake2b"
 )
 
 const REGCODE_LEN uint64 = 32
@@ -19,14 +18,14 @@ const REGCODE_LEN uint64 = 32
 // so 24/4 = 6 characters
 const REGPIN_LEN uint64 = 3
 const REGPIN_START uint64 = 0
-const REGPIN_END uint64 = REGPIN_START + REGPIN_LEN
+const REGPIN_END = REGPIN_START + REGPIN_LEN
 
 // Max value for 6 digit registration key, (2^24)-1
-const REGPIN_MAX uint32 = uint32((1 << (REGPIN_LEN * 8)) - 1)
+const REGPIN_MAX = uint32((1 << (REGPIN_LEN * 8)) - 1)
 
-const REGKEY_LEN uint64 = REGCODE_LEN - REGPIN_LEN
-const REGKEY_START uint64 = REGPIN_END
-const REGKEY_END uint64 = REGKEY_START + REGKEY_LEN
+const REGKEY_LEN = REGCODE_LEN - REGPIN_LEN
+const REGKEY_START = REGPIN_END
+const REGKEY_END = REGKEY_START + REGKEY_LEN
 
 // Takes a Registration Code and returns the Registration Key and
 // Registration Pin
@@ -66,7 +65,7 @@ func RegistrationHash(regkey []byte, regpin uint32) ([]byte, error) {
 	copy(regcode[REGKEY_START:REGKEY_END], regkey)
 
 	//Get the object to hash the code with
-	hasher, err := hash.NewCMixHash()
+	hasher, err := blake2b.New256(nil)
 
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf(
