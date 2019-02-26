@@ -63,16 +63,16 @@ func TestNewMessage(t *testing.T) {
 
 		expct := expectedSlices[i]
 
-		if !bytes.Contains(msg.data, expct) {
+		if !bytes.Contains(msg.payload, expct) {
 			t.Errorf("Test of NewMessage failed on test %v:, "+
 				"bytes did not match;\n Value Expected: %v, Value Received: %v", i,
-				hex.EncodeToString(expct), hex.EncodeToString(msg.data))
+				hex.EncodeToString(expct), hex.EncodeToString(msg.payload))
 		}
 
 		serial := msg.SerializeMessage()
 		deserial := DeserializeMessage(serial)
 
-		pldSuccess, pldErr := payloadEqual(msg.Message, deserial.Message)
+		pldSuccess, pldErr := payloadEqual(msg.Payload, deserial.Payload)
 
 		if !pldSuccess {
 			t.Errorf("Test of NewMessage failed on test %v:, "+
@@ -91,15 +91,15 @@ func TestNewMessage(t *testing.T) {
 
 }
 
-func payloadEqual(p1 *Message, p2 *Message) (bool, string) {
+func payloadEqual(p1 *Payload, p2 *Payload) (bool, string) {
 	e := hex.EncodeToString
 	// Use Contains instead of Equal here because the byte slice includes
 	// trailing zeroes after the end of the string. Package users are
 	// responsible for trimming these trailing zeroes currently. Once we migrate
 	// to a better padding scheme this will become unnecessary.
-	if !bytes.Contains(p2.data, p1.data) {
-		return false, fmt.Sprintf("data; Expected %v, Recieved: %v",
-			e(p1.data), e(p2.data))
+	if !bytes.Contains(p2.payload, p1.payload) {
+		return false, fmt.Sprintf("payload; Expected %v, Recieved: %v",
+			e(p1.payload), e(p2.payload))
 	}
 
 	if !bytes.Equal(p1.senderID, p2.senderID) {
@@ -208,14 +208,14 @@ func TestMessage_GetPayload(t *testing.T) {
 	if err != nil {
 		t.Errorf("Got error from data generation: %s", err.Error())
 	}
-	msg := MaryPoppins{
-		Message: &Message{
-			data: data,
+	msg := Message{
+		Payload: &Payload{
+			payload: data,
 		},
 		AssociatedData: &AssociatedData{},
 	}
 	if !bytes.Equal(data, msg.GetPayload()) {
-		t.Errorf("MaryPoppins payload was %q, expected %q", msg.GetPayload(), data)
+		t.Errorf("Message payload was %q, expected %q", msg.GetPayload(), data)
 	}
 }
 
@@ -226,12 +226,12 @@ func TestMessage_GetRecipient(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := MaryPoppins{Message: &Message{},
+	msg := Message{Payload: &Payload{},
 		AssociatedData: &AssociatedData{
 			recipientID: recipient,
 		}}
 	if !bytes.Equal(recipient, msg.GetRecipient()[:]) {
-		t.Errorf("MaryPoppins recipient was %q, expected %q",
+		t.Errorf("Message recipient was %q, expected %q",
 			*msg.GetRecipient(), recipient)
 	}
 }
@@ -243,10 +243,10 @@ func TestMessage_GetSender(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg := MaryPoppins{Message: &Message{senderID: sender},
+	msg := Message{Payload: &Payload{senderID: sender},
 		AssociatedData: &AssociatedData{}}
 	if !bytes.Equal(sender, msg.GetSender()[:]) {
-		t.Errorf("MaryPoppins sender was %q, expected %q",
+		t.Errorf("Message sender was %q, expected %q",
 			*msg.GetSender(), sender)
 	}
 }

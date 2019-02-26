@@ -69,9 +69,17 @@ func (r *AssociatedData) GetRecipientID() []byte {
 	return r.recipientID
 }
 
+func (r *AssociatedData) GetRecipient() *id.User {
+	return new(id.User).SetBytes(r.recipientID)
+}
+
 // Returns number of bytes copied
 func (r *AssociatedData) SetRecipientID(newID []byte) int {
 	return copy(r.recipientID, newID)
+}
+
+func (r *AssociatedData) SetRecipient(newID *id.User) {
+	copy(r.recipientID, newID.Bytes())
 }
 
 // Get the key fingerprint

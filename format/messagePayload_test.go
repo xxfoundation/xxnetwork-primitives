@@ -33,7 +33,7 @@ func TestMessagePayload(t *testing.T) {
 	e := hex.EncodeToString
 
 	for i := uint64(0); i < uint64(tests); i++ {
-		pld, err := NewMessagePayload(id.NewUserFromUint(i+1, t),
+		pld, err := NewPayload(id.NewUserFromUint(i+1, t),
 			testStrings[i])
 
 		if (err != nil) != expectedErrors[i] {
@@ -48,19 +48,19 @@ func TestMessagePayload(t *testing.T) {
 
 		expct := expectedSlices[i]
 
-		if !bytes.Contains(pld.data, expct) {
+		if !bytes.Contains(pld.payload, expct) {
 			t.Errorf("Test of Payload failed on test %v, "+
 				"bytes did not "+
 				"match;\n Value Expected: %v, "+
 				"Value Received: %v; Lengths: %v, %v", i,
-				string(expct), string(pld.data), len(expct), len(pld.data))
+				string(expct), string(pld.payload), len(expct), len(pld.payload))
 		}
 
 		pld.GetPayloadMIC()[MMIC_LEN-1] = uint8(i)
 		pld.GetMessageInitVect()[MMIC_LEN-1] = uint8(i * 5)
 
 		serial := pld.SerializePayload()
-		deserial := DeserializeMessagePayload(serial)
+		deserial := DeserializePayload(serial)
 
 		if !bytes.Equal(deserial.GetMessageInitVect(),
 			pld.GetMessageInitVect()) {

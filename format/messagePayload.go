@@ -7,40 +7,31 @@
 package format
 
 import (
-	"errors"
 	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
-	// Length and Position of the MaryPoppins Payload Initialization Vector
-	MIV_LEN   uint64 = 9
-	MIV_START uint64 = 0
-	MIV_END   uint64 = MIV_LEN
+	// Length and position of sender ID
+	// Because the first bit of all user IDs is zero, this will always be in the
+	// cyclic group
+	MP_SID_LEN   int = id.UserLen
+	MP_SID_START int = 0
+	MP_SID_END   int = MP_SID_START + MP_SID_LEN
 
 	// Length and Position of message payload
-	DATA_LEN   uint64 = TOTAL_LEN - SID_LEN - MIV_LEN - MMIC_LEN
-	DATA_START uint64 = MIV_END
-	DATA_END   uint64 = DATA_START + DATA_LEN
-
-	SID_LEN   uint64 = id.UserLen
-	SID_START uint64 = DATA_END
-	SID_END   uint64 = SID_START + SID_LEN
-
-	// Length and Position of the MaryPoppins Payload MIC
-	MMIC_LEN   uint64 = 8
-	MMIC_START uint64 = SID_END
-	MMIC_END   uint64 = MMIC_START + MMIC_LEN
+	// Includes both padding and payload
+	MP_PAYLOAD_LEN   int = TOTAL_LEN - MP_SID_LEN
+	MP_PAYLOAD_START int = MP_SID_END
+	MP_PAYLOAD_END   int = MP_PAYLOAD_START + MP_PAYLOAD_LEN
 )
 
-type Message struct {
-	// This array holds all of the message data
+type Payload struct {
+	// This array holds all of the message payload
 	payloadSerial [TOTAL_LEN]byte
 	// All other slices point to their respective parts of the array. So, the
 	// message is always serialized and ready to go, and no copies are required
-	messageInitVect []byte
-	senderID        []byte
-	data            []byte
-	messageMIC      []byte
+	payload  []byte
+	senderID []byte
 }
 
 // Makes a new message for a certain sender.
@@ -49,81 +40,59 @@ type Message struct {
 // too long to fit.
 // Will return an error if the message was too long to fit in one payload
 // Make sure to populate the initialization vector and the MIC later
-func NewMessagePayload(sender *id.User, text []byte) (*Message, error) {
-	result := Message{payloadSerial: [TOTAL_LEN]byte{}}
-	result.data = result.payloadSerial[DATA_START:DATA_END]
-	result.messageMIC = result.payloadSerial[MMIC_START:MMIC_END]
-	result.senderID = result.payloadSerial[SID_START:SID_END]
-	copy(result.senderID, sender.Bytes())
-	result.messageInitVect = result.payloadSerial[MIV_START:MIV_END]
+func NewPayload() *Payload {
+	result := Payload{payloadSerial: [TOTAL_LEN]byte{}}
+	result.payload = result.payloadSerial[MP_PAYLOAD_START:MP_PAYLOAD_END]
+	result.senderID = result.payloadSerial[MP_SID_START:MP_SID_END]
 
-	copyLen := copy(result.data, text)
-	var err error
-	if copyLen != len(text) {
-		err = errors.New("Couldn't fit text in one payload")
-	}
-
-	return &result, err
-}
-
-// Get the initialization vector's slice
-// This allows reading and writing the correct section of memory, but
-// doesn't allow changing the slice header in the structure itself
-func (p *Message) GetMessageInitVect() []byte {
-	return p.messageInitVect
+	return &result
 }
 
 // Get the sender ID's slice
 // This allows reading and writing the correct section of memory, but
 // doesn't allow changing the slice header in the structure itself
-func (p *Message) GetSenderID() []byte {
+func (p *Payload) GetSenderID() []byte {
 	return p.senderID
 }
 
 // Wrap the sender ID in its type
-func (p *Message) GetSender() *id.User {
+func (p *Payload) GetSender() *id.User {
 	result := new(id.User).SetBytes(p.senderID[:])
 	return result
 }
 
-// This function returns a pointer to the data payload
-// This ensures that while the data can be edited, it cant be reallocated
-func (p *Message) GetData() []byte {
-	return p.data
+// Returns number of bytes copied
+func (p *Payload) SetSenderID(newId []byte) int {
+	return copy(p.senderID, newId)
 }
 
-// This function returns a pointer to the payload MIC
+func (p *Payload) SetSender(newId *id.User) {
+	copy(p.senderID, newId.Bytes())
+}
+
+// This function returns a pointer to the payload payload
 // This ensures that while the data can be edited, it cant be reallocated
-func (p *Message) GetPayloadMIC() []byte {
-	return p.messageMIC
+func (p *Payload) GetPayload() []byte {
+	return p.payload
+}
+
+// Returns number of bytes copied
+func (p *Payload) SetPayload(payload []byte) int {
+	return copy(p.payload, payload)
 }
 
 // Returns the serialized message payload
-// TODO Does it make sense to make this an internal method?
-func (p *Message) SerializePayload() []byte {
-	// It's actually unnecessary to ensure that the highest bit of the
-	// serialized message is zero here if the initialization vector was
-	// correctly generated, but just in case, we set the first bit to zero
-	// to ensure that the payload fits in the cyclic group.
-	p.payloadSerial[0] = p.payloadSerial[0] & ZEROER
-
+func (p *Payload) SerializePayload() []byte {
 	return p.payloadSerial[:]
 }
 
 // Slices a serialized payload in the correct spots
-func DeserializeMessagePayload(pSerial []byte) *Message {
-	var pBytes [TOTAL_LEN]byte
-	copy(pBytes[:], pSerial)
-
-	return &Message{
-		pBytes,
-		pBytes[MIV_START:MIV_END],
-		pBytes[SID_START:SID_END],
-		pBytes[DATA_START:DATA_END],
-		pBytes[MMIC_START:MMIC_END],
-	}
+func DeserializePayload(pSerial []byte) *Payload {
+	result := NewPayload()
+	copy(result.payloadSerial[:], pSerial)
+	return result
 }
 
-func (p *Message) DeepCopy() *Message {
-	return DeserializeMessagePayload(p.payloadSerial[:])
+func (p *Payload) DeepCopy() *Payload {
+	return DeserializePayload(p.payloadSerial[:])
 }
