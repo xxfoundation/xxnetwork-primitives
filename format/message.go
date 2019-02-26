@@ -12,54 +12,46 @@ import (
 	"gitlab.com/elixxir/primitives/id"
 )
 
-// Defines message structure.  Based the "Basic Message Structure" doc
+// Defines message structure.  Based the "Basic MaryPoppins Structure" doc
 // Defining ranges in slices in go is inclusive for the beginning but
 // exclusive for the end, so the END consts are one more then the final
 // index.
 const (
-	TOTAL_LEN uint64 = 256
+	TOTAL_LEN int = 256
 
 	//Byte used to ensure the highest bit of a serialization is zero
 	ZEROER byte = 0x7F
 )
 
-//TODO: generate ranges programmatic
-
-// Holds the payloads once they have been serialized
-type MessageSerial struct {
-	MessagePayload   []byte
-	RecipientPayload []byte
-}
-
 // Structure which contains a message payload and the recipient payload in an
 // easily accessible format
-type Message struct {
-	*MessagePayload
-	*RecipientPayload
+type MaryPoppins struct {
+	*Message
+	*AssociatedData
 }
 
 // Wrap the sender ID in its type
-func (m Message) GetSender() *id.User {
+func (m MaryPoppins) GetSender() *id.User {
 	result := new(id.User).SetBytes(m.senderID[:])
 	return result
 }
 
 // Get the payload from a message
-func (m Message) GetPayload() []byte {
+func (m MaryPoppins) GetPayload() []byte {
 	return m.data
 }
 
 // Wrap the recipient ID in its type
-func (m Message) GetRecipient() *id.User {
+func (m MaryPoppins) GetRecipient() *id.User {
 	result := new(id.User).SetBytes(m.recipientID[:])
 	return result
 }
 
 // Makes a new message for a certain sender and recipient
-func NewMessage(sender, recipient *id.User, text []byte) (*Message, error) {
+func NewMessage(sender, recipient *id.User, text []byte) (*MaryPoppins, error) {
 
 	//build the recipient payload
-	recipientPayload, err := NewRecipientPayload(recipient)
+	recipientPayload, err := NewAssociatedData(recipient)
 
 	if err != nil {
 		err = errors.New(fmt.Sprintf(
@@ -71,17 +63,17 @@ func NewMessage(sender, recipient *id.User, text []byte) (*Message, error) {
 	//Build the message Payloads
 	messagePayload, err := NewMessagePayload(sender, text)
 
-	message := Message{messagePayload, recipientPayload}
+	message := MaryPoppins{messagePayload, recipientPayload}
 
 	return &message, err
 }
 
-func (m Message) SerializeMessage() MessageSerial {
-	return MessageSerial{m.MessagePayload.SerializePayload(),
-		m.RecipientPayload.SerializeRecipient()}
+func (m MaryPoppins) SerializeMessage() MessageSerial {
+	return MessageSerial{m.Message.SerializePayload(),
+		m.AssociatedData.SerializeRecipient()}
 }
 
-func DeserializeMessage(ms MessageSerial) Message {
-	return Message{DeserializeMessagePayload(ms.MessagePayload),
-		DeserializeRecipient(ms.RecipientPayload)}
+func DeserializeMessage(ms MessageSerial) MaryPoppins {
+	return MaryPoppins{DeserializeMessagePayload(ms.MessagePayload),
+		DeserializeAssociatedData(ms.RecipientPayload)}
 }

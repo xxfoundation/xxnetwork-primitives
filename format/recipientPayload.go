@@ -7,97 +7,121 @@
 package format
 
 import (
-	"errors"
-	"fmt"
 	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
-	// Length and Position of the Recipient Initialization Vector
-	RIV_LEN   uint64 = 9
-	RIV_START uint64 = 0
-	RIV_END   uint64 = RIV_LEN
+	// Length and position of the Recipient ID
+	// The first bit of all user IDs should be zero
+	AD_RID_LEN   int = id.UserLen
+	AD_RID_START int = 0
+	AD_RID_END   int = AD_RID_START + AD_RID_LEN
 
-	// Length and Position of the Recipient ID
-	RID_LEN   uint64 = id.UserLen
-	RID_START uint64 = REMPTY_END
-	RID_END   uint64 = RID_START + RID_LEN
+	// Length and position of the key fingerprint
+	AD_KEYFP_LEN int = 32
+	AD_KEYFP_START int = AD_RID_END
+	AD_KEYFP_END int = AD_KEYFP_START + AD_KEYFP_LEN
 
-	// Length and Position of the Recipient MIC
-	RMIC_LEN   uint64 = 8
-	RMIC_START uint64 = RID_END
-	RMIC_END   uint64 = RMIC_START + RMIC_LEN
+	// Length and position of the encrypted timestamp
+	// TODO Should this be 16 bytes instead? (that's enough for nanosecond
+	// precision)
+	AD_TIMESTAMP_LEN = 32
+	AD_TIMESTAMP_START = AD_KEYFP_END
+	AD_TIMESTAMP_END = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
+
+	// Length and Position of the Recipient MAC
+	AD_MAC_LEN   int = 8
+	AD_MAC_START int = AD_TIMESTAMP_END
+	AD_MAC_END   int = AD_MAC_START + AD_MAC_LEN
 
 	// Length of unused region in recipient payload
-	REMPTY_LEN   uint64 = TOTAL_LEN - RIV_LEN - RMIC_LEN - RID_LEN
-	REMPTY_START uint64 = RIV_END
-	REMPTY_END   uint64 = REMPTY_START + REMPTY_LEN
+	// TODO @mario Should the empty data go at the end or in the middle
+	// somewhere? Should this be PKCS padding instead?
+	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_TIMESTAMP_LEN - AD_MAC_LEN
+	AD_EMPTY_START int = AD_RID_END
+	AD_EMPTY_END   int = AD_EMPTY_START + AD_EMPTY_LEN
 )
 
 // Structure containing the components of the recipient payload
-type RecipientPayload struct {
-	recipientSerial   [TOTAL_LEN]byte
-	recipientInitVect []byte
-	recipientID       []byte
-	recipientMIC      []byte
+type AssociatedData struct {
+	associatedDataSerial [TOTAL_LEN]byte
+	recipientID          []byte
+	keyFingerprint       []byte
+	timestamp            []byte
+	mac                  []byte
 }
 
-//Builds a recipient payload object
-func NewRecipientPayload(ID *id.User) (*RecipientPayload, error) {
-	if ID == nil || *ID == *id.ZeroID {
-		return nil, errors.New(fmt.Sprintf(
-			"Cannot build Recipient Payload; Invalid Recipient ID: %q",
-			ID))
-	}
-	result := RecipientPayload{recipientSerial: [TOTAL_LEN]byte{}}
-	result.recipientID = result.recipientSerial[RID_START:RID_END]
-	copy(result.recipientID, ID.Bytes())
-	result.recipientInitVect = result.recipientSerial[RIV_START:RIV_END]
-	result.recipientMIC = result.recipientSerial[RMIC_START:RMIC_END]
+// Initializes an Associated data with the correct slices
+func NewAssociatedData() (*AssociatedData) {
+	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
+	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
+	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_LEN]
+	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
+	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
 
-	return &result, nil
+	return &result
 }
 
 // This function returns the recipient ID slice
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
-func (r *RecipientPayload) GetRecipientID() []byte {
+func (r *AssociatedData) GetRecipientID() []byte {
 	return r.recipientID
 }
 
-// Get the recipient initialization vector
-// The caller can read or write the data within this slice, but can't change
-// the slice header in the actual structure
-func (r *RecipientPayload) GetRecipientInitVect() []byte {
-	return r.recipientInitVect
+// Returns number of bytes copied
+func (r *AssociatedData) SetRecipientID(newID []byte) int {
+	return copy(r.recipientID, newID)
 }
 
-// Get the recipient MIC
+// Get the key fingerprint
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
-func (r *RecipientPayload) GetRecipientMIC() []byte {
-	return r.recipientMIC
+func (r *AssociatedData) GetKeyFingerprint() []byte {
+	return r.keyFingerprint
+}
+
+// Returns number of bytes copied
+func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
+	return copy(r.keyFingerprint, newKeyFP)
+}
+
+// Get the timestamp for the associated data
+// This should be possible for just the receiving client to decrypt
+func (r *AssociatedData) GetTimestamp() []byte {
+	return r.timestamp
+}
+
+// Returns number of bytes copied
+func (r *AssociatedData) SetTimestamp(newTimestamp []byte) int {
+	return copy(r.timestamp, newTimestamp)
+}
+
+// Get the MAC for the associated data
+// The caller can read or write the data within this slice, but can't change
+// the slice header in the actual structure
+func (r *AssociatedData) GetMAC() []byte {
+	return r.mac
+}
+
+// Returns number of bytes copied
+func (r *AssociatedData) SetMAC(newMAC []byte) int {
+	return copy(r.mac, newMAC)
 }
 
 // Returns the serialized recipient payload, without copying
-func (r *RecipientPayload) SerializeRecipient() []byte {
-	return r.recipientSerial[:]
+func (r *AssociatedData) SerializeRecipient() []byte {
+	return r.associatedDataSerial[:]
 }
 
 // Slices a serialized recipient ID into its constituent fields
-func DeserializeRecipient(rSerial []byte) *RecipientPayload {
-	var rBytes [TOTAL_LEN]byte
-	copy(rBytes[:], rSerial)
-	return &RecipientPayload{
-		rBytes,
-		rBytes[RIV_START:RIV_END],
-		rBytes[RID_START:RID_END],
-		rBytes[RMIC_START:RMIC_END],
-	}
-
+func DeserializeAssociatedData(rSerial []byte) *AssociatedData {
+	result := NewAssociatedData()
+	copy(result.associatedDataSerial[:], rSerial)
+	return result
 }
 
 // Creates a deep copy of the recipient, used for sending multiple messages
-func (r *RecipientPayload) DeepCopy() *RecipientPayload {
-	return DeserializeRecipient(r.recipientSerial[:])
+func (r *AssociatedData) DeepCopy() *AssociatedData {
+	return DeserializeAssociatedData(r.associatedDataSerial[:])
 }
