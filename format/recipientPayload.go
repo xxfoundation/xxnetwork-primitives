@@ -85,17 +85,6 @@ func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
 	return copy(r.keyFingerprint, newKeyFP)
 }
 
-// Get the timestamp for the associated data
-// This should be possible for just the receiving client to decrypt
-func (r *AssociatedData) GetTimestamp() []byte {
-	return r.timestamp
-}
-
-// Returns number of bytes copied
-func (r *AssociatedData) SetTimestamp(newTimestamp []byte) int {
-	return copy(r.timestamp, newTimestamp)
-}
-
 // Get the MAC for the associated data
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
