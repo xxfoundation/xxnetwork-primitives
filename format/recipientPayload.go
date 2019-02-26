@@ -40,7 +40,6 @@ type AssociatedData struct {
 	associatedDataSerial [TOTAL_LEN]byte
 	recipientID          []byte
 	keyFingerprint       []byte
-	timestamp            []byte
 	mac                  []byte
 }
 
@@ -48,7 +47,7 @@ type AssociatedData struct {
 func NewAssociatedData() (*AssociatedData) {
 	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
 	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
-	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_LEN]
+	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
 	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
 
 	return &result
