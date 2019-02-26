@@ -7,12 +7,14 @@
 package format_test
 
 import (
-	"testing"
-	"gitlab.com/elixxir/primitives/format"
-	"math/rand"
+	"bytes"
 	"errors"
 	"fmt"
-	"bytes"
+	"gitlab.com/elixxir/primitives/format"
+	"gitlab.com/elixxir/primitives/id"
+	"math/rand"
+	"reflect"
+	"testing"
 )
 
 // Ensures that you can read to and write from a field, and that the contents
@@ -23,7 +25,7 @@ func testField(get func() []byte, set func([]byte) int, ser func() []byte,
 	// Ensure expected field length
 	testLen := len(get())
 	if testLen != length {
-		return errors.New(fmt.Sprintf("Test len was %v, " +
+		return errors.New(fmt.Sprintf("Test len was %v, "+
 			"but expected len was %v", testLen, length))
 	}
 
@@ -36,7 +38,7 @@ func testField(get func() []byte, set func([]byte) int, ser func() []byte,
 	}
 	setLen := set(testBytes)
 	if setLen != testLen {
-		return errors.New(fmt.Sprintf("Test len was %v, " +
+		return errors.New(fmt.Sprintf("Test len was %v, "+
 			"but %v bytes were set", testLen, setLen))
 	}
 
@@ -49,6 +51,23 @@ func testField(get func() []byte, set func([]byte) int, ser func() []byte,
 		return errors.New("Test data wasn't included in the serialization")
 	}
 	return nil
+}
+
+// Make sure that SetRecipient and SetSender set the field correctly with id.User
+func TestSetUser(t *testing.T) {
+	u := new(id.User).SetUints(&[4]uint64{3298561, 1083657, 2836259, 187653})
+	payload := format.NewPayload()
+	payload.SetSender(u)
+	if !id.Equal(u, payload.GetSender()) {
+		t.Errorf("Sender not set correctly. Got: %x, expected %x",
+			payload.GetSender(), u)
+	}
+	data := format.NewAssociatedData()
+	data.SetRecipient(u)
+	if !id.Equal(u, data.GetRecipient()) {
+		t.Errorf("Recipient not set correctly. Got: %x, expected %x",
+			data.GetRecipient(), u)
+	}
 }
 
 // Test each field of the payload
@@ -102,5 +121,39 @@ func TestAssociatedData(t *testing.T) {
 		format.AD_RID_LEN)
 	if err != nil {
 		t.Errorf("Recipient ID by id.User failed: %v", err.Error())
+	}
+}
+
+func TestDeepCopy(t *testing.T) {
+	// Generate test data for each structure
+	r := rand.New(rand.NewSource(0))
+	testBytes := make([]byte, format.TOTAL_LEN)
+	_, err := r.Read(testBytes)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	// Make a deep copy of each structure, and make sure that changing one
+	// doesn't change the other
+	data := format.DeserializeAssociatedData(testBytes)
+	dataCopy := data.DeepCopy()
+	payload := format.DeserializePayload(testBytes)
+	payloadCopy := payload.DeepCopy()
+
+	if !reflect.DeepEqual(data, dataCopy) {
+		t.Error("Datas should have been equal before mutation, but weren't")
+	}
+	if !reflect.DeepEqual(payload, payloadCopy) {
+		t.Error("Payloads should have been equal before mutation, but weren't")
+	}
+	// Mutate each copy. The originals and copies should now be different
+	dataCopy.SetRecipient(id.NewUserFromUint(5, t))
+	payloadCopy.SetSender(id.NewUserFromUint(5, t))
+	if reflect.DeepEqual(data, dataCopy) {
+		t.Error("Datas should have been different after mutation, but weren't")
+	}
+	if reflect.DeepEqual(payload, payloadCopy) {
+		t.Error("Payloads should have been different after mutation, " +
+			"but weren't")
 	}
 }
