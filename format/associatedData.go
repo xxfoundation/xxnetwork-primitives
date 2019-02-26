@@ -11,26 +11,38 @@ import (
 )
 
 const (
+	// First byte to ensure that the associated data are always within the
+	// cyclic group
+	AD_FIRST_LEN   int = 1
+	AD_FIRST_START int = 0
+	AD_FIRST_END   int = AD_FIRST_START + AD_FIRST_LEN
+
 	// Length and position of the Recipient ID
-	// The first bit of all user IDs should be zero
 	AD_RID_LEN   int = id.UserLen
-	AD_RID_START int = 0
+	AD_RID_START int = AD_FIRST_END
 	AD_RID_END   int = AD_RID_START + AD_RID_LEN
 
 	// Length and position of the key fingerprint
-	AD_KEYFP_LEN int = 32
+	AD_KEYFP_LEN   int = 32
 	AD_KEYFP_START int = AD_RID_END
-	AD_KEYFP_END int = AD_KEYFP_START + AD_KEYFP_LEN
+	AD_KEYFP_END   int = AD_KEYFP_START + AD_KEYFP_LEN
+
+	// Length and position of the encrypted timestamp
+	// 128 bits, seconds+nanoseconds
+	// Encrypt as one AES block
+	AD_TIMESTAMP_LEN   int = 16
+	AD_TIMESTAMP_START int = AD_KEYFP_END
+	AD_TIMESTAMP_END   int = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
 
 	// Length and Position of the Recipient MAC
 	AD_MAC_LEN   int = 32
-	AD_MAC_START int = AD_KEYFP_END
+	AD_MAC_START int = AD_TIMESTAMP_END
 	AD_MAC_END   int = AD_MAC_START + AD_MAC_LEN
 
 	// Length of unused region in recipient payload
 	// TODO @mario Should the empty data go at the end or in the middle
 	// somewhere? Should this be PKCS padding instead?
-	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN
+	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN - AD_FIRST_LEN - AD_TIMESTAMP_LEN
 	AD_EMPTY_START int = AD_RID_END
 	AD_EMPTY_END   int = AD_EMPTY_START + AD_EMPTY_LEN
 )
@@ -40,15 +52,19 @@ type AssociatedData struct {
 	associatedDataSerial [TOTAL_LEN]byte
 	recipientID          []byte
 	keyFingerprint       []byte
+	timestamp            []byte
 	mac                  []byte
 }
 
 // Initializes an Associated data with the correct slices
-func NewAssociatedData() (*AssociatedData) {
+func NewAssociatedData() *AssociatedData {
 	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
 	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
 	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
+	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
 	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
+
+	ensureGroup(result.associatedDataSerial[AD_FIRST_START:AD_FIRST_END])
 
 	return &result
 }

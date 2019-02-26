@@ -11,16 +11,18 @@ import (
 )
 
 const (
+	MP_FIRST_LEN int = 1
+	MP_FIRST_START int = 0
+	MP_FIRST_END int = MP_FIRST_START + MP_FIRST_LEN
+
 	// Length and position of sender ID
-	// Because the first bit of all user IDs is zero, this will always be in the
-	// cyclic group
 	MP_SID_LEN   int = id.UserLen
-	MP_SID_START int = 0
+	MP_SID_START int = MP_FIRST_END
 	MP_SID_END   int = MP_SID_START + MP_SID_LEN
 
 	// Length and Position of message payload
 	// Includes both padding and payload
-	MP_PAYLOAD_LEN   int = TOTAL_LEN - MP_SID_LEN
+	MP_PAYLOAD_LEN   int = TOTAL_LEN - MP_SID_LEN - MP_FIRST_LEN
 	MP_PAYLOAD_START int = MP_SID_END
 	MP_PAYLOAD_END   int = MP_PAYLOAD_START + MP_PAYLOAD_LEN
 )
@@ -44,6 +46,8 @@ func NewPayload() *Payload {
 	result := Payload{payloadSerial: [TOTAL_LEN]byte{}}
 	result.payload = result.payloadSerial[MP_PAYLOAD_START:MP_PAYLOAD_END]
 	result.senderID = result.payloadSerial[MP_SID_START:MP_SID_END]
+
+	ensureGroup(result.payloadSerial[MP_FIRST_START:MP_FIRST_END])
 
 	return &result
 }

@@ -30,4 +30,3 @@ func TestNewMessage(t *testing.T) {
 		t.Error("MAC length wasn't right")
 	}
 }
-
