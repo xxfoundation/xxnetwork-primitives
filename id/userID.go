@@ -9,7 +9,7 @@ package id
 import (
 	"encoding/base32"
 	"encoding/binary"
-	"gitlab.com/elixxir/crypto/hash"
+	"golang.org/x/crypto/blake2b"
 	"testing"
 )
 
@@ -53,7 +53,7 @@ func (u *User) RegistrationCode() string {
 // TODO Should we use the full-length hash? Should we even be doing registration
 // like this?
 func userHash(uid *User) []byte {
-	h, _ := hash.NewCMixHash()
+	h, _ := blake2b.New256(nil)
 	h.Write(uid[:])
 	huid := h.Sum(nil)
 	huid = huid[len(huid)-RegCodeLen:]
