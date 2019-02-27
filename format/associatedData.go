@@ -30,7 +30,7 @@ const (
 	// Length and position of the encrypted timestamp
 	// 128 bits, seconds+nanoseconds
 	// Encrypt as one AES block
-	AD_TIMESTAMP_LEN   int = 16
+	AD_TIMESTAMP_LEN   int = 32
 	AD_TIMESTAMP_START int = AD_KEYFP_END
 	AD_TIMESTAMP_END   int = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
 
