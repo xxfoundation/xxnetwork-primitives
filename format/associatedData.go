@@ -34,16 +34,22 @@ const (
 	AD_TIMESTAMP_START int = AD_KEYFP_END
 	AD_TIMESTAMP_END   int = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
 
-	// Length and Position of the Recipient MAC
+	// Length and Position of the MAC
 	AD_MAC_LEN   int = 32
 	AD_MAC_START int = AD_TIMESTAMP_END
 	AD_MAC_END   int = AD_MAC_START + AD_MAC_LEN
 
+	// TODO Delete this when the third phase has been removed
+	// Length and position of the recipient MIC
+	AD_RMIC_LEN int = 32
+	AD_RMIC_START int = AD_MAC_END
+	AD_RMIC_END int = AD_RMIC_START + AD_RMIC_LEN
+
 	// Length of unused region in recipient payload
 	// TODO @mario Should the empty data go at the end or in the middle
 	// somewhere? Should this be PKCS padding instead?
-	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN - AD_FIRST_LEN - AD_TIMESTAMP_LEN
-	AD_EMPTY_START int = AD_RID_END
+	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN - AD_FIRST_LEN - AD_TIMESTAMP_LEN - AD_RMIC_LEN
+	AD_EMPTY_START int = AD_RMIC_END
 	AD_EMPTY_END   int = AD_EMPTY_START + AD_EMPTY_LEN
 )
 
@@ -54,6 +60,7 @@ type AssociatedData struct {
 	keyFingerprint       []byte
 	timestamp            []byte
 	mac                  []byte
+	rmic []byte
 }
 
 // Initializes an Associated data with the correct slices
@@ -63,6 +70,7 @@ func NewAssociatedData() *AssociatedData {
 	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
 	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
 	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
+	result.rmic = result.associatedDataSerial[AD_RMIC_START:AD_RMIC_END]
 
 	ensureGroup(result.associatedDataSerial[AD_FIRST_START:AD_FIRST_END])
 
@@ -101,7 +109,7 @@ func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
 	return copy(r.keyFingerprint, newKeyFP)
 }
 
-// Get the MAC for the associated data
+// Get the MAC for the message payload
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
 func (r *AssociatedData) GetMAC() []byte {
@@ -111,6 +119,16 @@ func (r *AssociatedData) GetMAC() []byte {
 // Returns number of bytes copied
 func (r *AssociatedData) SetMAC(newMAC []byte) int {
 	return copy(r.mac, newMAC)
+}
+
+// Get the MIC for the recipient ID
+func (r *AssociatedData) GetRecipientMIC() []byte {
+	return r.rmic
+}
+
+// Returns number of bytes copied
+func (r *AssociatedData) SetRecipientMIC(newRecipientMIC []byte) int {
+	return copy(r.rmic, newRecipientMIC)
 }
 
 // Returns the serialized recipient payload, without copying

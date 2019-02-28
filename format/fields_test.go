@@ -122,6 +122,13 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient ID by id.User failed: %v", err.Error())
 	}
+	err = testField(data.GetRecipientMIC,
+		data.SetRecipientMIC,
+		data.SerializeAssociatedData,
+		format.AD_RMIC_LEN)
+	if err != nil {
+		t.Errorf("Recipient MIC failed: %v", err.Error())
+	}
 }
 
 func TestDeepCopy(t *testing.T) {
