@@ -131,6 +131,15 @@ func (r *AssociatedData) SetRecipientMIC(newRecipientMIC []byte) int {
 	return copy(r.rmic, newRecipientMIC)
 }
 
+// Get the message's timestamp
+func (r *AssociatedData) GetTimestamp() []byte {
+	return r.timestamp
+}
+
+func (r *AssociatedData) SetTimestamp(newTimestamp []byte) int {
+	return copy(r.timestamp, newTimestamp)
+}
+
 // Returns the serialized recipient payload, without copying
 func (r *AssociatedData) SerializeAssociatedData() []byte {
 	return r.associatedDataSerial[:]

@@ -129,6 +129,11 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient MIC failed: %v", err.Error())
 	}
+	err = testField(data.GetTimestamp, data.SetTimestamp,
+		data.SerializeAssociatedData, format.AD_TIMESTAMP_LEN)
+	if err != nil {
+		t.Errorf("Timestamp failed: %v", err.Error())
+	}
 }
 
 func TestDeepCopy(t *testing.T) {
