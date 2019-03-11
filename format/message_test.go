@@ -14,7 +14,7 @@ func TestNewMessage(t *testing.T) {
 	if msg.Payload == nil || msg.AssociatedData == nil {
 		t.Error("An embedded struct was nil")
 	}
-	if len(msg.payload) != MP_PAYLOAD_LEN {
+	if len(msg.payloadData) != MP_PAYLOAD_LEN {
 		t.Error("Payload length wasn't right")
 	}
 	if len(msg.senderID) != MP_SID_LEN {
@@ -26,7 +26,13 @@ func TestNewMessage(t *testing.T) {
 	if len(msg.keyFingerprint) != AD_KEYFP_LEN {
 		t.Error("Keyfp length wasn't right")
 	}
+	if len(msg.timestamp) != AD_TIMESTAMP_LEN {
+		t.Error("Timestamp length wasn't right")
+	}
 	if len(msg.mac) != AD_MAC_LEN {
+		t.Error("MAC length wasn't right")
+	}
+	if len(msg.rmic) != AD_RMIC_LEN {
 		t.Error("MAC length wasn't right")
 	}
 }

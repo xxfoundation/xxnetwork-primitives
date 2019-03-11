@@ -30,7 +30,7 @@ const (
 	// Length and position of the encrypted timestamp
 	// 128 bits, seconds+nanoseconds
 	// Encrypt as one AES block
-	AD_TIMESTAMP_LEN   int = 32
+	AD_TIMESTAMP_LEN   int = 16
 	AD_TIMESTAMP_START int = AD_KEYFP_END
 	AD_TIMESTAMP_END   int = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
 
@@ -41,11 +41,11 @@ const (
 
 	// TODO Delete this when the third phase has been removed
 	// Length and position of the recipient MIC
-	AD_RMIC_LEN int = 32
+	AD_RMIC_LEN   int = 32
 	AD_RMIC_START int = AD_MAC_END
-	AD_RMIC_END int = AD_RMIC_START + AD_RMIC_LEN
+	AD_RMIC_END   int = AD_RMIC_START + AD_RMIC_LEN
 
-	// Length of unused region in recipient payload
+	// Length of unused region in recipient payloadData
 	// TODO @mario Should the empty data go at the end or in the middle
 	// somewhere? Should this be PKCS padding instead?
 	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN - AD_FIRST_LEN - AD_TIMESTAMP_LEN - AD_RMIC_LEN
@@ -53,14 +53,14 @@ const (
 	AD_EMPTY_END   int = AD_EMPTY_START + AD_EMPTY_LEN
 )
 
-// Structure containing the components of the recipient payload
+// Structure containing the components of the recipient payloadData
 type AssociatedData struct {
 	associatedDataSerial [TOTAL_LEN]byte
 	recipientID          []byte
 	keyFingerprint       []byte
 	timestamp            []byte
 	mac                  []byte
-	rmic []byte
+	rmic                 []byte
 }
 
 // Initializes an Associated data with the correct slices
@@ -109,7 +109,7 @@ func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
 	return copy(r.keyFingerprint, newKeyFP)
 }
 
-// Get the MAC for the message payload
+// Get the MAC for the message
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
 func (r *AssociatedData) GetMAC() []byte {
@@ -140,19 +140,19 @@ func (r *AssociatedData) SetTimestamp(newTimestamp []byte) int {
 	return copy(r.timestamp, newTimestamp)
 }
 
-// Returns the serialized recipient payload, without copying
+// Returns the serialized Associated Data, without copying
 func (r *AssociatedData) SerializeAssociatedData() []byte {
 	return r.associatedDataSerial[:]
 }
 
-// Slices a serialized recipient ID into its constituent fields
+// Slices a serialized Associated Data into its constituent fields
 func DeserializeAssociatedData(rSerial []byte) *AssociatedData {
 	result := NewAssociatedData()
 	copy(result.associatedDataSerial[:], rSerial)
 	return result
 }
 
-// Creates a deep copy of the recipient, used for sending multiple messages
+// Creates a deep copy of the Associated Data, used for sending multiple messages
 func (r *AssociatedData) DeepCopy() *AssociatedData {
 	return DeserializeAssociatedData(r.associatedDataSerial[:])
 }

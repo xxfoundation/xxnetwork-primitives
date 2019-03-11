@@ -11,29 +11,37 @@ import (
 )
 
 const (
-	MP_FIRST_LEN int = 1
-	MP_FIRST_START int = 0
-	MP_FIRST_END int = MP_FIRST_START + MP_FIRST_LEN
-
 	// Length and position of sender ID
 	MP_SID_LEN   int = id.UserLen
-	MP_SID_START int = MP_FIRST_END
+	MP_SID_START int = 0
 	MP_SID_END   int = MP_SID_START + MP_SID_LEN
 
 	// Length and Position of message payload
 	// Includes both padding and payload
-	MP_PAYLOAD_LEN   int = TOTAL_LEN - MP_SID_LEN - MP_FIRST_LEN
+	MP_PAYLOAD_LEN   int = TOTAL_LEN - MP_SID_LEN
 	MP_PAYLOAD_START int = MP_SID_END
 	MP_PAYLOAD_END   int = MP_PAYLOAD_START + MP_PAYLOAD_LEN
 )
 
+// The payload data must be variable, because for E2E, padding will
+// be added, which has a minimum length of 11 bytes. This means that
+// the E2E encrypt function can't accept a byte slice of more than
+// 256-11 bytes. The senderID and payload data can be set on payload
+// struct as normal, and then GetPayload can be used to get a byte
+// slice containing only the actual data, instead of TOTAL_LEN bytes.
+// SetPayload can be used to set the encrypted data into the object,
+// since after padding the size will always be TOTAL_LEN.
+// On decryption, the function SetSplitPayload can be used to split
+// a serialized byte slice into the senderID and payload data
 type Payload struct {
 	// This array holds all of the message payload
 	payloadSerial [TOTAL_LEN]byte
 	// All other slices point to their respective parts of the array. So, the
 	// message is always serialized and ready to go, and no copies are required
-	payload  []byte
-	senderID []byte
+	senderID    []byte
+	payloadData []byte
+	// Actual size of payloadData before encryption / after decryption
+	size int
 }
 
 // Makes a new message for a certain sender.
@@ -43,12 +51,9 @@ type Payload struct {
 // Will return an error if the message was too long to fit in one payload
 // Make sure to populate the initialization vector and the MIC later
 func NewPayload() *Payload {
-	result := Payload{payloadSerial: [TOTAL_LEN]byte{}}
-	result.payload = result.payloadSerial[MP_PAYLOAD_START:MP_PAYLOAD_END]
+	result := Payload{payloadSerial: [TOTAL_LEN]byte{}, size: 0}
+	result.payloadData = result.payloadSerial[MP_PAYLOAD_START:MP_PAYLOAD_END]
 	result.senderID = result.payloadSerial[MP_SID_START:MP_SID_END]
-
-	ensureGroup(result.payloadSerial[MP_FIRST_START:MP_FIRST_END])
-
 	return &result
 }
 
@@ -74,18 +79,40 @@ func (p *Payload) SetSender(newId *id.User) {
 	copy(p.senderID, newId.Bytes())
 }
 
-// This function returns a pointer to the payload payload
+// This function returns a pointer to the payload data
 // This ensures that while the data can be edited, it cant be reallocated
-func (p *Payload) GetPayload() []byte {
-	return p.payload
+func (p *Payload) GetPayloadData() []byte {
+	return p.payloadData[:p.size]
 }
 
 // Returns number of bytes copied
-func (p *Payload) SetPayload(payload []byte) int {
-	return copy(p.payload, payload)
+func (p *Payload) SetPayloadData(payload []byte) int {
+	p.size = copy(p.payloadData, payload)
+	return p.size
 }
 
-// Returns the serialized message payload
+// Returns the actual existing serialized payload
+func (p *Payload) GetPayload() []byte {
+	return p.payloadSerial[:MP_SID_LEN+p.size]
+}
+
+// Set serialized payload
+// Returns number of bytes copied
+func (p *Payload) SetPayload(pSerial []byte) int {
+	return copy(p.payloadSerial[:], pSerial)
+}
+
+// Split decrypted payload into actual fields
+// Assume first 32 bytes are always senderID
+// and rest is payload data
+// Returns number of bytes copied
+func (p *Payload) SetSplitPayload(pSerial []byte) int {
+	ret1 := p.SetSenderID(pSerial[:MP_SID_LEN])
+	ret2 := p.SetPayloadData(pSerial[MP_SID_LEN:])
+	return ret1+ret2
+}
+
+// Returns the full serialized payload
 func (p *Payload) SerializePayload() []byte {
 	return p.payloadSerial[:]
 }

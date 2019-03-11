@@ -17,7 +17,7 @@ import (
 // index.
 const TOTAL_LEN int = 256
 
-// Structure which contains a message payload and the recipient payload in an
+// Structure which contains a message payload and associated data in an
 // easily accessible format
 type Message struct {
 	*Payload
