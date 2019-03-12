@@ -25,6 +25,8 @@ const UserLen = 32
 // the string isn't a valid UTF-8 string. So, the alternative underlying type
 // that you can use as a map key in Go is an array, and that's what the package
 // should use.
+// TODO Should we enforce any aspects of the user ID generation here?
+// (e.g. the first bit being zero to enforce everything being in the cyclic group)
 type User [UserLen]byte
 
 // Use this if you don't want to have to populate user ids for this manually
