@@ -96,7 +96,28 @@ func TestSetUser(t *testing.T) {
 	}
 }
 
-func TestAssociatedData(t *testing.T) {
+// Guarantees that all fields of a NewAssociatedData are the valid length
+func TestNewAssociatedData(t *testing.T) {
+	associatedData := NewAssociatedData()
+
+	if len(associatedData.recipientID) != AD_RID_LEN {
+		t.Error("Recipient length wasn't right")
+	}
+	if len(associatedData.keyFingerprint) != AD_KEYFP_LEN {
+		t.Error("Keyfp length wasn't right")
+	}
+	if len(associatedData.timestamp) != AD_TIMESTAMP_LEN {
+		t.Error("Timestamp length wasn't right")
+	}
+	if len(associatedData.mac) != AD_MAC_LEN {
+		t.Error("MAC length wasn't right")
+	}
+	if len(associatedData.rmic) != AD_RMIC_LEN {
+		t.Error("MAC length wasn't right")
+	}
+}
+
+func TestAssociatedData_RecipientID(t *testing.T) {
 	data := NewAssociatedData()
 	var err error
 	err = testField(data.GetRecipientID,
@@ -106,20 +127,7 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient ID failed: %v", err.Error())
 	}
-	//err = testField(data.GetKeyFingerprint,
-	//	data.SetKeyFingerprint,
-	//	data.SerializeAssociatedData,
-	//	format.AD_KEYFP_LEN)
-	//if err != nil {
-	//	t.Errorf("Key Fingerprint failed: %v", err.Error())
-	//}
-	err = testField(data.GetMAC,
-		data.SetMAC,
-		data.SerializeAssociatedData,
-		AD_MAC_LEN)
-	if err != nil {
-		t.Errorf("MAC failed: %v", err.Error())
-	}
+
 	err = testField(data.GetRecipient().Bytes,
 		data.SetRecipientID,
 		data.SerializeAssociatedData,
@@ -127,6 +135,57 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient ID by id.User failed: %v", err.Error())
 	}
+}
+
+func TestAssociatedData_KeyFingerprint(t *testing.T) {
+	data := NewAssociatedData()
+
+	fp := Fingerprint{}
+
+	if data.GetKeyFingerprint() != fp {
+		t.Errorf("Finger not initialized properly")
+	}
+
+	fp = Fingerprint{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
+
+	data.SetKeyFingerprint(fp)
+	if data.GetKeyFingerprint() != fp {
+		t.Errorf("Fingerprint failed")
+	}
+
+	fp = Fingerprint{1,0,3,2,5,4,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31}
+
+	data.SetKeyFingerprint(fp)
+
+	if data.GetKeyFingerprint() != fp {
+		t.Errorf("Fingerprint failed")
+	}
+
+	serAssociatedData := data.SerializeAssociatedData()
+	fpFromSer := serAssociatedData[AD_KEYFP_START:AD_KEYFP_END]
+
+	if bytes.Compare(fp[:], fpFromSer) != 0 {
+		t.Errorf("Fingerprint get doesn't match serijalized associated data")
+	}
+}
+
+func TestAssociatedData_Mac(t *testing.T) {
+	data := NewAssociatedData()
+	var err error
+
+	err = testField(data.GetMAC,
+		data.SetMAC,
+		data.SerializeAssociatedData,
+		AD_MAC_LEN)
+	if err != nil {
+		t.Errorf("MAC failed: %v", err.Error())
+	}
+}
+
+func TestAssociatedData_RecipientMIC(t *testing.T) {
+	data := NewAssociatedData()
+	var err error
+
 	err = testField(data.GetRecipientMIC,
 		data.SetRecipientMIC,
 		data.SerializeAssociatedData,
@@ -134,6 +193,12 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient MIC failed: %v", err.Error())
 	}
+}
+
+func TestAssociatedData_Timestamp(t *testing.T) {
+	data := NewAssociatedData()
+	var err error
+
 	err = testField(data.GetTimestamp, data.SetTimestamp,
 		data.SerializeAssociatedData, AD_TIMESTAMP_LEN)
 	if err != nil {
