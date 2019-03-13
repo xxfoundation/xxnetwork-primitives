@@ -82,6 +82,12 @@ func NewAssociatedData() *AssociatedData {
 	return &result
 }
 
+func NewFingerprint(data []byte) (fp *Fingerprint) {
+	fp = &Fingerprint{}
+	copy(fp[:], data[:])
+	return fp
+}
+
 func ensureGroup(overwriteRegion []byte) (numRead int, err error) {
 	numRead, err = rand.Read(overwriteRegion)
 	if len(overwriteRegion) > 0 {
