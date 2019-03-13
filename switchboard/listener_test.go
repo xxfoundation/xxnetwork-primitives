@@ -24,22 +24,22 @@ type MockListener struct {
 }
 
 type Message struct {
-	contents  []byte
-	sender    *id.User
-	innerType cmixproto.InnerType
-	outerType cmixproto.OuterType
+	Contents  []byte
+	Sender    *id.User
+	InnerType cmixproto.InnerType
+	OuterType cmixproto.OuterType
 }
 
 func (m *Message) GetSender() *id.User {
-	return m.sender
+	return m.Sender
 }
 
 func (m *Message) GetInnerType() cmixproto.InnerType {
-	return m.innerType
+	return m.InnerType
 }
 
 func (m *Message) GetOuterType() cmixproto.OuterType {
-	return m.outerType
+	return m.OuterType
 }
 
 func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
@@ -50,7 +50,7 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 
 	if !isHeardElsewhere || !ml.IsFallback {
 		ml.NumHeard++
-		ml.LastMessage = msg.contents
+		ml.LastMessage = msg.Contents
 		ml.LastMessageType = msg.GetInnerType()
 	}
 }
@@ -77,10 +77,10 @@ func TestListenerMap_SpeakOne(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		contents:  []byte("hmmmm"),
-		sender:    specificUser,
-		innerType: specificInnerType,
-		outerType: specificOuterType,
+		Contents:  []byte("hmmmm"),
+		Sender:    specificUser,
+		InnerType: specificInnerType,
+		OuterType: specificOuterType,
 	})
 
 	// determine whether the listener heard the message
@@ -99,10 +99,10 @@ func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
 	// speak
 	for i := 0; i < 20; i++ {
 		go listeners.Speak(&Message{
-			contents:  make([]byte, 0),
-			sender:    specificUser,
-			innerType: specificInnerType,
-			outerType: specificOuterType,
+			Contents:  make([]byte, 0),
+			Sender:    specificUser,
+			InnerType: specificInnerType,
+			OuterType: specificOuterType,
 		})
 	}
 
@@ -121,10 +121,10 @@ func TestListenerMap_SpeakToAnother(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		innerType: specificInnerType,
-		outerType: specificOuterType,
-		contents:  make([]byte, 0),
-		sender:    nonzeroUser,
+		InnerType: specificInnerType,
+		OuterType: specificOuterType,
+		Contents:  make([]byte, 0),
+		Sender:    nonzeroUser,
 	})
 
 	// determine whether the listener heard the message
@@ -142,10 +142,10 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		innerType: specificInnerType + 1,
-		outerType: specificOuterType + 1,
-		contents:  make([]byte, 0),
-		sender:    specificUser,
+		InnerType: specificInnerType + 1,
+		OuterType: specificOuterType + 1,
+		Contents:  make([]byte, 0),
+		Sender:    specificUser,
 	})
 
 	// determine whether the listener heard the message
@@ -179,10 +179,10 @@ func TestListenerMap_SpeakWildcard(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		contents:  make([]byte, 0),
-		sender:    specificUser,
-		innerType: specificInnerType + 1,
-		outerType: specificOuterType + 1,
+		Contents:  make([]byte, 0),
+		Sender:    specificUser,
+		InnerType: specificInnerType + 1,
+		OuterType: specificOuterType + 1,
 	})
 
 	// determine whether the listener heard the message
@@ -218,10 +218,10 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	for messageType := cmixproto.InnerType(1); messageType <= cmixproto.
 		InnerType(20); messageType++ {
 		go listeners.Speak(&Message{
-			innerType: messageType,
-			outerType: specificOuterType,
-			contents:  make([]byte, 0),
-			sender:    specificUser,
+			InnerType: messageType,
+			OuterType: specificOuterType,
+			Contents:  make([]byte, 0),
+			Sender:    specificUser,
 		})
 	}
 	// send to all types for a different user
@@ -229,10 +229,10 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	for messageType := cmixproto.InnerType(1); messageType <= cmixproto.
 		InnerType(20); messageType++ {
 		go listeners.Speak(&Message{
-			innerType: messageType,
-			outerType: specificOuterType,
-			contents:  make([]byte, 0),
-			sender:    otherUser,
+			InnerType: messageType,
+			OuterType: specificOuterType,
+			Contents:  make([]byte, 0),
+			Sender:    otherUser,
 		})
 	}
 
@@ -270,16 +270,16 @@ func TestListenerMap_SpeakFallback(t *testing.T) {
 
 	// send exactly one message to each of them
 	listeners.Speak(&Message{
-		innerType: specificInnerType,
-		outerType: specificOuterType,
-		contents:  make([]byte, 0),
-		sender:    specificUser,
+		InnerType: specificInnerType,
+		OuterType: specificOuterType,
+		Contents:  make([]byte, 0),
+		Sender:    specificUser,
 	})
 	listeners.Speak(&Message{
-		innerType: specificInnerType + 1,
-		outerType: specificOuterType + 1,
-		contents:  make([]byte, 0),
-		sender:    specificUser,
+		InnerType: specificInnerType + 1,
+		OuterType: specificOuterType + 1,
+		Contents:  make([]byte, 0),
+		Sender:    specificUser,
 	})
 
 	time.Sleep(delay)
@@ -300,10 +300,10 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 	listeners, listener := OneListenerSetup()
 	expected := []byte{0x01, 0x02, 0x03, 0x04}
 	listeners.Speak(&Message{
-		innerType: specificInnerType,
-		outerType: specificOuterType,
-		contents:  expected,
-		sender:    specificUser,
+		InnerType: specificInnerType,
+		OuterType: specificOuterType,
+		Contents:  expected,
+		Sender:    specificUser,
 	})
 	time.Sleep(delay)
 	if !bytes.Equal(listener.LastMessage, expected) {

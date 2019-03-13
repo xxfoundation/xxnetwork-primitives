@@ -13,7 +13,10 @@ option go_package = "cmixproto";
 
 enum OuterType {
     NONE = 0;
+    // End-to-end encrypted on the client
     E2E = 1;
+    // Only encrypted with the node keys
+    NODE = 2;
 }
 
 enum InnerType {

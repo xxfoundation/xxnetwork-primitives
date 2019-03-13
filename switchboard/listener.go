@@ -13,7 +13,6 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
-	"sync/atomic"
 )
 
 type Item interface {
@@ -27,65 +26,6 @@ type Item interface {
 // This is an interface so you can receive callbacks through the Gomobile boundary
 type Listener interface {
 	Hear(item Item, isHeardElsewhere bool)
-}
-
-// Implementation of Listener interface using a channel
-type listeningQueue struct {
-	bufSize    int32
-	buf        []Item
-	writeIndex int32
-	queue      chan []Item
-}
-
-// Set up a listening queue and add it to the switchboard
-func (s *Switchboard) ListenChannel(bufSize int32, channelBufferSize int,
-	outerType cmixproto.OuterType, innerType cmixproto.InnerType,
-	sender *id.User) (id string, messageQueue chan []Item) {
-	l := listeningQueue{
-		bufSize:    bufSize,
-		buf:        make([]Item, bufSize),
-		writeIndex: 0,
-		queue:      make(chan []Item, channelBufferSize),
-	}
-	id = s.Register(sender, outerType, innerType, l)
-	return id, l.queue
-}
-
-// Empty remaining elements in the buffer
-func (l *listeningQueue) Flush() {
-	result := l.buf
-	l.buf = make([]Item, 0, l.bufSize)
-	atomic.StoreInt32(&l.writeIndex, 0)
-	l.queue <- result
-}
-
-// Returns the number of items in the listening buffer.
-// May be helpful when determining when to do the final flush.
-func (l *listeningQueue) Len() int32 {
-	return l.writeIndex
-}
-
-// TODO What happens if you use pointer receiver? Should test whether it still works correctly.
-// Multiple threads can write to this buffer simultaneously through the
-// switchboard using this method
-func (l listeningQueue) Hear(item Item, isHeardElsewhere bool) {
-	writeIndex := atomic.LoadInt32(&l.writeIndex)
-	for {
-		// Only try to CAS if the write index is in the correct range
-		// If it's outside the correct range, it should return to the correct
-		// range soon, because another goroutine is about to flush the buffer
-		if writeIndex < l.bufSize {
-			// If the CAS succeeds, it's safe to write to the buffer at writeIndex
-			if atomic.CompareAndSwapInt32(&l.writeIndex, writeIndex, writeIndex+1) {
-				break
-			}
-		}
-		writeIndex = atomic.LoadInt32(&l.writeIndex)
-	}
-	l.buf[writeIndex] = item
-	if writeIndex >= l.bufSize {
-		l.Flush()
-	}
 }
 
 type listenerRecord struct {
@@ -177,6 +117,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	matches := make([]*listenerRecord, 0)
 
 	// 8 cases total, for matching both specific and general listeners
+	// This seems inefficient
 	for _, listener := range lm.listeners[*item.GetSender()][item.
 		GetOuterType()][item.GetInnerType()] {
 		matches = append(matches, listener)
@@ -237,14 +178,14 @@ func (lm *Switchboard) Speak(item Item) {
 		jww.ERROR.Printf(
 			"Message of type %v, %v from user %q didn't match any listeners in"+
 				" the map", item.GetOuterType().String(), item.GetInnerType().String(),
-				item.GetSender())
+			item.GetSender())
 		// dump representation of the map
 		for u, perUser := range lm.listeners {
 			for outerType, perOuterType := range perUser {
 				for innerType, perInnerType := range perOuterType {
 					for i, listener := range perInnerType {
 
-						jww.ERROR.Printf("Listener %v: %v, user %v, " +
+						jww.ERROR.Printf("Listener %v: %v, user %v, "+
 							"outertype %v, type %v, ",
 							i, listener.id, u, outerType.String(),
 							innerType.String())
