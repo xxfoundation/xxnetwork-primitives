@@ -204,3 +204,21 @@ func TestAssociatedData_Timestamp(t *testing.T) {
 		t.Errorf("Timestamp failed: %v", err.Error())
 	}
 }
+
+func TestNewFingerprint(t *testing.T) {
+
+	r := rand.New(rand.NewSource(0))
+	testBytes := make([]byte, AD_KEYFP_LEN)
+
+	_, err := r.Read(testBytes)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	fp := NewFingerprint(testBytes)
+
+	if bytes.Compare(fp[:], testBytes) != 0 {
+		t.Errorf("NewFingerprint created a fingerprint that doesn't match data")
+	}
+
+}
