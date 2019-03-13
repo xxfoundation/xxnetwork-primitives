@@ -57,20 +57,19 @@ const (
 type AssociatedData struct {
 	associatedDataSerial [TOTAL_LEN]byte
 	recipientID          []byte
-	keyFingerprint       [AD_KEYFP_LEN]byte
+	keyFingerprint       []byte
 	timestamp            []byte
 	mac                  []byte
 	rmic                 []byte
 }
 
+type Fingerprint [AD_KEYFP_LEN]byte
+
 // Initializes an Associated data with the correct slices
 func NewAssociatedData() *AssociatedData {
-	result := AssociatedData{
-		associatedDataSerial: [TOTAL_LEN]byte{},
-		keyFingerprint: [AD_KEYFP_LEN]byte{},
-	}
+	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
 	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
-
+	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
 	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
 	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
 	result.rmic = result.associatedDataSerial[AD_RMIC_START:AD_RMIC_END]
@@ -103,13 +102,14 @@ func (r *AssociatedData) SetRecipient(newID *id.User) {
 // Get the key fingerprint
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
-func (r *AssociatedData) GetKeyFingerprint() []byte {
-	return r.keyFingerprint[:]
+func (r *AssociatedData) GetKeyFingerprint() (fp Fingerprint) {
+	copy(fp[:], r.keyFingerprint)
+	return fp
 }
 
 // Returns number of bytes copied
-func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
-	return copy(r.keyFingerprint[:], newKeyFP)
+func (r *AssociatedData) SetKeyFingerprint(fp Fingerprint) int {
+	return copy(r.keyFingerprint, fp[:])
 }
 
 // Get the MAC for the message

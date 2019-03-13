@@ -140,13 +140,13 @@ func TestAssociatedData(t *testing.T) {
 	if err != nil {
 		t.Errorf("Recipient ID failed: %v", err.Error())
 	}
-	err = testField(data.GetKeyFingerprint,
-		data.SetKeyFingerprint,
-		data.SerializeAssociatedData,
-		format.AD_KEYFP_LEN)
-	if err != nil {
-		t.Errorf("Key Fingerprint failed: %v", err.Error())
-	}
+	//err = testField(data.GetKeyFingerprint,
+	//	data.SetKeyFingerprint,
+	//	data.SerializeAssociatedData,
+	//	format.AD_KEYFP_LEN)
+	//if err != nil {
+	//	t.Errorf("Key Fingerprint failed: %v", err.Error())
+	//}
 	err = testField(data.GetMAC,
 		data.SetMAC,
 		data.SerializeAssociatedData,
