@@ -8,7 +8,6 @@ package switchboard
 
 import (
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/elixxir/primitives/cmixproto"
 	"gitlab.com/elixxir/primitives/id"
 	"reflect"
 	"strconv"
@@ -19,8 +18,8 @@ type Item interface {
 	// To reviewer: Is this the correct name for this method? It's always the
 	// sender ID in the client, but that might not be the case on the nodes
 	GetSender() *id.User
-	GetOuterType() cmixproto.OuterType
-	GetInnerType() cmixproto.InnerType
+	GetOuterType() int32
+	GetInnerType() int32
 }
 
 // This is an interface so you can receive callbacks through the Gomobile boundary
@@ -36,7 +35,7 @@ type listenerRecord struct {
 type Switchboard struct {
 	// By matching with the keys for each level of the map,
 	// you can find the listeners that meet each criterion
-	listeners map[id.User]map[cmixproto.OuterType]map[cmixproto.InnerType][]*listenerRecord
+	listeners map[id.User]map[int32]map[int32][]*listenerRecord
 	lastID    int
 	mux       sync.RWMutex
 }
@@ -45,8 +44,7 @@ var Listeners = NewSwitchboard()
 
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
-		listeners: make(map[id.User]map[cmixproto.OuterType]map[cmixproto.
-			InnerType][]*listenerRecord),
+		listeners: make(map[id.User]map[int32]map[int32][]*listenerRecord),
 		lastID: 0,
 	}
 }
@@ -64,18 +62,18 @@ func NewSwitchboard() *Switchboard {
 //
 // If a message matches multiple listeners, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
-	outerType cmixproto.OuterType, innerType cmixproto.InnerType,
+	outerType int32, innerType int32,
 	newListener Listener) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
 
 	lm.lastID++
 	if lm.listeners[*user] == nil {
-		lm.listeners[*user] = make(map[cmixproto.OuterType]map[cmixproto.InnerType][]*listenerRecord)
+		lm.listeners[*user] = make(map[int32]map[int32][]*listenerRecord)
 	}
 
 	if lm.listeners[*user][outerType] == nil {
-		lm.listeners[*user][outerType] = make(map[cmixproto.InnerType][]*listenerRecord)
+		lm.listeners[*user][outerType] = make(map[int32][]*listenerRecord)
 	}
 
 	newListenerRecord := &listenerRecord{
@@ -126,29 +124,23 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		GetOuterType()][item.GetInnerType()] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*item.GetSender()][cmixproto.
-		OuterType_NONE][cmixproto.InnerType_NO_TYPE] {
+	for _, listener := range lm.listeners[*item.GetSender()][item.GetOuterType()][0] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*id.ZeroID][cmixproto.
-		OuterType_NONE][cmixproto.InnerType_NO_TYPE] {
+	for _, listener := range lm.listeners[*id.ZeroID][item.GetOuterType()][0] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*item.GetSender()][item.
-		GetOuterType()][cmixproto.InnerType_NO_TYPE] {
+	for _, listener := range lm.listeners[*item.GetSender()][0][0] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*id.ZeroID][item.
-		GetOuterType()][cmixproto.InnerType_NO_TYPE] {
+	for _, listener := range lm.listeners[*id.ZeroID][0][0] {
 		matches = append(matches, listener)
 	}
 	// Match all, but with generic outer type
-	for _, listener := range lm.listeners[*item.GetSender()][cmixproto.
-		OuterType_NONE][item.GetInnerType()] {
+	for _, listener := range lm.listeners[*item.GetSender()][0][item.GetInnerType()] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*id.ZeroID][cmixproto.
-		OuterType_NONE][item.GetInnerType()] {
+	for _, listener := range lm.listeners[*id.ZeroID][0][item.GetInnerType()] {
 		matches = append(matches, listener)
 	}
 
@@ -177,7 +169,7 @@ func (lm *Switchboard) Speak(item Item) {
 	} else {
 		jww.ERROR.Printf(
 			"Message of type %v, %v from user %q didn't match any listeners in"+
-				" the map", item.GetOuterType().String(), item.GetInnerType().String(),
+				" the map", item.GetOuterType(), item.GetInnerType(),
 			item.GetSender())
 		// dump representation of the map
 		for u, perUser := range lm.listeners {
@@ -187,8 +179,7 @@ func (lm *Switchboard) Speak(item Item) {
 
 						jww.ERROR.Printf("Listener %v: %v, user %v, "+
 							"outertype %v, type %v, ",
-							i, listener.id, u, outerType.String(),
-							innerType.String())
+							i, listener.id, u, outerType, innerType)
 					}
 				}
 			}

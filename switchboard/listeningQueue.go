@@ -7,15 +7,14 @@
 package switchboard
 
 import (
-	"gitlab.com/elixxir/primitives/cmixproto"
 	"gitlab.com/elixxir/primitives/id"
 )
 
 type ListeningQueue chan Item
 
 // Set up a listening queue and add it to the switchboard
-func (s *Switchboard) ListenChannel(outerType cmixproto.OuterType,
-	innerType cmixproto.InnerType, sender *id.User, channelBufferSize int) (id string,
+func (s *Switchboard) ListenChannel(outerType int32,
+	innerType int32, sender *id.User, channelBufferSize int) (id string,
 	messageQueue ListeningQueue) {
 	messageQueue = make(ListeningQueue, channelBufferSize)
 	id = s.Register(sender, outerType, innerType, messageQueue)

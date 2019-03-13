@@ -7,7 +7,6 @@
 package switchboard
 
 import (
-	"gitlab.com/elixxir/primitives/cmixproto"
 	"gitlab.com/elixxir/primitives/id"
 	"sync"
 	"testing"
@@ -23,8 +22,7 @@ func TestListeningQueue_Hear(t *testing.T) {
 	wg.Add(numThreads * numItems)
 
 	s := NewSwitchboard()
-	_, queue := s.ListenChannel(cmixproto.OuterType_NONE,
-		cmixproto.InnerType_NO_TYPE, id.ZeroID, 12)
+	_, queue := s.ListenChannel(0, 0, id.ZeroID, 12)
 
 	var items []Item
 
@@ -36,8 +34,8 @@ func TestListeningQueue_Hear(t *testing.T) {
 				s.Speak(&Message{
 					Contents:  []byte{},
 					Sender:    user,
-					InnerType: cmixproto.InnerType_TEXT_MESSAGE,
-					OuterType: cmixproto.OuterType_NODE,
+					InnerType: 5,
+					OuterType: 2,
 				})
 				wg.Done()
 				time.Sleep(time.Millisecond)
