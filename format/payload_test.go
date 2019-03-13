@@ -1,6 +1,8 @@
 package format
 
-import "testing"
+import (
+	"testing"
+)
 
 
 // Guarantees that all fields of a NewPayload are the valid length
