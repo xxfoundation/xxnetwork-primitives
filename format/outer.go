@@ -4,7 +4,7 @@ package format
 type OuterType uint32
 
 const (
-	Unecnrypted OuterType = iota
+	Unencrypted OuterType = iota
 	E2E
 	Garbled
 	Error
