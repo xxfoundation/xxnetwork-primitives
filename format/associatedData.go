@@ -7,6 +7,8 @@
 package format
 
 import (
+	"crypto/rand"
+	"errors"
 	"gitlab.com/elixxir/primitives/id"
 )
 
@@ -63,9 +65,12 @@ type AssociatedData struct {
 	rmic                 []byte
 }
 
+type Fingerprint [AD_KEYFP_LEN]byte
+
 // Initializes an Associated data with the correct slices
 func NewAssociatedData() *AssociatedData {
 	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
+
 	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
 	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
 	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
@@ -75,6 +80,17 @@ func NewAssociatedData() *AssociatedData {
 	ensureGroup(result.associatedDataSerial[AD_FIRST_START:AD_FIRST_END])
 
 	return &result
+}
+
+func ensureGroup(overwriteRegion []byte) (numRead int, err error) {
+	numRead, err = rand.Read(overwriteRegion)
+	if len(overwriteRegion) > 0 {
+		overwriteRegion[0] &= 0x7f
+	} else {
+		err = errors.New("can't use a slice with zero length to ensure the" +
+			" message is inside the group")
+	}
+	return numRead, err
 }
 
 // This function returns the recipient ID slice
@@ -100,13 +116,14 @@ func (r *AssociatedData) SetRecipient(newID *id.User) {
 // Get the key fingerprint
 // The caller can read or write the data within this slice, but can't change
 // the slice header in the actual structure
-func (r *AssociatedData) GetKeyFingerprint() []byte {
-	return r.keyFingerprint
+func (r *AssociatedData) GetKeyFingerprint() (fp Fingerprint) {
+	copy(fp[:], r.keyFingerprint)
+	return fp
 }
 
 // Returns number of bytes copied
-func (r *AssociatedData) SetKeyFingerprint(newKeyFP []byte) int {
-	return copy(r.keyFingerprint, newKeyFP)
+func (r *AssociatedData) SetKeyFingerprint(fp Fingerprint) int {
+	return copy(r.keyFingerprint, fp[:])
 }
 
 // Get the MAC for the message
