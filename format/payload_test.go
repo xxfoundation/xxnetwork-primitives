@@ -4,7 +4,6 @@ import (
 	"testing"
 )
 
-
 // Guarantees that all fields of a NewPayload are the valid length
 func TestNewPayload(t *testing.T) {
 	payload := NewPayload()

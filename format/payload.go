@@ -109,7 +109,7 @@ func (p *Payload) SetPayload(pSerial []byte) int {
 func (p *Payload) SetSplitPayload(pSerial []byte) int {
 	ret1 := p.SetSenderID(pSerial[:MP_SID_LEN])
 	ret2 := p.SetPayloadData(pSerial[MP_SID_LEN:])
-	return ret1+ret2
+	return ret1 + ret2
 }
 
 // Returns the full serialized payload
