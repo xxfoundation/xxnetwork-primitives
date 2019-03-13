@@ -8,7 +8,6 @@ package switchboard
 
 import (
 	"bytes"
-	"gitlab.com/elixxir/primitives/cmixproto"
 	"gitlab.com/elixxir/primitives/id"
 	"sync"
 	"testing"
@@ -19,26 +18,26 @@ type MockListener struct {
 	NumHeard        int
 	IsFallback      bool
 	LastMessage     []byte
-	LastMessageType cmixproto.InnerType
+	LastMessageType int32
 	mux             sync.Mutex
 }
 
 type Message struct {
 	Contents  []byte
 	Sender    *id.User
-	InnerType cmixproto.InnerType
-	OuterType cmixproto.OuterType
+	InnerType int32
+	OuterType int32
 }
 
 func (m *Message) GetSender() *id.User {
 	return m.Sender
 }
 
-func (m *Message) GetInnerType() cmixproto.InnerType {
+func (m *Message) GetInnerType() int32 {
 	return m.InnerType
 }
 
-func (m *Message) GetOuterType() cmixproto.OuterType {
+func (m *Message) GetOuterType() int32 {
 	return m.OuterType
 }
 
@@ -56,8 +55,8 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 }
 
 var specificUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 5})
-var specificInnerType = cmixproto.InnerType_TEXT_MESSAGE
-var specificOuterType = cmixproto.OuterType_E2E
+var specificInnerType int32 = 5
+var specificOuterType int32 = 2
 var delay = 10 * time.Millisecond
 
 func OneListenerSetup() (*Switchboard, *MockListener) {
@@ -159,8 +158,8 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 
 var zeroUser = id.ZeroID
 var nonzeroUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 786})
-var zeroInnerType cmixproto.InnerType
-var zeroOuterType cmixproto.OuterType
+var zeroInnerType int32
+var zeroOuterType int32
 
 func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	var listeners *Switchboard
@@ -200,8 +199,7 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	individualListeners := make([]*MockListener, 0)
 
 	// one user, many types
-	for messageType := cmixproto.InnerType(1); messageType <= cmixproto.
-		InnerType(20); messageType++ {
+	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		newListener := MockListener{}
 		listeners.Register(specificUser, specificOuterType, messageType,
 			&newListener)
@@ -215,8 +213,7 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	listeners.Register(zeroUser, zeroOuterType, zeroInnerType, wildcardListener)
 
 	// send to all types for our user
-	for messageType := cmixproto.InnerType(1); messageType <= cmixproto.
-		InnerType(20); messageType++ {
+	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
 			InnerType: messageType,
 			OuterType: specificOuterType,
@@ -226,8 +223,7 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	}
 	// send to all types for a different user
 	otherUser := id.NewUserFromUint(98, t)
-	for messageType := cmixproto.InnerType(1); messageType <= cmixproto.
-		InnerType(20); messageType++ {
+	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
 			InnerType: messageType,
 			OuterType: specificOuterType,
@@ -292,7 +288,7 @@ func TestListenerMap_SpeakFallback(t *testing.T) {
 	}
 	if fallbackListener.NumHeard != expected {
 		t.Errorf("Fallback listener: Expected %v, got %v messages", expected,
-			specificListener.NumHeard)
+			fallbackListener.NumHeard)
 	}
 }
 
