@@ -4,13 +4,12 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
-package format_test
+package format
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"gitlab.com/elixxir/primitives/format"
 	"gitlab.com/elixxir/primitives/id"
 	"math/rand"
 	"reflect"
@@ -83,13 +82,13 @@ func testVariableField(get func() []byte, set func([]byte) int, ser func() []byt
 // Make sure that SetRecipient and SetSender set the field correctly with id.User
 func TestSetUser(t *testing.T) {
 	u := new(id.User).SetUints(&[4]uint64{3298561, 1083657, 2836259, 187653})
-	payload := format.NewPayload()
+	payload := NewPayload()
 	payload.SetSender(u)
 	if !id.Equal(u, payload.GetSender()) {
 		t.Errorf("Sender not set correctly. Got: %x, expected %x",
 			payload.GetSender(), u)
 	}
-	data := format.NewAssociatedData()
+	data := NewAssociatedData()
 	data.SetRecipient(u)
 	if !id.Equal(u, data.GetRecipient()) {
 		t.Errorf("Recipient not set correctly. Got: %x, expected %x",
@@ -97,46 +96,13 @@ func TestSetUser(t *testing.T) {
 	}
 }
 
-// Test each field of the payload
-func TestPayload(t *testing.T) {
-	payload := format.NewPayload()
-	var err error
-	err = testField(payload.GetSenderID, payload.SetSenderID,
-		payload.SerializePayload, format.MP_SID_LEN)
-	if err != nil {
-		t.Errorf("Sender ID failed: %v", err.Error())
-	}
-	err = testField(payload.GetSender().Bytes, payload.SetSenderID,
-		payload.SerializePayload, format.MP_SID_LEN)
-	if err != nil {
-		t.Errorf("Sender ID by id.User failed: %v", err.Error())
-	}
-	// These functions return variable length according to size of actual data
-	// so must be tested with different function
-	err = testVariableField(payload.GetPayloadData, payload.SetPayloadData,
-		payload.SerializePayload, format.MP_PAYLOAD_LEN)
-	if err != nil {
-		t.Errorf("Payload Data failed: %v", err.Error())
-	}
-	err = testVariableField(payload.GetPayload, payload.SetPayload,
-		payload.SerializePayload, format.TOTAL_LEN)
-	if err != nil {
-		t.Errorf("Payload failed: %v", err.Error())
-	}
-	err = testVariableField(payload.GetPayload, payload.SetSplitPayload,
-		payload.SerializePayload, format.MP_PAYLOAD_LEN)
-	if err != nil {
-		t.Errorf("Payload Split failed: %v", err.Error())
-	}
-}
-
 func TestAssociatedData(t *testing.T) {
-	data := format.NewAssociatedData()
+	data := NewAssociatedData()
 	var err error
 	err = testField(data.GetRecipientID,
 		data.SetRecipientID,
 		data.SerializeAssociatedData,
-		format.AD_RID_LEN)
+		AD_RID_LEN)
 	if err != nil {
 		t.Errorf("Recipient ID failed: %v", err.Error())
 	}
@@ -150,26 +116,26 @@ func TestAssociatedData(t *testing.T) {
 	err = testField(data.GetMAC,
 		data.SetMAC,
 		data.SerializeAssociatedData,
-		format.AD_MAC_LEN)
+		AD_MAC_LEN)
 	if err != nil {
 		t.Errorf("MAC failed: %v", err.Error())
 	}
 	err = testField(data.GetRecipient().Bytes,
 		data.SetRecipientID,
 		data.SerializeAssociatedData,
-		format.AD_RID_LEN)
+		AD_RID_LEN)
 	if err != nil {
 		t.Errorf("Recipient ID by id.User failed: %v", err.Error())
 	}
 	err = testField(data.GetRecipientMIC,
 		data.SetRecipientMIC,
 		data.SerializeAssociatedData,
-		format.AD_RMIC_LEN)
+		AD_RMIC_LEN)
 	if err != nil {
 		t.Errorf("Recipient MIC failed: %v", err.Error())
 	}
 	err = testField(data.GetTimestamp, data.SetTimestamp,
-		data.SerializeAssociatedData, format.AD_TIMESTAMP_LEN)
+		data.SerializeAssociatedData, AD_TIMESTAMP_LEN)
 	if err != nil {
 		t.Errorf("Timestamp failed: %v", err.Error())
 	}
@@ -178,7 +144,7 @@ func TestAssociatedData(t *testing.T) {
 func TestDeepCopy(t *testing.T) {
 	// Generate test data for each structure
 	r := rand.New(rand.NewSource(0))
-	testBytes := make([]byte, format.TOTAL_LEN)
+	testBytes := make([]byte, TOTAL_LEN)
 	_, err := r.Read(testBytes)
 	if err != nil {
 		t.Error(err.Error())
@@ -186,9 +152,9 @@ func TestDeepCopy(t *testing.T) {
 
 	// Make a deep copy of each structure, and make sure that changing one
 	// doesn't change the other
-	data := format.DeserializeAssociatedData(testBytes)
+	data := DeserializeAssociatedData(testBytes)
 	dataCopy := data.DeepCopy()
-	payload := format.DeserializePayload(testBytes)
+	payload := DeserializePayload(testBytes)
 	payloadCopy := payload.DeepCopy()
 
 	if !reflect.DeepEqual(data, dataCopy) {
