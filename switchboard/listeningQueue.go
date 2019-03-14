@@ -8,12 +8,13 @@ package switchboard
 
 import (
 	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/elixxir/primitives/format"
 )
 
 type ListeningQueue chan Item
 
 // Set up a listening queue and add it to the switchboard
-func (s *Switchboard) ListenChannel(outerType int32,
+func (s *Switchboard) ListenChannel(outerType format.OuterType,
 	innerType int32, sender *id.User, channelBufferSize int) (id string,
 	messageQueue ListeningQueue) {
 	messageQueue = make(ListeningQueue, channelBufferSize)

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"gitlab.com/elixxir/primitives/format"
 )
 
 type MockListener struct {
@@ -26,7 +27,7 @@ type Message struct {
 	Contents  []byte
 	Sender    *id.User
 	InnerType int32
-	OuterType int32
+	OuterType format.OuterType
 }
 
 func (m *Message) GetSender() *id.User {
@@ -37,7 +38,7 @@ func (m *Message) GetInnerType() int32 {
 	return m.InnerType
 }
 
-func (m *Message) GetOuterType() int32 {
+func (m *Message) GetOuterType() format.OuterType {
 	return m.OuterType
 }
 
@@ -56,7 +57,7 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 
 var specificUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 5})
 var specificInnerType int32 = 5
-var specificOuterType int32 = 2
+var specificOuterType format.OuterType = 2
 var delay = 10 * time.Millisecond
 
 func OneListenerSetup() (*Switchboard, *MockListener) {
@@ -159,7 +160,7 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 var zeroUser = id.ZeroID
 var nonzeroUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 786})
 var zeroInnerType int32
-var zeroOuterType int32
+var zeroOuterType format.OuterType
 
 func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	var listeners *Switchboard
