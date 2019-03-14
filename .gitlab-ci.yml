@@ -68,11 +68,12 @@ test:
   script:
     - mkdir -p testdata
     - goverage -coverprofile=testdata/coverage.out -v ./... | grep -v "no packages being tested depend on"
-    - go tool cover -func=testdata/coverage.out
-    - go tool cover -html=testdata/coverage.out -o testdata/coverage.html
+    - cat testdata/coverage.out | grep -v pb[.]go > testdata/coverage-real.out
+    - go tool cover -func=testdata/coverage-real.out
+    - go tool cover -html=testdata/coverage-real.out -o testdata/coverage.html
 
     # Test Coverage Check
-    - go tool cover -func=testdata/coverage.out | grep "total:" | awk '{print $3}' | sed 's/\%//g' > testdata/coverage-percentage.txt
+    - go tool cover -func=testdata/coverage-real.out | grep "total:" | awk '{print $3}' | sed 's/\%//g' > testdata/coverage-percentage.txt
     - export CODE_CHECK=$(echo "$(cat testdata/coverage-percentage.txt) >= $MIN_CODE_COVERAGE" | bc -l)
     - (if [ "$CODE_CHECK" == "1" ]; then echo "Minimum coverage of $MIN_CODE_COVERAGE succeeded"; else echo "Minimum coverage of $MIN_CODE_COVERAGE failed"; exit 1; fi);
 
