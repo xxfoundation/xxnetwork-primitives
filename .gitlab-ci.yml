@@ -126,3 +126,10 @@ deploy_staging:
     # url: https://librerio.example.com
   only:
   - master
+
+trigger:
+  script:
+    # client
+    - "curl -X POST -F token=e2131503c25e935c659930445980d3 -F ref=master https://gitlab.com/api/v4/projects/5454785/trigger/pipeline"
+    # server
+    - "curl -X POST -F token=af0e098d32d36daad7d39e4fe9132b -F ref=master https://gitlab.com/api/v4/projects/5014439/trigger/pipeline"
