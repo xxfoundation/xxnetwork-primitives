@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math/rand"
+	"reflect"
 	"testing"
 )
 
@@ -110,5 +111,27 @@ func TestEqual(t *testing.T) {
 	}
 	if Equal(&id3, &id1) {
 		t.Error("ID 1 and 3 shouldn't have been equal, but were")
+	}
+}
+
+//Test that deep copy returns an exact copy and that changing one does nto change the other
+func TestUser_DeepCopy(t *testing.T) {
+	rng := rand.New(rand.NewSource(42))
+	for i := 0; i < 100; i++ {
+		var original User
+		rng.Read(original[:])
+		deepcopy := (&original).DeepCopy()
+
+		if !reflect.DeepEqual(original, *deepcopy) {
+			t.Errorf("User.DeepCopy: On Attempt %v copy does not equal origonal %v %v", i, original, deepcopy)
+		}
+
+		for j := 0; j < UserLen; j++ {
+			original[j] = ^original[j]
+		}
+
+		if reflect.DeepEqual(original, *deepcopy) {
+			t.Errorf("User.DeepCopy: On Attempt %v copy still linked to origonal %v %v", i, original, deepcopy)
+		}
 	}
 }

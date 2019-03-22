@@ -108,3 +108,12 @@ func (u *User) Bytes() []byte {
 func Equal(lhs *User, rhs *User) bool {
 	return *lhs == *rhs
 }
+
+func (u *User) DeepCopy() *User {
+	if u == nil {
+		return nil
+	}
+	var nu User
+	copy(nu[:], (*u)[:])
+	return &nu
+}
