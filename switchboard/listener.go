@@ -19,8 +19,8 @@ type Item interface {
 	// To reviewer: Is this the correct name for this method? It's always the
 	// sender ID in the client, but that might not be the case on the nodes
 	GetSender() *id.User
-	GetOuterType() format.OuterType
-	GetInnerType() int32
+	GetCryptoType() format.CryptoType
+	GetMessageType() int32
 }
 
 // This is an interface so you can receive callbacks through the Gomobile boundary
@@ -36,7 +36,7 @@ type listenerRecord struct {
 type Switchboard struct {
 	// By matching with the keys for each level of the map,
 	// you can find the listeners that meet each criterion
-	listeners map[id.User]map[format.OuterType]map[int32][]*listenerRecord
+	listeners map[id.User]map[format.CryptoType]map[int32][]*listenerRecord
 	lastID    int
 	mux       sync.RWMutex
 }
@@ -45,7 +45,7 @@ var Listeners = NewSwitchboard()
 
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
-		listeners: make(map[id.User]map[format.OuterType]map[int32][]*listenerRecord),
+		listeners: make(map[id.User]map[format.CryptoType]map[int32][]*listenerRecord),
 		lastID: 0,
 	}
 }
@@ -63,14 +63,14 @@ func NewSwitchboard() *Switchboard {
 //
 // If a message matches multiple listeners, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
-	outerType format.OuterType, innerType int32,
+	outerType format.CryptoType, innerType int32,
 	newListener Listener) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
 
 	lm.lastID++
 	if lm.listeners[*user] == nil {
-		lm.listeners[*user] = make(map[format.OuterType]map[int32][]*listenerRecord)
+		lm.listeners[*user] = make(map[format.CryptoType]map[int32][]*listenerRecord)
 	}
 
 	if lm.listeners[*user][outerType] == nil {
@@ -94,13 +94,13 @@ func (lm *Switchboard) Unregister(listenerID string) {
 
 	// Iterate over all listeners in the map.
 	for u, perUser := range lm.listeners {
-		for outerType, perOuterType := range perUser {
-			for innerType, perInnerType := range perOuterType {
-				for i, listener := range perInnerType {
+		for outerType, perCryptoType := range perUser {
+			for innerType, perMessageType := range perCryptoType {
+				for i, listener := range perMessageType {
 					if listener.id == listenerID {
 						// this matches, so remove listener from data structure
 						lm.listeners[u][outerType][innerType] = append(
-							perInnerType[:i], perInnerType[i+1:]...)
+							perMessageType[:i], perMessageType[i+1:]...)
 						// since the id is unique per listener,
 						// we can terminate the loop early.
 						return
@@ -118,17 +118,17 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	// 8 cases total, for matching both specific and general listeners
 	// This seems inefficient
 	for _, listener := range lm.listeners[*item.GetSender()][item.
-		GetOuterType()][item.GetInnerType()] {
+		GetCryptoType()][item.GetMessageType()] {
 		matches = append(matches, listener)
 	}
 	for _, listener := range lm.listeners[*id.ZeroID][item.
-		GetOuterType()][item.GetInnerType()] {
+		GetCryptoType()][item.GetMessageType()] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*item.GetSender()][item.GetOuterType()][0] {
+	for _, listener := range lm.listeners[*item.GetSender()][item.GetCryptoType()][0] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*id.ZeroID][item.GetOuterType()][0] {
+	for _, listener := range lm.listeners[*id.ZeroID][item.GetCryptoType()][0] {
 		matches = append(matches, listener)
 	}
 	for _, listener := range lm.listeners[*item.GetSender()][format.None][0] {
@@ -138,10 +138,10 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		matches = append(matches, listener)
 	}
 	// Match all, but with generic outer type
-	for _, listener := range lm.listeners[*item.GetSender()][format.None][item.GetInnerType()] {
+	for _, listener := range lm.listeners[*item.GetSender()][format.None][item.GetMessageType()] {
 		matches = append(matches, listener)
 	}
-	for _, listener := range lm.listeners[*id.ZeroID][format.None][item.GetInnerType()] {
+	for _, listener := range lm.listeners[*id.ZeroID][format.None][item.GetMessageType()] {
 		matches = append(matches, listener)
 	}
 
@@ -170,13 +170,13 @@ func (lm *Switchboard) Speak(item Item) {
 	} else {
 		jww.ERROR.Printf(
 			"Message of type %v, %v from user %q didn't match any listeners in"+
-				" the map", item.GetOuterType(), item.GetInnerType(),
+				" the map", item.GetCryptoType(), item.GetMessageType(),
 			item.GetSender())
 		// dump representation of the map
 		for u, perUser := range lm.listeners {
-			for outerType, perOuterType := range perUser {
-				for innerType, perInnerType := range perOuterType {
-					for i, listener := range perInnerType {
+			for outerType, perCryptoType := range perUser {
+				for innerType, perMessageType := range perCryptoType {
+					for i, listener := range perMessageType {
 
 						jww.ERROR.Printf("Listener %v: %v, user %v, "+
 							"outertype %v, type %v, ",
