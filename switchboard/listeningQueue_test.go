@@ -34,8 +34,8 @@ func TestListeningQueue_Hear(t *testing.T) {
 				s.Speak(&Message{
 					Contents:  []byte{},
 					Sender:    user,
-					InnerType: 5,
-					OuterType: 2,
+					MessageType: 5,
+					CryptoType: 2,
 				})
 				wg.Done()
 				time.Sleep(time.Millisecond)
