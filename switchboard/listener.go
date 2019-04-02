@@ -63,7 +63,7 @@ func NewSwitchboard() *Switchboard {
 //
 // If a message matches multiple listeners, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
-	outerType format.CryptoType, innerType int32,
+	cryptoType format.CryptoType, messageType int32,
 	newListener Listener) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
@@ -73,16 +73,16 @@ func (lm *Switchboard) Register(user *id.User,
 		lm.listeners[*user] = make(map[format.CryptoType]map[int32][]*listenerRecord)
 	}
 
-	if lm.listeners[*user][outerType] == nil {
-		lm.listeners[*user][outerType] = make(map[int32][]*listenerRecord)
+	if lm.listeners[*user][cryptoType] == nil {
+		lm.listeners[*user][cryptoType] = make(map[int32][]*listenerRecord)
 	}
 
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
 	}
-	lm.listeners[*user][outerType][innerType] = append(
-		lm.listeners[*user][outerType][innerType],
+	lm.listeners[*user][cryptoType][messageType] = append(
+		lm.listeners[*user][cryptoType][messageType],
 		newListenerRecord)
 
 	return newListenerRecord.id
