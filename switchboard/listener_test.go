@@ -26,20 +26,20 @@ type MockListener struct {
 type Message struct {
 	Contents  []byte
 	Sender    *id.User
-	InnerType int32
-	OuterType format.OuterType
+	MessageType int32
+	CryptoType format.CryptoType
 }
 
 func (m *Message) GetSender() *id.User {
 	return m.Sender
 }
 
-func (m *Message) GetInnerType() int32 {
-	return m.InnerType
+func (m *Message) GetMessageType() int32 {
+	return m.MessageType
 }
 
-func (m *Message) GetOuterType() format.OuterType {
-	return m.OuterType
+func (m *Message) GetCryptoType() format.CryptoType {
+	return m.CryptoType
 }
 
 func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
@@ -51,13 +51,13 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 	if !isHeardElsewhere || !ml.IsFallback {
 		ml.NumHeard++
 		ml.LastMessage = msg.Contents
-		ml.LastMessageType = msg.GetInnerType()
+		ml.LastMessageType = msg.GetMessageType()
 	}
 }
 
 var specificUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 5})
-var specificInnerType int32 = 5
-var specificOuterType format.OuterType = 2
+var specificMessageType int32 = 5
+var specificCryptoType format.CryptoType = 2
 var delay = 10 * time.Millisecond
 
 func OneListenerSetup() (*Switchboard, *MockListener) {
@@ -66,7 +66,7 @@ func OneListenerSetup() (*Switchboard, *MockListener) {
 	// add one listener to the map
 	fullyMatchedListener := &MockListener{}
 	// TODO different type for message types?
-	listeners.Register(specificUser, specificOuterType, specificInnerType,
+	listeners.Register(specificUser, specificCryptoType, specificMessageType,
 		fullyMatchedListener)
 	return listeners, fullyMatchedListener
 }
@@ -79,8 +79,8 @@ func TestListenerMap_SpeakOne(t *testing.T) {
 	listeners.Speak(&Message{
 		Contents:  []byte("hmmmm"),
 		Sender:    specificUser,
-		InnerType: specificInnerType,
-		OuterType: specificOuterType,
+		MessageType: specificMessageType,
+		CryptoType: specificCryptoType,
 	})
 
 	// determine whether the listener heard the message
@@ -101,8 +101,8 @@ func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
 		go listeners.Speak(&Message{
 			Contents:  make([]byte, 0),
 			Sender:    specificUser,
-			InnerType: specificInnerType,
-			OuterType: specificOuterType,
+			MessageType: specificMessageType,
+			CryptoType: specificCryptoType,
 		})
 	}
 
@@ -121,8 +121,8 @@ func TestListenerMap_SpeakToAnother(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		InnerType: specificInnerType,
-		OuterType: specificOuterType,
+		MessageType: specificMessageType,
+		CryptoType: specificCryptoType,
 		Contents:  make([]byte, 0),
 		Sender:    nonzeroUser,
 	})
@@ -142,8 +142,8 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		InnerType: specificInnerType + 1,
-		OuterType: specificOuterType + 1,
+		MessageType: specificMessageType + 1,
+		CryptoType: specificCryptoType + 1,
 		Contents:  make([]byte, 0),
 		Sender:    specificUser,
 	})
@@ -159,8 +159,8 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 
 var zeroUser = id.ZeroID
 var nonzeroUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 786})
-var zeroInnerType int32
-var zeroOuterType format.OuterType
+var zeroMessageType int32
+var zeroCryptoType format.CryptoType
 
 func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	var listeners *Switchboard
@@ -168,7 +168,7 @@ func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	// add one listener to the map
 	wildcardListener := &MockListener{}
 	// TODO different type for message types?
-	listeners.Register(zeroUser, zeroOuterType, zeroInnerType,
+	listeners.Register(zeroUser, zeroCryptoType, zeroMessageType,
 		wildcardListener)
 	return listeners, wildcardListener
 }
@@ -181,8 +181,8 @@ func TestListenerMap_SpeakWildcard(t *testing.T) {
 	listeners.Speak(&Message{
 		Contents:  make([]byte, 0),
 		Sender:    specificUser,
-		InnerType: specificInnerType + 1,
-		OuterType: specificOuterType + 1,
+		MessageType: specificMessageType + 1,
+		CryptoType: specificCryptoType + 1,
 	})
 
 	// determine whether the listener heard the message
@@ -202,22 +202,22 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	// one user, many types
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		newListener := MockListener{}
-		listeners.Register(specificUser, specificOuterType, messageType,
+		listeners.Register(specificUser, specificCryptoType, messageType,
 			&newListener)
 		individualListeners = append(individualListeners, &newListener)
 	}
 	// wildcard listener for the user
 	userListener := &MockListener{}
-	listeners.Register(specificUser, zeroOuterType, zeroInnerType, userListener)
+	listeners.Register(specificUser, zeroCryptoType, zeroMessageType, userListener)
 	// wildcard listener for all messages
 	wildcardListener := &MockListener{}
-	listeners.Register(zeroUser, zeroOuterType, zeroInnerType, wildcardListener)
+	listeners.Register(zeroUser, zeroCryptoType, zeroMessageType, wildcardListener)
 
 	// send to all types for our user
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
-			InnerType: messageType,
-			OuterType: specificOuterType,
+			MessageType: messageType,
+			CryptoType: specificCryptoType,
 			Contents:  make([]byte, 0),
 			Sender:    specificUser,
 		})
@@ -226,8 +226,8 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	otherUser := id.NewUserFromUint(98, t)
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
-			InnerType: messageType,
-			OuterType: specificOuterType,
+			MessageType: messageType,
+			CryptoType: specificCryptoType,
 			Contents:  make([]byte, 0),
 			Sender:    otherUser,
 		})
@@ -260,21 +260,21 @@ func TestListenerMap_SpeakFallback(t *testing.T) {
 	// add one normal and one fallback listener to the map
 	fallbackListener := &MockListener{}
 	fallbackListener.IsFallback = true
-	listeners.Register(zeroUser, zeroOuterType, zeroInnerType, fallbackListener)
+	listeners.Register(zeroUser, zeroCryptoType, zeroMessageType, fallbackListener)
 	specificListener := &MockListener{}
-	listeners.Register(specificUser, specificOuterType, specificInnerType,
+	listeners.Register(specificUser, specificCryptoType, specificMessageType,
 		specificListener)
 
 	// send exactly one message to each of them
 	listeners.Speak(&Message{
-		InnerType: specificInnerType,
-		OuterType: specificOuterType,
+		MessageType: specificMessageType,
+		CryptoType: specificCryptoType,
 		Contents:  make([]byte, 0),
 		Sender:    specificUser,
 	})
 	listeners.Speak(&Message{
-		InnerType: specificInnerType + 1,
-		OuterType: specificOuterType + 1,
+		MessageType: specificMessageType + 1,
+		CryptoType: specificCryptoType + 1,
 		Contents:  make([]byte, 0),
 		Sender:    specificUser,
 	})
@@ -297,8 +297,8 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 	listeners, listener := OneListenerSetup()
 	expected := []byte{0x01, 0x02, 0x03, 0x04}
 	listeners.Speak(&Message{
-		InnerType: specificInnerType,
-		OuterType: specificOuterType,
+		MessageType: specificMessageType,
+		CryptoType: specificCryptoType,
 		Contents:  expected,
 		Sender:    specificUser,
 	})
@@ -307,18 +307,18 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 		t.Errorf("Received message was %v, expected %v",
 			listener.LastMessage, expected)
 	}
-	if listener.LastMessageType != specificInnerType {
+	if listener.LastMessageType != specificMessageType {
 		t.Errorf("Received message type was %v, expected %v",
-			listener.LastMessageType, specificInnerType)
+			listener.LastMessageType, specificMessageType)
 	}
 }
 
 func TestListenerMap_Unregister(t *testing.T) {
 	listeners := NewSwitchboard()
-	listenerID := listeners.Register(specificUser, specificOuterType, specificInnerType,
+	listenerID := listeners.Register(specificUser, specificCryptoType, specificMessageType,
 		&MockListener{})
 	listeners.Unregister(listenerID)
-	if len(listeners.listeners[*specificUser][specificOuterType][specificInnerType]) != 0 {
+	if len(listeners.listeners[*specificUser][specificCryptoType][specificMessageType]) != 0 {
 		t.Error("The listener was still in the map after we stopped" +
 			" listening on it")
 	}
