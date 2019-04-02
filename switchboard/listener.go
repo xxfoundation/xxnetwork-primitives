@@ -119,33 +119,48 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	// This seems inefficient
 	for _, listener := range lm.listeners[*item.GetSender()][item.
 		GetCryptoType()][item.GetMessageType()] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*id.ZeroID][item.
 		GetCryptoType()][item.GetMessageType()] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*item.GetSender()][item.GetCryptoType()][0] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*id.ZeroID][item.GetCryptoType()][0] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*item.GetSender()][format.None][0] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*id.ZeroID][format.None][0] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	// Match all, but with generic outer type
 	for _, listener := range lm.listeners[*item.GetSender()][format.None][item.GetMessageType()] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 	for _, listener := range lm.listeners[*id.ZeroID][format.None][item.GetMessageType()] {
-		matches = append(matches, listener)
+		matches = appendIfUnique(matches, listener)
 	}
 
 	return matches
+}
+
+func appendIfUnique(matches []*listenerRecord, newListener *listenerRecord) []*listenerRecord {
+	// Search for the listener ID
+	found := false
+	for _, l := range matches {
+        found = found || (l.id == newListener.id)
+	}
+	if !found {
+		// If we didn't find it, it's OK to append it to the slice
+		return append(matches, newListener)
+	} else {
+		// We already matched this listener, and shouldn't append it
+		return matches
+	}
 }
 
 // Broadcast a message to the appropriate listeners

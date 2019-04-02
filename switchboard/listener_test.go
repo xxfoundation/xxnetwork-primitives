@@ -353,7 +353,7 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 		CryptoType:  0,
 		MessageType: 3,
 	})
-	if l.NumHeard != 1 {
+	if l.NumHeard != 0 {
 		t.Error("Listener should not have heard")
 	}
 
@@ -365,7 +365,7 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 		CryptoType:  5,
 		MessageType: 0,
 	})
-	if l.NumHeard != 1 {
+	if l.NumHeard != 0 {
 		t.Error("Listener should not have heard")
 	}
 
@@ -382,7 +382,7 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 	}
 }
 
-func TestListenerMap_SpecificMessageType(t *testing.T) {
+func TestListenerMap_ZeroCryptoType(t *testing.T) {
 	listeners := NewSwitchboard()
 	l := &MockListener{}
 	// This listener should always get exactly one message if the messageType
@@ -404,12 +404,38 @@ func TestListenerMap_SpecificMessageType(t *testing.T) {
 	l.NumHeard = 0
 	// Should match once
 	listeners.Speak(&Message{
-		Contents:    []byte("Test 0"),
+		Contents:    []byte("Test 1"),
 		Sender:      id.NewUserFromUint(8, t),
 		CryptoType:  0,
 		MessageType: 3,
 	})
 	if l.NumHeard != 1 {
 		t.Error("Listener should have heard once")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 2"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 0,
+	})
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 3"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 0,
+	})
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
 	}
 }
