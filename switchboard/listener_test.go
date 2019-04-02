@@ -26,8 +26,8 @@ type MockListener struct {
 type Message struct {
 	Contents  []byte
 	Sender    *id.User
-	MessageType int32
 	CryptoType format.CryptoType
+	MessageType int32
 }
 
 func (m *Message) GetSender() *id.User {
@@ -321,5 +321,95 @@ func TestListenerMap_Unregister(t *testing.T) {
 	if len(listeners.listeners[*specificUser][specificCryptoType][specificMessageType]) != 0 {
 		t.Error("The listener was still in the map after we stopped" +
 			" listening on it")
+	}
+}
+
+// The following tests show correct behavior in certain type situations.
+// In all cases, the listeners are listening to all users, because these tests
+// are about types.
+// This test demonstrates correct behavior when the crypto and message types
+// are both specified.
+func TestListenerMap_SpecificListener(t *testing.T) {
+	listeners := NewSwitchboard()
+	l := &MockListener{}
+	listeners.Register(id.ZeroID, 5, 3, l)
+	// Should match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 0"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 1"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should not have heard")
+	}
+
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 2"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 0,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should not have heard")
+	}
+
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 3"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 0,
+	})
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
+	}
+}
+
+func TestListenerMap_SpecificMessageType(t *testing.T) {
+	listeners := NewSwitchboard()
+	l := &MockListener{}
+	// This listener should always get exactly one message if the messageType
+	// is 3. The crypto type used should not affect this behavior.
+	listeners.Register(id.ZeroID, 0, 3, l)
+
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 0"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 0"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard once")
 	}
 }
