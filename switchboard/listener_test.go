@@ -439,3 +439,119 @@ func TestListenerMap_ZeroCryptoType(t *testing.T) {
 		t.Error("Listener should not have heard")
 	}
 }
+
+func TestBothTypesZeroListener(t *testing.T) {
+	listeners := NewSwitchboard()
+	l := &MockListener{}
+	// This listener should always get exactly one message from all received
+	// messages
+	listeners.Register(id.ZeroID, 0, 0, l)
+
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 0"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 1"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 2"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 0,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 3"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 0,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+}
+
+func TestSpecificCryptoType(t *testing.T) {
+	listeners := NewSwitchboard()
+	l := &MockListener{}
+	// This listener should always get exactly one message from all received
+	// messages
+	listeners.Register(id.ZeroID, 5, 0, l)
+
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 0"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 3,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 1"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 3,
+	})
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should not match
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 2"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  0,
+		MessageType: 0,
+	})
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
+	}
+
+	// Reset the count
+	l.NumHeard = 0
+	// Should match once
+	listeners.Speak(&Message{
+		Contents:    []byte("Test 3"),
+		Sender:      id.NewUserFromUint(8, t),
+		CryptoType:  5,
+		MessageType: 0,
+	})
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
+	}
+}
