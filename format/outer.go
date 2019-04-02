@@ -1,10 +1,10 @@
 package format
 
 // Describes the encryption formatting of a message
-type OuterType uint32
+type CryptoType uint32
 
 const (
-	None OuterType = iota
+	None CryptoType = iota
 	Unencrypted
 	E2E
 	Garbled
