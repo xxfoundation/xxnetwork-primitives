@@ -9,6 +9,5 @@ const (
 	E2E
 	Garbled
 	Error
-	RekeyTrigger
 	Rekey
 )
