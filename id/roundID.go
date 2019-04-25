@@ -6,4 +6,4 @@
 
 package id
 
-type Node uint64
+type Round uint64
