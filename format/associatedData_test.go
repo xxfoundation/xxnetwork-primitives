@@ -83,13 +83,13 @@ func TestSetUser(t *testing.T) {
 	u := new(id.User).SetUints(&[4]uint64{3298561, 1083657, 2836259, 187653})
 	payload := NewPayload()
 	payload.SetSender(u)
-	if !id.Equal(u, payload.GetSender()) {
+	if !u.Cmp(payload.GetSender()) {
 		t.Errorf("Sender not set correctly. Got: %x, expected %x",
 			payload.GetSender(), u)
 	}
 	data := NewAssociatedData()
 	data.SetRecipient(u)
-	if !id.Equal(u, data.GetRecipient()) {
+	if !u.Cmp(data.GetRecipient()) {
 		t.Errorf("Recipient not set correctly. Got: %x, expected %x",
 			data.GetRecipient(), u)
 	}
