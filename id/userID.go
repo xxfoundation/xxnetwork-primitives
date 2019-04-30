@@ -105,8 +105,8 @@ func (u *User) Bytes() []byte {
 }
 
 // Utility function to determine whether two user IDs are equal
-func Equal(lhs *User, rhs *User) bool {
-	return *lhs == *rhs
+func (u *User) Cmp(y *User) bool {
+	return *u == *y
 }
 
 func (u *User) DeepCopy() *User {
