@@ -12,7 +12,7 @@ import (
 func TestNodeID_SetBytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(NodeID).SetBytes(idBytes)
+	id := new(Node).SetBytes(idBytes)
 
 	if !bytes.Equal(id[:], idBytes) {
 		t.Errorf("SetBytes() incorrectly set the NodeID bytes"+
@@ -24,7 +24,7 @@ func TestNodeID_SetBytes(t *testing.T) {
 // array of all zeros.
 func TestNodeID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
-	id := new(NodeID).SetBytes(idBytes)
+	id := new(Node).SetBytes(idBytes)
 
 	if !bytes.Equal(id[:], make([]byte, NodeIdLen)) {
 		t.Errorf("SetBytes() on nil data did not set all bytes to zero"+
@@ -36,7 +36,7 @@ func TestNodeID_SetBytes_Error(t *testing.T) {
 func TestNodeID_Bytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(NodeID).SetBytes(idBytes)
+	id := new(Node).SetBytes(idBytes)
 
 	if !bytes.Equal(id[:], id.Bytes()) {
 		t.Errorf("Bytes() returned incorrect byte slice of NodeID"+
@@ -47,9 +47,9 @@ func TestNodeID_Bytes(t *testing.T) {
 // Tests that Cmp() returns true when two node IDs are equal and returns false
 // when they are not equal.
 func TestNodeID_Cmp(t *testing.T) {
-	id1 := NodeID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	id2 := NodeID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	id3 := NodeID{1, 2, 3, 4, 5, 6, 7, 8, 9, 11}
+	id1 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	id2 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	id3 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 11}
 
 	if !id1.Cmp(&id2) {
 		t.Errorf("Cmp() incorrectly determined the two IDs are not equal"+
@@ -68,7 +68,7 @@ func TestNodeID_DeepCopy(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
 
 	for i := 0; i < 100; i++ {
-		var original NodeID
+		var original Node
 		rng.Read(original[:])
 		deepCopy := (&original).DeepCopy()
 
@@ -92,7 +92,7 @@ func TestNodeID_DeepCopy(t *testing.T) {
 }
 
 func TestNodeID_DeepCopy_Error(t *testing.T) {
-	var original *NodeID
+	var original *Node
 	deepCopy := original.DeepCopy()
 
 	if deepCopy != nil {

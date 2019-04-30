@@ -10,14 +10,14 @@ package id
 const NodeIdLen = 32
 
 // Node ID array
-type NodeID [NodeIdLen]byte
+type Node [NodeIdLen]byte
 
 // SetBytes sets the bytes of the node ID to the provided byte slice and returns
 // it if the byte slice has the correct length. Otherwise, returns a user ID
 // that is all zeroes.
-func (n *NodeID) SetBytes(data []byte) *NodeID {
+func (n *Node) SetBytes(data []byte) *Node {
 	if len(data) != NodeIdLen {
-		return new(NodeID)
+		return new(Node)
 	} else {
 		copy(n[:], data)
 		return n
@@ -25,22 +25,22 @@ func (n *NodeID) SetBytes(data []byte) *NodeID {
 }
 
 // Bytes converts a node ID to a byte slice.
-func (n *NodeID) Bytes() []byte {
+func (n *Node) Bytes() []byte {
 	return n[:]
 }
 
 // Equals determines whether two node IDs are the same.
-func (n *NodeID) Cmp(y *NodeID) bool {
+func (n *Node) Cmp(y *Node) bool {
 	return *n == *y
 }
 
 // DeepCopy creates a completely new copy of the node ID.
-func (n *NodeID) DeepCopy() *NodeID {
+func (n *Node) DeepCopy() *Node {
 	if n == nil {
 		return nil
 	}
 
-	var newNode NodeID
+	var newNode Node
 	copy(newNode[:], (*n)[:])
 
 	return &newNode
