@@ -69,7 +69,7 @@ func TestUserID_SetBytes(t *testing.T) {
 func TestUserID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
 	id := new(User).SetBytes(idBytes)
-	if !Equal(id, ZeroID) {
+	if !id.Cmp(ZeroID) {
 		t.Error("Got a non-zero ID out of setting the bytes, but shouldn't have")
 	}
 	if id != nil {
@@ -101,15 +101,15 @@ func TestUserID_Bytes(t *testing.T) {
 
 // Proves that equal returns true when two IDs are equal and returns false when
 // they aren't
-func TestEqual(t *testing.T) {
+func TestUser_Cmp(t *testing.T) {
 	id1 := User{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	id2 := User{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	id3 := User{1, 2, 3, 4, 5, 6, 7, 8, 9, 11}
 
-	if !Equal(&id1, &id2) {
+	if !id1.Cmp(&id2) {
 		t.Error("ID 1 and 2 should have been equal, but weren't")
 	}
-	if Equal(&id3, &id1) {
+	if id3.Cmp(&id1) {
 		t.Error("ID 1 and 3 shouldn't have been equal, but were")
 	}
 }
