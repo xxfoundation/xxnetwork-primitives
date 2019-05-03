@@ -101,3 +101,22 @@ func TestNodeID_DeepCopy_Error(t *testing.T) {
 			deepCopy, original)
 	}
 }
+
+func TestNode_String(t *testing.T) {
+    // A node ID should produce the same string each time if the underlying data
+    // is the same
+	id1 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	id2 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    // However, if you change it, the produced string should differ
+	id3 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 11}
+
+    if id1.String() != id2.String() {
+        t.Error("id1 and id2 are identical, " +
+        	"and the strings they produce should be identical, but aren't")
+	}
+	if id3.String() == id1.String() {
+		t.Error("id1 and id3 are not identical, " +
+			"and the strings they produce should not be identical, " +
+			"but they are")
+	}
+}
