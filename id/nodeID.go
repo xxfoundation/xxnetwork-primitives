@@ -6,6 +6,8 @@
 
 package id
 
+import "encoding/base64"
+
 // Length of node IDs in bytes
 const NodeIdLen = 32
 
@@ -44,4 +46,10 @@ func (n *Node) DeepCopy() *Node {
 	copy(newNode[:], (*n)[:])
 
 	return &newNode
+}
+
+// String() implements Stringer, and allows node IDs to be used as connection IDs
+// Currently, it just base64 encodes the node ID
+func (n *Node) String() string {
+	return base64.StdEncoding.EncodeToString(n.Bytes())
 }
