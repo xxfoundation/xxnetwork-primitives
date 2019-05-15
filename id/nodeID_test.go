@@ -7,27 +7,27 @@ import (
 	"testing"
 )
 
-// Tests that setting the bytes with SetBytes() populates the node ID with all
+// Tests that setting the bytes with NewNodeFromBytes() populates the node ID with all
 // the same bytes.
 func TestNodeID_SetBytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], idBytes) {
-		t.Errorf("SetBytes() incorrectly set the NodeID bytes"+
+		t.Errorf("NewNodeFromBytes() incorrectly set the NodeID bytes"+
 			"\n\treceived: %v\n\texpected: %v", id[:], idBytes)
 	}
 }
 
-// Tests that providing invalid input (wrong length) to SetBytes() returns an
+// Tests that providing invalid input (wrong length) to NewNodeFromBytes() returns an
 // array of all zeros.
 func TestNodeID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], make([]byte, NodeIdLen)) {
-		t.Errorf("SetBytes() on nil data did not set all bytes to zero"+
+		t.Errorf("NewNodeFromBytes() on nil data did not set all bytes to zero"+
 			"\n\treceived: %v\n\texpected: %v", id[:], make([]byte, NodeIdLen))
 	}
 }
@@ -36,7 +36,7 @@ func TestNodeID_SetBytes_Error(t *testing.T) {
 func TestNodeID_Bytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], id.Bytes()) {
 		t.Errorf("Bytes() returned incorrect byte slice of NodeID"+
