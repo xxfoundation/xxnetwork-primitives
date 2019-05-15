@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ func TestUserID_RegistrationCode(t *testing.T) {
 // Proves that results from setting up a new user ID from one uint64 are as
 // expected, i.e. the first 3 uints worth of space are zero and the last uint
 // worth of space is filled.
-// You shouldn't use NewUserFromUint in production code! Use SetUints instead
+// You shouldn't use NewUserFromUint in production code! Use NewUserFromUints instead
 // and have the first three uints be zero.
 // I wrote NewUserFromUint for compatibility with a lot of our tests that
 // populated user IDs from a single uint64 and don't care too much about
@@ -58,7 +58,7 @@ func TestNewUserFromUint(t *testing.T) {
 func TestUserID_SetBytes(t *testing.T) {
 	idBytes := make([]byte, UserLen)
 	rand.Read(idBytes)
-	id := new(User).SetBytes(idBytes)
+	id := NewUserFromBytes(idBytes)
 	if !bytes.Equal(id[:], idBytes) {
 		t.Error("NewNodeFromBytes didn't set all the bytes correctly")
 	}
@@ -68,7 +68,7 @@ func TestUserID_SetBytes(t *testing.T) {
 // invalid result
 func TestUserID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
-	id := new(User).SetBytes(idBytes)
+	id := NewUserFromBytes(idBytes)
 	if !id.Cmp(ZeroID) {
 		t.Error("Got a non-zero ID out of setting the bytes, but shouldn't have")
 	}
@@ -76,10 +76,10 @@ func TestUserID_SetBytes_Error(t *testing.T) {
 	}
 }
 
-// Proves that SetUints populates data all over the user ID as expected
+// Proves that NewUserFromUints populates data all over the user ID as expected
 func TestUserID_SetUints(t *testing.T) {
 	uints := [4]uint64{798264, 350789, 34076, 154268}
-	id := new(User).SetUints(&uints)
+	id := NewUserFromUints(&uints)
 	for i := 0; i < len(uints); i++ {
 		if binary.BigEndian.Uint64(id[i*8:]) != uints[i] {
 			t.Errorf("Uint64 differed at index %v", i)
@@ -92,7 +92,7 @@ func TestUserID_SetUints(t *testing.T) {
 func TestUserID_Bytes(t *testing.T) {
 	idBytes := make([]byte, UserLen)
 	rand.Read(idBytes)
-	id := new(User).SetBytes(idBytes)
+	id := NewUserFromBytes(idBytes)
 	if !bytes.Equal(idBytes, id.Bytes()) {
 		t.Error("Surprisingly, " +
 			"the Bytes() method didn't return an equivalent byteslice")

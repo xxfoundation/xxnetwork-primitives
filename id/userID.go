@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -34,7 +34,7 @@ var ZeroID *User
 
 func init() {
 	// A zero ID should have all its bytes set to zero
-	ZeroID = new(User).SetBytes(make([]byte, UserLen))
+	ZeroID = NewUserFromBytes(make([]byte, UserLen))
 }
 
 // Length of registration code in raw bytes
@@ -75,27 +75,30 @@ func NewUserFromUint(newId uint64, t *testing.T) *User {
 	return &result
 }
 
-// Since user IDs are 256 bits long, you need four uint64s to be able to set
+// NewUserFromUints creates a user from uint64 slice of length 4.
+// Since user IDs are 256 bits long, you need 4 uint64s to be able to set
 // all the bits with uints. All the uints are big-endian, and are put in the
 // ID in big-endian order above that.
-func (u *User) SetUints(uints *[4]uint64) *User {
+func NewUserFromUints(uints *[4]uint64) *User {
+	user := new(User)
 	for i := range uints {
-		binary.BigEndian.PutUint64(u[i*8:], uints[i])
+		binary.BigEndian.PutUint64(user[i*8:], uints[i])
 	}
-	return u
+	return user
 }
 
 // Returns a user ID set to the contents of the byte slice if the byte slice
 // has the correct length
 // Otherwise, returns a user ID that's all zeroes
-func (u *User) SetBytes(data []byte) *User {
+func NewUserFromBytes(data []byte) *User {
+	user := new(User)
 	if len(data) != UserLen {
 		// Return a user ID with all zeroes which should get rejected somewhere
 		// along the line due to cryptographic properties that the system provides
-		return new(User)
+		return user
 	} else {
-		copy(u[:], data)
-		return u
+		copy(user[:], data)
+		return user
 	}
 }
 
