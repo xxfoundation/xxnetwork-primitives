@@ -87,19 +87,17 @@ func NewUserFromUints(uints *[4]uint64) *User {
 	return user
 }
 
-// Returns a user ID set to the contents of the byte slice if the byte slice
-// has the correct length
-// Otherwise, returns a user ID that's all zeroes
+// Returns a user ID set to the contents of the byte slice
+// if the byte slice has the correct length.
+// Otherwise, returns a user ID that's all zeroes which
+// should get rejected somewhere along the line due
+// to cryptographic properties that the system provides
 func NewUserFromBytes(data []byte) *User {
 	user := new(User)
-	if len(data) != UserLen {
-		// Return a user ID with all zeroes which should get rejected somewhere
-		// along the line due to cryptographic properties that the system provides
-		return user
-	} else {
+	if len(data) == UserLen {
 		copy(user[:], data)
-		return user
 	}
+	return user
 }
 
 // Utility function to convert a user ID to a byte slice
