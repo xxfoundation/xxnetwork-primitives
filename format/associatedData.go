@@ -107,7 +107,7 @@ func (r *AssociatedData) GetRecipientID() []byte {
 }
 
 func (r *AssociatedData) GetRecipient() *id.User {
-	return new(id.User).SetBytes(r.recipientID)
+	return id.NewUserFromBytes(r.recipientID)
 }
 
 // Returns number of bytes copied

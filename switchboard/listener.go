@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -8,8 +8,8 @@ package switchboard
 
 import (
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/elixxir/primitives/id"
 	"gitlab.com/elixxir/primitives/format"
+	"gitlab.com/elixxir/primitives/id"
 	"reflect"
 	"strconv"
 	"sync"
@@ -46,7 +46,7 @@ var Listeners = NewSwitchboard()
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
 		listeners: make(map[id.User]map[format.CryptoType]map[int32][]*listenerRecord),
-		lastID: 0,
+		lastID:    0,
 	}
 }
 
@@ -152,7 +152,7 @@ func appendIfUnique(matches []*listenerRecord, newListener *listenerRecord) []*l
 	// Search for the listener ID
 	found := false
 	for _, l := range matches {
-        found = found || (l.id == newListener.id)
+		found = found || (l.id == newListener.id)
 	}
 	if !found {
 		// If we didn't find it, it's OK to append it to the slice

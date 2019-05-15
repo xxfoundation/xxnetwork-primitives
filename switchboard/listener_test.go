@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -8,11 +8,11 @@ package switchboard
 
 import (
 	"bytes"
+	"gitlab.com/elixxir/primitives/format"
 	"gitlab.com/elixxir/primitives/id"
 	"sync"
 	"testing"
 	"time"
-	"gitlab.com/elixxir/primitives/format"
 )
 
 type MockListener struct {
@@ -24,9 +24,9 @@ type MockListener struct {
 }
 
 type Message struct {
-	Contents  []byte
-	Sender    *id.User
-	CryptoType format.CryptoType
+	Contents    []byte
+	Sender      *id.User
+	CryptoType  format.CryptoType
 	MessageType int32
 }
 
@@ -55,7 +55,7 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 	}
 }
 
-var specificUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 5})
+var specificUser = id.NewUserFromUints(&[4]uint64{0, 0, 0, 5})
 var specificMessageType int32 = 5
 var specificCryptoType format.CryptoType = 2
 var delay = 10 * time.Millisecond
@@ -77,10 +77,10 @@ func TestListenerMap_SpeakOne(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		Contents:  []byte("hmmmm"),
-		Sender:    specificUser,
+		Contents:    []byte("hmmmm"),
+		Sender:      specificUser,
 		MessageType: specificMessageType,
-		CryptoType: specificCryptoType,
+		CryptoType:  specificCryptoType,
 	})
 
 	// determine whether the listener heard the message
@@ -99,10 +99,10 @@ func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
 	// speak
 	for i := 0; i < 20; i++ {
 		go listeners.Speak(&Message{
-			Contents:  make([]byte, 0),
-			Sender:    specificUser,
+			Contents:    make([]byte, 0),
+			Sender:      specificUser,
 			MessageType: specificMessageType,
-			CryptoType: specificCryptoType,
+			CryptoType:  specificCryptoType,
 		})
 	}
 
@@ -122,9 +122,9 @@ func TestListenerMap_SpeakToAnother(t *testing.T) {
 	// speak
 	listeners.Speak(&Message{
 		MessageType: specificMessageType,
-		CryptoType: specificCryptoType,
-		Contents:  make([]byte, 0),
-		Sender:    nonzeroUser,
+		CryptoType:  specificCryptoType,
+		Contents:    make([]byte, 0),
+		Sender:      nonzeroUser,
 	})
 
 	// determine whether the listener heard the message
@@ -143,9 +143,9 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 	// speak
 	listeners.Speak(&Message{
 		MessageType: specificMessageType + 1,
-		CryptoType: specificCryptoType + 1,
-		Contents:  make([]byte, 0),
-		Sender:    specificUser,
+		CryptoType:  specificCryptoType + 1,
+		Contents:    make([]byte, 0),
+		Sender:      specificUser,
 	})
 
 	// determine whether the listener heard the message
@@ -158,7 +158,7 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 }
 
 var zeroUser = id.ZeroID
-var nonzeroUser = new(id.User).SetUints(&[4]uint64{0, 0, 0, 786})
+var nonzeroUser = id.NewUserFromUints(&[4]uint64{0, 0, 0, 786})
 var zeroMessageType int32
 var zeroCryptoType format.CryptoType
 
@@ -179,10 +179,10 @@ func TestListenerMap_SpeakWildcard(t *testing.T) {
 
 	// speak
 	listeners.Speak(&Message{
-		Contents:  make([]byte, 0),
-		Sender:    specificUser,
+		Contents:    make([]byte, 0),
+		Sender:      specificUser,
 		MessageType: specificMessageType + 1,
-		CryptoType: specificCryptoType + 1,
+		CryptoType:  specificCryptoType + 1,
 	})
 
 	// determine whether the listener heard the message
@@ -217,9 +217,9 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
 			MessageType: messageType,
-			CryptoType: specificCryptoType,
-			Contents:  make([]byte, 0),
-			Sender:    specificUser,
+			CryptoType:  specificCryptoType,
+			Contents:    make([]byte, 0),
+			Sender:      specificUser,
 		})
 	}
 	// send to all types for a different user
@@ -227,9 +227,9 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
 			MessageType: messageType,
-			CryptoType: specificCryptoType,
-			Contents:  make([]byte, 0),
-			Sender:    otherUser,
+			CryptoType:  specificCryptoType,
+			Contents:    make([]byte, 0),
+			Sender:      otherUser,
 		})
 	}
 
@@ -268,15 +268,15 @@ func TestListenerMap_SpeakFallback(t *testing.T) {
 	// send exactly one message to each of them
 	listeners.Speak(&Message{
 		MessageType: specificMessageType,
-		CryptoType: specificCryptoType,
-		Contents:  make([]byte, 0),
-		Sender:    specificUser,
+		CryptoType:  specificCryptoType,
+		Contents:    make([]byte, 0),
+		Sender:      specificUser,
 	})
 	listeners.Speak(&Message{
 		MessageType: specificMessageType + 1,
-		CryptoType: specificCryptoType + 1,
-		Contents:  make([]byte, 0),
-		Sender:    specificUser,
+		CryptoType:  specificCryptoType + 1,
+		Contents:    make([]byte, 0),
+		Sender:      specificUser,
 	})
 
 	time.Sleep(delay)
@@ -298,9 +298,9 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 	expected := []byte{0x01, 0x02, 0x03, 0x04}
 	listeners.Speak(&Message{
 		MessageType: specificMessageType,
-		CryptoType: specificCryptoType,
-		Contents:  expected,
-		Sender:    specificUser,
+		CryptoType:  specificCryptoType,
+		Contents:    expected,
+		Sender:      specificUser,
 	})
 	time.Sleep(delay)
 	if !bytes.Equal(listener.LastMessage, expected) {
