@@ -60,11 +60,11 @@ func TestUserID_SetBytes(t *testing.T) {
 	rand.Read(idBytes)
 	id := new(User).SetBytes(idBytes)
 	if !bytes.Equal(id[:], idBytes) {
-		t.Error("SetBytes didn't set all the bytes correctly")
+		t.Error("NewNodeFromBytes didn't set all the bytes correctly")
 	}
 }
 
-// Proves that providing invalid input (wrong length) to SetBytes() gives an
+// Proves that providing invalid input (wrong length) to NewNodeFromBytes() gives an
 // invalid result
 func TestUserID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte

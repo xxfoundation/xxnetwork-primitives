@@ -14,15 +14,16 @@ const NodeIdLen = 32
 // Node ID array
 type Node [NodeIdLen]byte
 
-// SetBytes sets the bytes of the node ID to the provided byte slice and returns
-// it if the byte slice has the correct length. Otherwise, returns a user ID
-// that is all zeroes.
-func (n *Node) SetBytes(data []byte) *Node {
+// NewNodeFromBytes returns a new Node ID from bytes slice if
+// the byte slice has the correct length. Otherwise, it returns
+// a user ID that is all zeroes.
+func NewNodeFromBytes(data []byte) *Node {
+	node := new(Node)
 	if len(data) != NodeIdLen {
-		return new(Node)
+		return node
 	} else {
-		copy(n[:], data)
-		return n
+		copy(node[:], data)
+		return node
 	}
 }
 
