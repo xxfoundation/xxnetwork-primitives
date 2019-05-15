@@ -15,16 +15,14 @@ const NodeIdLen = 32
 type Node [NodeIdLen]byte
 
 // NewNodeFromBytes returns a new Node ID from bytes slice if
-// the byte slice has the correct length. Otherwise, it returns
-// a user ID that is all zeroes.
+// the byte slice has the correct length.
+// Otherwise, it returns a user ID that is all zeroes.
 func NewNodeFromBytes(data []byte) *Node {
 	node := new(Node)
-	if len(data) != NodeIdLen {
-		return node
-	} else {
+	if len(data) == NodeIdLen {
 		copy(node[:], data)
-		return node
 	}
+	return node
 }
 
 // Bytes converts a node ID to a byte slice.
