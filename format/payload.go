@@ -66,7 +66,7 @@ func (p *Payload) GetSenderID() []byte {
 
 // Wrap the sender ID in its type
 func (p *Payload) GetSender() *id.User {
-	result := new(id.User).SetBytes(p.senderID[:])
+	result := id.NewUserFromBytes(p.senderID[:])
 	return result
 }
 

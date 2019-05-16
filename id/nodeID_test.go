@@ -7,27 +7,27 @@ import (
 	"testing"
 )
 
-// Tests that setting the bytes with SetBytes() populates the node ID with all
+// Tests that setting the bytes with NewNodeFromBytes() populates the node ID with all
 // the same bytes.
 func TestNodeID_SetBytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], idBytes) {
-		t.Errorf("SetBytes() incorrectly set the NodeID bytes"+
+		t.Errorf("NewNodeFromBytes() incorrectly set the NodeID bytes"+
 			"\n\treceived: %v\n\texpected: %v", id[:], idBytes)
 	}
 }
 
-// Tests that providing invalid input (wrong length) to SetBytes() returns an
+// Tests that providing invalid input (wrong length) to NewNodeFromBytes() returns an
 // array of all zeros.
 func TestNodeID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], make([]byte, NodeIdLen)) {
-		t.Errorf("SetBytes() on nil data did not set all bytes to zero"+
+		t.Errorf("NewNodeFromBytes() on nil data did not set all bytes to zero"+
 			"\n\treceived: %v\n\texpected: %v", id[:], make([]byte, NodeIdLen))
 	}
 }
@@ -36,7 +36,7 @@ func TestNodeID_SetBytes_Error(t *testing.T) {
 func TestNodeID_Bytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
-	id := new(Node).SetBytes(idBytes)
+	id := NewNodeFromBytes(idBytes)
 
 	if !bytes.Equal(id[:], id.Bytes()) {
 		t.Errorf("Bytes() returned incorrect byte slice of NodeID"+
@@ -103,16 +103,16 @@ func TestNodeID_DeepCopy_Error(t *testing.T) {
 }
 
 func TestNode_String(t *testing.T) {
-    // A node ID should produce the same string each time if the underlying data
-    // is the same
+	// A node ID should produce the same string each time if the underlying data
+	// is the same
 	id1 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	id2 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    // However, if you change it, the produced string should differ
+	// However, if you change it, the produced string should differ
 	id3 := Node{1, 2, 3, 4, 5, 6, 7, 8, 9, 11}
 
-    if id1.String() != id2.String() {
-        t.Error("id1 and id2 are identical, " +
-        	"and the strings they produce should be identical, but aren't")
+	if id1.String() != id2.String() {
+		t.Error("id1 and id2 are identical, " +
+			"and the strings they produce should be identical, but aren't")
 	}
 	if id3.String() == id1.String() {
 		t.Error("id1 and id3 are not identical, " +

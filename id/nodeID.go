@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,16 +14,15 @@ const NodeIdLen = 32
 // Node ID array
 type Node [NodeIdLen]byte
 
-// SetBytes sets the bytes of the node ID to the provided byte slice and returns
-// it if the byte slice has the correct length. Otherwise, returns a user ID
-// that is all zeroes.
-func (n *Node) SetBytes(data []byte) *Node {
-	if len(data) != NodeIdLen {
-		return new(Node)
-	} else {
-		copy(n[:], data)
-		return n
+// NewNodeFromBytes returns a new Node ID from bytes slice if
+// the byte slice has the correct length.
+// Otherwise, it returns a user ID that is all zeroes.
+func NewNodeFromBytes(data []byte) *Node {
+	node := new(Node)
+	if len(data) == NodeIdLen {
+		copy(node[:], data)
 	}
+	return node
 }
 
 // Bytes converts a node ID to a byte slice.

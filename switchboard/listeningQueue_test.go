@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2019 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -26,16 +26,16 @@ func TestListeningQueue_Hear(t *testing.T) {
 
 	var items []Item
 
-	user := new(id.User).SetUints(&[4]uint64{0, 0, 0, 3})
+	user := id.NewUserFromUints(&[4]uint64{0, 0, 0, 3})
 	// Hopefully this would be enough to cause a race condition
 	for j := 0; j < numThreads; j++ {
 		go func() {
 			for i := 0; i < numItems; i++ {
 				s.Speak(&Message{
-					Contents:  []byte{},
-					Sender:    user,
+					Contents:    []byte{},
+					Sender:      user,
 					MessageType: 5,
-					CryptoType: 2,
+					CryptoType:  2,
 				})
 				wg.Done()
 				time.Sleep(time.Millisecond)
@@ -45,13 +45,13 @@ func TestListeningQueue_Hear(t *testing.T) {
 	// Listen to the heard messages
 	// If there aren't enough items, this will block forever instead of failing
 	// the test
-	for len(items) < numThreads * numItems {
+	for len(items) < numThreads*numItems {
 		items = append(items, <-queue)
 	}
 	// Check that all items are represented
 	wg.Wait()
-	time.Sleep(50*time.Millisecond)
-	if len(items) != numThreads * numItems {
+	time.Sleep(50 * time.Millisecond)
+	if len(items) != numThreads*numItems {
 		t.Error("Didn't get the expected number of items on the channel")
 	}
 	// Make sure there isn't anything else available on the channel: there

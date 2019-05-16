@@ -1,3 +1,9 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2019 Privategrity Corporation                                   /
+//                                                                             /
+// All rights reserved.                                                        /
+////////////////////////////////////////////////////////////////////////////////
+
 package circuit
 
 import (
@@ -306,7 +312,7 @@ func makeTestingNodeIdList(len int) []*id.Node {
 	for i := 0; i < len; i++ {
 		nodeIdBytes := make([]byte, id.NodeIdLen)
 		nodeIdBytes[0] = byte(i + 1)
-		newNodeId := (&id.Node{}).SetBytes(nodeIdBytes)
+		newNodeId := id.NewNodeFromBytes(nodeIdBytes)
 		nodeIdList = append(nodeIdList, newNodeId)
 	}
 
@@ -316,6 +322,6 @@ func makeTestingNodeIdList(len int) []*id.Node {
 func makeNodeId(b byte) *id.Node {
 	invalidNodeIdBytes := make([]byte, id.NodeIdLen)
 	invalidNodeIdBytes[0] = byte(b)
-	invalidNodeID := (&id.Node{}).SetBytes(invalidNodeIdBytes)
+	invalidNodeID := id.NewNodeFromBytes(invalidNodeIdBytes)
 	return invalidNodeID
 }
