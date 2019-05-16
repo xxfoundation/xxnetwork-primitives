@@ -80,7 +80,7 @@ func testVariableField(get func() []byte, set func([]byte) int, ser func() []byt
 
 // Make sure that SetRecipient and SetSender set the field correctly with id.User
 func TestSetUser(t *testing.T) {
-	u := new(id.User).SetUints(&[4]uint64{3298561, 1083657, 2836259, 187653})
+	u := id.NewUserFromUints(&[4]uint64{3298561, 1083657, 2836259, 187653})
 	payload := NewPayload()
 	payload.SetSender(u)
 	if !u.Cmp(payload.GetSender()) {

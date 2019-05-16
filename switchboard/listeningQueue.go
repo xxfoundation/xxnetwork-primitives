@@ -7,8 +7,8 @@
 package switchboard
 
 import (
-	"gitlab.com/elixxir/primitives/id"
 	"gitlab.com/elixxir/primitives/format"
+	"gitlab.com/elixxir/primitives/id"
 )
 
 type ListeningQueue chan Item
@@ -27,5 +27,5 @@ func (s *Switchboard) ListenChannel(outerType format.CryptoType,
 // switchboard using this method, although because the writes are to adjacent
 // elements, performance is likely to be suboptimal
 func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool) {
-	l<-item
+	l <- item
 }
