@@ -42,9 +42,29 @@ func TestGatewayID_Bytes(t *testing.T) {
 	nodeId := NewNodeFromBytes(idBytes)
 	id := nodeId.NewGateway()
 
-	if !bytes.Equal(id[:], id.Bytes()) {
+	if !bytes.Equal(id.Bytes(), idBytes) {
 		t.Errorf("Bytes() returned incorrect byte slice of Gateway ID"+
-			"\n\treceived: %v\n\texpected: %v", id[:], idBytes)
+			"\n\treceived: %v\n\texpected: %v", id.Bytes(), idBytes)
+	}
+}
+
+// Tests that Bytes() correctly makes a new copy of the bytes.
+func TestGatewayID_Bytes_Copy(t *testing.T) {
+	idBytes := make([]byte, GatewayIdLen)
+	rand.Read(idBytes)
+	nodeId := NewNodeFromBytes(idBytes)
+	id := nodeId.NewGateway()
+
+	gatewayBytes := id.Bytes()
+
+	// Modify the original
+	for j := 0; j < GatewayIdLen; j++ {
+		id[j] = ^id[j]
+	}
+
+	if !bytes.Equal(gatewayBytes, idBytes) {
+		t.Errorf("Bytes() returned incorrect byte slice of Gateway ID"+
+			"\n\treceived: %v\n\texpected: %v", gatewayBytes, idBytes)
 	}
 }
 

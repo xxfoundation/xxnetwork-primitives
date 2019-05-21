@@ -6,7 +6,9 @@
 
 package id
 
-import "encoding/base64"
+import (
+	"encoding/base64"
+)
 
 // Length of gateway IDs in bytes
 const GatewayIdLen = 32
@@ -17,16 +19,21 @@ type Gateway [GatewayIdLen]byte
 // NewGateway returns a new Gateway ID from a Node ID if the byte slice has the
 // correct length. Otherwise, it returns a Gateway ID that is all zeroes.
 func (n *Node) NewGateway() *Gateway {
-	Gateway := new(Gateway)
+	gateway := new(Gateway)
+
 	if len(n) == GatewayIdLen {
-		copy(Gateway[:], n[:])
+		copy(gateway[:], n[:])
 	}
-	return Gateway
+
+	return gateway
 }
 
-// Bytes converts a Gateway ID to a byte slice.
+// Bytes returns a copy of a Gateway ID as a byte slice.
 func (g *Gateway) Bytes() []byte {
-	return g[:]
+	bytes := make([]byte, GatewayIdLen)
+	copy(bytes, g[:])
+
+	return bytes
 }
 
 // Equals determines whether two Gateway IDs are the same.
