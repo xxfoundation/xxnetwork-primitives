@@ -133,7 +133,8 @@ func TestUser_Cmp(t *testing.T) {
 	}
 }
 
-//Test that deep copy returns an exact copy and that changing one does nto change the other
+//Test that deep copy returns an exact copy and that changing one does not
+// change the other
 func TestUser_DeepCopy(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
 	for i := 0; i < 100; i++ {
