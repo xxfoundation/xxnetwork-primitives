@@ -14,9 +14,8 @@ const NodeIdLen = 32
 // Node ID array
 type Node [NodeIdLen]byte
 
-// NewNodeFromBytes returns a new Node ID from bytes slice if
-// the byte slice has the correct length.
-// Otherwise, it returns a user ID that is all zeroes.
+// NewNodeFromBytes returns a new Node ID from bytes slice if the byte slice has
+// the correct length. Otherwise, it returns a user ID that is all zeroes.
 func NewNodeFromBytes(data []byte) *Node {
 	node := new(Node)
 	if len(data) == NodeIdLen {
@@ -50,8 +49,8 @@ func (n *Node) DeepCopy() *Node {
 	return &newNode
 }
 
-// String() implements Stringer, and allows node IDs to be used as connection IDs
-// Currently, it just base64 encodes the node ID
+// String() implements Stringer, and allows node IDs to be used as connection
+// IDs. Currently, it just base64 encodes the node ID
 func (n *Node) String() string {
 	return base64.StdEncoding.EncodeToString(n.Bytes())
 }
