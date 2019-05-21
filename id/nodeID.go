@@ -25,9 +25,12 @@ func NewNodeFromBytes(data []byte) *Node {
 	return node
 }
 
-// Bytes converts a node ID to a byte slice.
+// Bytes returns a copy of a Node ID as a byte slice.
 func (n *Node) Bytes() []byte {
-	return n[:]
+	bytes := make([]byte, NodeIdLen)
+	copy(bytes, n[:])
+
+	return bytes
 }
 
 // Equals determines whether two node IDs are the same.
