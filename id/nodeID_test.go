@@ -20,8 +20,8 @@ func TestNodeID_SetBytes(t *testing.T) {
 	}
 }
 
-// Tests that providing invalid input (wrong length) to NewNodeFromBytes() returns an
-// array of all zeros.
+// Tests that providing invalid input (wrong length) to NewNodeFromBytes()
+// returns an array of all zeros.
 func TestNodeID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
 	id := NewNodeFromBytes(idBytes)
