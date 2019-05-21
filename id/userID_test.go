@@ -143,7 +143,8 @@ func TestUser_DeepCopy(t *testing.T) {
 		deepcopy := (&original).DeepCopy()
 
 		if !reflect.DeepEqual(original, *deepcopy) {
-			t.Errorf("User.DeepCopy: On Attempt %v copy does not equal origonal %v %v", i, original, deepcopy)
+			t.Errorf("User.DeepCopy: On Attempt %v copy does not equal "+
+				"origonal %v %v", i, original, deepcopy)
 		}
 
 		for j := 0; j < UserLen; j++ {
