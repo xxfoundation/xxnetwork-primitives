@@ -99,6 +99,25 @@ func TestUserID_Bytes(t *testing.T) {
 	}
 }
 
+// Tests that Bytes() correctly makes a new copy of the bytes.
+func TestUserID_Bytes_Copy(t *testing.T) {
+	idBytes := make([]byte, UserLen)
+	rand.Read(idBytes)
+	id := NewUserFromBytes(idBytes)
+
+	userBytes := id.Bytes()
+
+	// Modify the original
+	for j := 0; j < UserLen; j++ {
+		id[j] = ^id[j]
+	}
+
+	if !bytes.Equal(userBytes, idBytes) {
+		t.Errorf("Bytes() returned incorrect byte slice of User ID"+
+			"\n\treceived: %v\n\texpected: %v", userBytes, idBytes)
+	}
+}
+
 // Proves that equal returns true when two IDs are equal and returns false when
 // they aren't
 func TestUser_Cmp(t *testing.T) {

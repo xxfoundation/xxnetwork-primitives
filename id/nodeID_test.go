@@ -44,6 +44,25 @@ func TestNodeID_Bytes(t *testing.T) {
 	}
 }
 
+// Tests that Bytes() correctly makes a new copy of the bytes.
+func TestNodeID_Bytes_Copy(t *testing.T) {
+	idBytes := make([]byte, NodeIdLen)
+	rand.Read(idBytes)
+	id := NewNodeFromBytes(idBytes)
+
+	nodeBytes := id.Bytes()
+
+	// Modify the original
+	for j := 0; j < NodeIdLen; j++ {
+		id[j] = ^id[j]
+	}
+
+	if !bytes.Equal(nodeBytes, idBytes) {
+		t.Errorf("Bytes() returned incorrect byte slice of Node ID"+
+			"\n\treceived: %v\n\texpected: %v", nodeBytes, idBytes)
+	}
+}
+
 // Tests that Cmp() returns true when two node IDs are equal and returns false
 // when they are not equal.
 func TestNodeID_Cmp(t *testing.T) {
