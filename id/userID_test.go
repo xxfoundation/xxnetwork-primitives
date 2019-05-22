@@ -29,8 +29,8 @@ func TestUserID_RegistrationCode(t *testing.T) {
 // Proves that results from setting up a new user ID from one uint64 are as
 // expected, i.e. the first 3 uints worth of space are zero and the last uint
 // worth of space is filled.
-// You shouldn't use NewUserFromUint in production code! Use NewUserFromUints instead
-// and have the first three uints be zero.
+// You shouldn't use NewUserFromUint in production code! Use NewUserFromUints
+// instead and have the first three uints be zero.
 // I wrote NewUserFromUint for compatibility with a lot of our tests that
 // populated user IDs from a single uint64 and don't care too much about
 // propagating the whole thing.
