@@ -20,8 +20,8 @@ func TestNodeID_SetBytes(t *testing.T) {
 	}
 }
 
-// Tests that providing invalid input (wrong length) to NewNodeFromBytes() returns an
-// array of all zeros.
+// Tests that providing invalid input (wrong length) to NewNodeFromBytes()
+// returns an array of all zeros.
 func TestNodeID_SetBytes_Error(t *testing.T) {
 	var idBytes []byte
 	id := NewNodeFromBytes(idBytes)
@@ -41,6 +41,25 @@ func TestNodeID_Bytes(t *testing.T) {
 	if !bytes.Equal(id[:], id.Bytes()) {
 		t.Errorf("Bytes() returned incorrect byte slice of NodeID"+
 			"\n\treceived: %v\n\texpected: %v", id[:], idBytes)
+	}
+}
+
+// Tests that Bytes() correctly makes a new copy of the bytes.
+func TestNodeID_Bytes_Copy(t *testing.T) {
+	idBytes := make([]byte, NodeIdLen)
+	rand.Read(idBytes)
+	id := NewNodeFromBytes(idBytes)
+
+	nodeBytes := id.Bytes()
+
+	// Modify the original
+	for j := 0; j < NodeIdLen; j++ {
+		id[j] = ^id[j]
+	}
+
+	if !bytes.Equal(nodeBytes, idBytes) {
+		t.Errorf("Bytes() returned incorrect byte slice of Node ID"+
+			"\n\treceived: %v\n\texpected: %v", nodeBytes, idBytes)
 	}
 }
 
