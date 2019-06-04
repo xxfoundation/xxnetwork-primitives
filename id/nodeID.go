@@ -6,7 +6,11 @@
 
 package id
 
-import "encoding/base64"
+import (
+	"encoding/base64"
+	"encoding/binary"
+	"testing"
+)
 
 // Length of node IDs in bytes
 const NodeIdLen = 32
@@ -21,6 +25,19 @@ func NewNodeFromBytes(data []byte) *Node {
 	if len(data) == NodeIdLen {
 		copy(node[:], data)
 	}
+	return node
+}
+
+// NewNodeFromUInt returns a new Node ID equal to the passed uint
+// Primarily used for testing
+func NewNodeFromUInt(u uint64, t *testing.T) *Node {
+
+	if t == nil {
+		panic("NewNodeFromUInt is just for testing")
+	}
+
+	node := new(Node)
+	binary.BigEndian.PutUint64(node[:], u)
 	return node
 }
 
