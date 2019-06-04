@@ -9,7 +9,7 @@ import (
 
 // Tests that setting the bytes with NewNodeFromBytes() populates the node ID with all
 // the same bytes.
-func TestNodeID_SetBytes(t *testing.T) {
+func TestNewNodeFromBytes(t *testing.T) {
 	idBytes := make([]byte, NodeIdLen)
 	rand.Read(idBytes)
 	id := NewNodeFromBytes(idBytes)
@@ -22,7 +22,7 @@ func TestNodeID_SetBytes(t *testing.T) {
 
 // Tests that providing invalid input (wrong length) to NewNodeFromBytes()
 // returns an array of all zeros.
-func TestNodeID_SetBytes_Error(t *testing.T) {
+func TestNewNodeFromBytes_Error(t *testing.T) {
 	var idBytes []byte
 	id := NewNodeFromBytes(idBytes)
 
@@ -30,6 +30,41 @@ func TestNodeID_SetBytes_Error(t *testing.T) {
 		t.Errorf("NewNodeFromBytes() on nil data did not set all bytes to zero"+
 			"\n\treceived: %v\n\texpected: %v", id[:], make([]byte, NodeIdLen))
 	}
+}
+
+//Tests that node ids generated with NewNodeFromUint are correct
+func TestNewNodeFromUInt(t *testing.T) {
+
+	expected := [][]byte{
+		{175, 191, 100, 177, 150, 127, 140, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{136, 114, 180, 75, 159, 187, 151, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{77, 82, 242, 132, 20, 91, 159, 232, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	}
+
+	rng := rand.New(rand.NewSource(42))
+
+	for i := 0; i < 3; i++ {
+		nodeID := NewNodeFromUInt(rng.Uint64(), t)
+		if !reflect.DeepEqual(expected[i], nodeID[:]) {
+			t.Errorf("NewNodeFromUInt: created node id does not match "+
+				"expected; expected: %v, recieved: %v", expected[i], nodeID[:])
+		}
+	}
+}
+
+//Tests that NewNodeFromUint panics when used improperly
+func TestNewNodeFromUInt_Panic(t *testing.T) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+
+	NewNodeFromUInt(0, nil)
+
+	t.Error("NewNodeFromUInt should have paniced with nil testing.T")
+
 }
 
 // Tests that Bytes() correctly converts a node ID to an identical byte slice.
