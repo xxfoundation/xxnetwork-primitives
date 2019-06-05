@@ -1,1 +1,7 @@
 package: gitlab.com/elixxir/primitives
+import:
+- package: github.com/spacemonkeygo/openssl
+  version: master
+  repo: https://github.com/spacemonkeygo/openssl.git
+  vcs: git
+
