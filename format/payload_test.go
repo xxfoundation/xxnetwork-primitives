@@ -1,11 +1,7 @@
 package format
 
-import (
-	"testing"
-)
-
 // Guarantees that all fields of a NewPayload are the valid length
-func TestNewPayload(t *testing.T) {
+/*func TestNewPayload(t *testing.T) {
 	payload := NewPayload()
 	if len(payload.payloadData) != MP_PAYLOAD_LEN {
 		t.Error("Payload length wasn't right")
@@ -13,10 +9,10 @@ func TestNewPayload(t *testing.T) {
 	if len(payload.senderID) != MP_SID_LEN {
 		t.Error("Sender length wasn't right")
 	}
-}
+}*/
 
 // Test each field of the payload
-func TestPayload(t *testing.T) {
+/*func TestPayload(t *testing.T) {
 	payload := NewPayload()
 	var err error
 	err = testField(payload.GetSenderID, payload.SetSenderID,
@@ -46,4 +42,4 @@ func TestPayload(t *testing.T) {
 	if err != nil {
 		t.Errorf("Payload Split failed: %v", err.Error())
 	}
-}
+}*/

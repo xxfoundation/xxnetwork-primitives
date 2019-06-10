@@ -12,6 +12,7 @@ import (
 
 const (
 	// Length and position of sender ID
+	TOTAL_LEN        = 256
 	MP_SID_LEN   int = id.UserLen
 	MP_SID_START int = 0
 	MP_SID_END   int = MP_SID_START + MP_SID_LEN
