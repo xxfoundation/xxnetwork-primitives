@@ -11,6 +11,12 @@ const (
 	contentsLen   = 399 // 3192 bits
 	contentsStart = 0
 	contentsEnd   = contentsStart + contentsLen
+
+	// The smallest length that the padding can be
+	padMinLen = 11 // 88 bits
+
+	// The initial value of position; indicates content start is unknown
+	invalidPosition = -1
 )
 
 // Structure for the content section of the message points to a subsection of
@@ -31,7 +37,7 @@ type Contents struct {
 func NewContents(newSerial []byte) *Contents {
 	newContents := &Contents{
 		serial:   make([]byte, contentsLen),
-		position: -1,
+		position: invalidPosition,
 	}
 
 	if len(newSerial) == contentsLen {
@@ -61,27 +67,27 @@ func (c *Contents) Set(newSerial []byte) int {
 	}
 }
 
-// SetRightAligned sets the entire serial content right-aligned. The number of
-// bytes copied is returned. If the specified byte array is larger than serial,
-// then it panics.
-func (c *Contents) SetRightAligned(newSerial []byte) int {
-	if len(newSerial) <= contentsLen {
-		c.position = contentsLen - len(newSerial)
-		return copy(c.serial[c.position:], newSerial)
-	} else {
-		panic("new serial is larger than Contents serial")
-	}
-}
-
 // GetRightAligned returns the entire serial content, excluding the padding. If
 // the position of the data is not specified (position < 0), then it panics. The
 // caller can read or write the data within this slice, but cannot change the
 // slice header in the actual structure.
 func (c *Contents) GetRightAligned() []byte {
-	if c.position < 0 {
+	if c.position > invalidPosition {
 		return c.serial[c.position:]
 	} else {
 		panic("invalid padding when getting right-aligned data")
+	}
+}
+
+// SetRightAligned sets the entire serial content right-aligned. The number of
+// bytes copied is returned. If the specified byte array is larger than serial,
+// then it panics.
+func (c *Contents) SetRightAligned(newSerial []byte) int {
+	if len(newSerial) <= contentsLen-padMinLen {
+		c.position = contentsLen - len(newSerial)
+		return copy(c.serial[c.position:], newSerial)
+	} else {
+		panic("new serial is larger than Contents serial")
 	}
 }
 
@@ -93,7 +99,7 @@ func (c *Contents) GetPosition() int {
 
 // DeepCopy creates a copy of Contents.
 func (c *Contents) DeepCopy() *Contents {
-	newCopy := NewContents(nil)
+	newCopy := NewContents(make([]byte, contentsLen))
 	copy(newCopy.serial[:], c.serial)
 
 	return newCopy
