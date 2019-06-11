@@ -16,7 +16,28 @@ const (
 	payloadAEnd   = payloadAStart + subPayloadLen
 	payloadBStart = payloadAEnd
 	payloadBEnd   = payloadBStart + subPayloadLen
+
+	// Length, start index, and end index of grpByte
+	grpByteLen   = 1 // 8 bits
+	grpByteStart = associatedDataEnd
+	grpByteEnd   = grpByteStart + grpByteLen
 )
+
+/*                               Message Structure (not to scale)
++----------------------------------------------------------------------------------------+
+|                                         Message                                        |
+|                                        4096 bits                                       |
++----------------------------------------------------------------------------------------+
+|                  payloadA                  |                 payloadB                  |
+|                 2048 bits                  |                2048 bits                  |
++------------------------------------+-------+---------------------------------+---------+
+|              Contents              |             AssociatedData              | grpByte |
+|              3192 bits             |                896 bits                 | 8 bits  |
++------------------------------------+-----------------------------------------+         |
+|     padding     |       data       | recipientID | keyFP | timestamp |  mac  |         |
+|   88–3192 bits  |    0–3104 bits   |   256 bits  | 256 b |  128 bits | 256 b |         |
++-----------------+------------------+-------------+-------+-----------+-------+---------+
+*/
 
 // Structure for the message stores all the data serially. Subsequent fields
 // point to subsections of the serialised data so that the message is always
@@ -27,23 +48,8 @@ type Message struct {
 	AssociatedData                // points to the associate data of the message
 	payloadA       []byte         // points to the first half of the message
 	payloadB       []byte         // points to the second half of the message
+	grpByte        []byte         // zero value byte ensures payloadB is in the group
 }
-
-/*
-+----------------------------------------------------------------------------------------+
-|                                         Message                                        |
-|                                        4096 bits                                       |
-+----------------------------------------------------------------------------------------+
-|                  payloadA                  |                 payloadB                  |
-|                 2048 bits                  |                2048 bits                  |
-+------------------------------------+-------+-------------------------------------------+
-|              Contents              |                   AssociatedData                  |
-|              3192 bits             |                      904 bits                     |
-+------------------------------------+---------------------------------------------------+
-|     padding     |       data       | recipientID | keyFP | timestamp |  mac  | grpByte |
-|   88–3192 bits  |    0–3104 bits   |    256 b    | 256 b |   128 b   | 256 b |   8 b   |
-+-----------------+------------------+-------------+-------+-----------+-------+---------+
-*/
 
 // NewMessage creates a new empty message. It points the contents, associated
 // data, payload A, and payload B, to their respective parts of master.
@@ -55,8 +61,11 @@ func NewMessage() *Message {
 	newMsg.payloadA = newMsg.master[payloadAStart:payloadAEnd]
 	newMsg.payloadB = newMsg.master[payloadBStart:payloadBEnd]
 
-	newMsg.Contents = *NewContents(newMsg.Contents.serial)
-	newMsg.AssociatedData = *NewAssociatedData(newMsg.AssociatedData.serial)
+	newMsg.grpByte = newMsg.master[grpByteStart:grpByteEnd]
+	copy(newMsg.grpByte, []byte{0})
+
+	//newMsg.Contents = *NewContents(newMsg.Contents.serial)
+	//newMsg.AssociatedData = *NewAssociatedData(newMsg.AssociatedData.serial)
 
 	return newMsg
 }
@@ -111,13 +120,18 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 }
 
 // SetDecryptedPayloadB is used when receiving a decrypted payload B to ensure
-// all data is put back in the right order. Specifically, it moves the last byte
-// to the front and sets the last byte to zero. The number of bytes copied is
-// returned.
+// all data is put back in the right order. If the specified byte array is not
+// exactly the same size as payloadB, then it panics. Specifically, it moves the
+// last byte to the front and sets the last byte to zero. The number of bytes
+// copied is returned. Assumes the newPayload is in the group and that its first
+// byte is zero.
 func (m *Message) SetDecryptedPayloadB(newPayload []byte) int {
-	size := copy(m.payloadB, newPayload)
-	m.payloadB[0] = m.payloadB[subPayloadLen-1]
-	m.payloadB[subPayloadLen-1] = 0
-
-	return size
+	if len(newPayload) == subPayloadLen {
+		size := copy(m.payloadB, newPayload)
+		m.payloadB[0] = m.payloadB[subPayloadLen-1]
+		m.payloadB[subPayloadLen-1] = 0
+		return size
+	} else {
+		panic("new payload not the same size as PayloadB")
+	}
 }

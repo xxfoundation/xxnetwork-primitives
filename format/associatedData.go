@@ -12,7 +12,7 @@ import (
 
 const (
 	// Length, start index, and end index of the Associated Data serial
-	associatedDataLen   = 113 // 904 bits
+	associatedDataLen   = 112 // 896 bits
 	associatedDataStart = contentsEnd
 	associatedDataEnd   = associatedDataStart + associatedDataLen
 
@@ -32,14 +32,9 @@ const (
 	timestampEnd   = timestampStart + timestampLen
 
 	// Length, start index, and end index of mac
-	macLen   = 16 // 128 bits
+	macLen   = 32 // 256 bits
 	macStart = timestampEnd
 	macEnd   = macStart + macLen
-
-	// Length, start index, and end index of grpByte
-	grpByteLen   = 1 // 8 bits
-	grpByteStart = macEnd
-	grpByteEnd   = grpByteStart + grpByteLen
 )
 
 // Structure for the associated data section of the message points to a
@@ -50,7 +45,6 @@ type AssociatedData struct {
 	keyFP       []byte // key fingerprint
 	timestamp   []byte
 	mac         []byte // message authentication code
-	grpByte     []byte // zero value byte ensures payloadB can be in the group
 }
 
 // Length of the key fingerprint
@@ -75,8 +69,6 @@ func NewAssociatedData(newSerial []byte) *AssociatedData {
 	newAD.keyFP = newAD.serial[keyFPStart:keyFPEnd]
 	newAD.timestamp = newAD.serial[timestampStart:timestampEnd]
 	newAD.mac = newAD.serial[macStart:macEnd]
-	newAD.grpByte = newAD.serial[grpByteStart:grpByteEnd]
-	newAD.grpByte[0] = 0
 
 	return newAD
 }
@@ -176,15 +168,20 @@ func (a *AssociatedData) SetMAC(newMAC []byte) int {
 
 // DeepCopy creates a copy of AssociatedData.
 func (a *AssociatedData) DeepCopy() *AssociatedData {
-	newCopy := NewAssociatedData(nil)
+	newCopy := NewAssociatedData(make([]byte, associatedDataLen))
 	copy(newCopy.serial[:], a.serial)
 
 	return newCopy
 }
 
-// NewFingerprint creates a new fingerprint from a byte slice.
+// NewFingerprint creates a new fingerprint from a byte slice. If the specified
+// data iis not exactly the same size as keyFP, then it panics.
 func NewFingerprint(data []byte) *Fingerprint {
-	fp := &Fingerprint{}
-	copy(fp[:], data[:])
-	return fp
+	if len(data) == KeyFPLen {
+		fp := &Fingerprint{}
+		copy(fp[:], data[:])
+		return fp
+	} else {
+		panic("data is not smaller than or equal to AssociatedData keyFP")
+	}
 }
