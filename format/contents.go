@@ -21,7 +21,9 @@ const (
 
 // Structure for the content section of the message points to a subsection of
 // the serialised Message structure. For the purpose of E2E, padding is added to
-// the front of serial, with a minimum length of 11 bytes.
+// the front of serial, with a minimum length of 11 bytes. The first byte of
+// padding is always all zeros so that a byte does not need to be placed at the
+// beginning of serial to ensure it is in the group.
 type Contents struct {
 	// Stores the data of Contents and points to region in master
 	serial []byte
