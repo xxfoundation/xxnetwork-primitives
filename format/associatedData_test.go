@@ -129,8 +129,7 @@ func TestNewAssociatedData_Length(t *testing.T) {
 			len(ad.mac), MacLen)
 	}
 
-	// Check that the summation of the length of all fields equals the length
-	// of serial
+	// Check that all the fields fit in serial
 	sum := len(ad.recipientID) + len(ad.keyFP) + len(ad.timestamp) + len(ad.mac)
 
 	if sum != len(ad.serial) {

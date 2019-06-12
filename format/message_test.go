@@ -75,8 +75,7 @@ func TestNewMessage_Length(t *testing.T) {
 			len(msg.grpByte), GrpByteLen)
 	}
 
-	// Check that the summation of the length of Content's and AssociatedData's
-	// serials equals the length of master
+	// Check that Content and AssociatedData serials fit in master
 	sum := len(msg.Contents.serial) + len(msg.AssociatedData.serial) + len(msg.grpByte)
 
 	if sum != len(msg.master) {
@@ -86,8 +85,7 @@ func TestNewMessage_Length(t *testing.T) {
 			sum, len(msg.master))
 	}
 
-	// Check that the summation of the length of the payloads equals the length
-	// of master
+	// Check that payloadA and payloadB serials fit in master
 	sum = len(msg.payloadA) + len(msg.payloadB)
 
 	if sum != len(msg.master) {
