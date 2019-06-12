@@ -64,9 +64,6 @@ func NewMessage() *Message {
 	newMsg.grpByte = newMsg.master[grpByteStart:grpByteEnd]
 	copy(newMsg.grpByte, []byte{0})
 
-	//newMsg.Contents = *NewContents(newMsg.Contents.serial)
-	//newMsg.AssociatedData = *NewAssociatedData(newMsg.AssociatedData.serial)
-
 	return newMsg
 }
 
@@ -84,11 +81,11 @@ func (m *Message) GetPayloadA() []byte {
 // copied is returned. If the specified byte array is not exactly the same size
 // as payloadA, then it panics.
 func (m *Message) SetPayloadA(payload []byte) int {
-	if len(payload) == subPayloadLen {
-		return copy(m.payloadA, payload)
-	} else {
+	if len(payload) != subPayloadLen {
 		panic("new payload not the same size as PayloadA")
 	}
+
+	return copy(m.payloadA, payload)
 }
 
 // GetPayloadB returns payload B, which is the last half of the message.
@@ -100,11 +97,11 @@ func (m *Message) GetPayloadB() []byte {
 // copied is returned. If the specified byte array is not exactly the same size
 // as payloadB, then it panics.
 func (m *Message) SetPayloadB(payload []byte) int {
-	if len(payload) == subPayloadLen {
-		return copy(m.payloadB, payload)
-	} else {
+	if len(payload) != subPayloadLen {
 		panic("new payload not the same size as PayloadB")
 	}
+
+	return copy(m.payloadB, payload)
 }
 
 // GetPayloadBForEncryption ensures payload B is in the group for encrypting.
@@ -126,12 +123,12 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 // copied is returned. Assumes the newPayload is in the group and that its first
 // byte is zero.
 func (m *Message) SetDecryptedPayloadB(newPayload []byte) int {
-	if len(newPayload) == subPayloadLen {
-		size := copy(m.payloadB, newPayload)
-		m.payloadB[0] = m.payloadB[subPayloadLen-1]
-		m.payloadB[subPayloadLen-1] = 0
-		return size
-	} else {
+	if len(newPayload) != subPayloadLen {
 		panic("new payload not the same size as PayloadB")
 	}
+
+	size := copy(m.payloadB, newPayload)
+	m.payloadB[0] = m.payloadB[subPayloadLen-1]
+	m.payloadB[subPayloadLen-1] = 0
+	return size
 }

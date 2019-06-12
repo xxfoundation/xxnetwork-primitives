@@ -37,16 +37,16 @@ type Contents struct {
 // NewContents creates a new Contents for a message and sets serial. If the new
 // serial is not exactly the same length as serial, then it panics.
 func NewContents(newSerial []byte) *Contents {
+	if len(newSerial) != contentsLen {
+		panic("new serial not the same size as Contents serial")
+	}
+
 	newContents := &Contents{
 		serial:   make([]byte, contentsLen),
 		position: invalidPosition,
 	}
 
-	if len(newSerial) == contentsLen {
-		newContents.serial = newSerial
-	} else {
-		panic("new serial not the same size as Contents serial")
-	}
+	newContents.serial = newSerial
 
 	return newContents
 }
@@ -62,11 +62,11 @@ func (c *Contents) Get() []byte {
 // If the specified byte array is not exactly the same size as serial, then it
 // panics.
 func (c *Contents) Set(newSerial []byte) int {
-	if len(newSerial) == contentsLen {
-		return copy(c.serial, newSerial)
-	} else {
+	if len(newSerial) != contentsLen {
 		panic("new serial not the same size as Contents serial")
 	}
+
+	return copy(c.serial, newSerial)
 }
 
 // GetRightAligned returns the entire serial content, excluding the padding. If
@@ -74,23 +74,23 @@ func (c *Contents) Set(newSerial []byte) int {
 // caller can read or write the data within this slice, but cannot change the
 // slice header in the actual structure.
 func (c *Contents) GetRightAligned() []byte {
-	if c.position > invalidPosition {
-		return c.serial[c.position:]
-	} else {
+	if c.position == invalidPosition {
 		panic("invalid padding when getting right-aligned data")
 	}
+
+	return c.serial[c.position:]
 }
 
 // SetRightAligned sets the entire serial content right-aligned. The number of
 // bytes copied is returned. If the specified byte array is larger than serial,
 // then it panics.
 func (c *Contents) SetRightAligned(newSerial []byte) int {
-	if len(newSerial) <= contentsLen-padMinLen {
-		c.position = contentsLen - len(newSerial)
-		return copy(c.serial[c.position:], newSerial)
-	} else {
+	if len(newSerial) > contentsLen-padMinLen {
 		panic("new serial is larger than Contents serial")
 	}
+
+	c.position = contentsLen - len(newSerial)
+	return copy(c.serial[c.position:], newSerial)
 }
 
 // GetPosition returns the index of the start of actual data (not padding) in
