@@ -17,7 +17,7 @@ import (
 func TestNewContents(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
@@ -37,10 +37,10 @@ func TestNewContents(t *testing.T) {
 	}
 
 	// Check serial's length
-	if len(c.serial) != contentsLen {
+	if len(c.serial) != ContentsLen {
 		t.Errorf("NewContents() did not create a serial with the correct length"+
 			"\n\treceived: %v\n\texpected: %v",
-			len(c.serial), contentsLen)
+			len(c.serial), ContentsLen)
 	}
 }
 
@@ -49,7 +49,7 @@ func TestNewContents(t *testing.T) {
 func TestNewContents_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen-5)
+	randSlice := make([]byte, ContentsLen-5)
 	rand.Read(randSlice)
 
 	// Defer to an error when NewContents() does not panic
@@ -78,7 +78,7 @@ func TestContents_Consistency(t *testing.T) {
 
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
@@ -95,7 +95,7 @@ func TestContents_Consistency(t *testing.T) {
 func TestContents_Get(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
@@ -114,26 +114,19 @@ func TestContents_Get(t *testing.T) {
 func TestContents_Set(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
-	c := NewContents(make([]byte, contentsLen))
+	c := NewContents(make([]byte, ContentsLen))
 
 	// Set Content's serial
-	size := c.Set(randSlice)
+	c.Set(randSlice)
 
 	if !bytes.Equal(c.Get(), randSlice) {
 		t.Errorf("Set() did not properly set Content's serial"+
 			"\n\treceived: %v\n\texpected: %v",
 			c.Get(), randSlice)
-	}
-
-	if size != contentsLen {
-		t.Errorf("Set() did not copy the correct number of bytes into "+
-			"Content's serial"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, contentsLen)
 	}
 }
 
@@ -141,11 +134,11 @@ func TestContents_Set(t *testing.T) {
 func TestContents_Set_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	serialRand := make([]byte, contentsLen-5)
+	serialRand := make([]byte, ContentsLen-5)
 	rand.Read(serialRand)
 
 	// Create new Contents
-	c := NewContents(make([]byte, contentsLen))
+	c := NewContents(make([]byte, ContentsLen))
 
 	// Defer to an error when Set() does not panic
 	defer func() {
@@ -163,7 +156,7 @@ func TestContents_Set_Panic(t *testing.T) {
 func TestContents_GetRightAligned(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents and set position
@@ -182,7 +175,7 @@ func TestContents_GetRightAligned(t *testing.T) {
 func TestContents_GetRightAligned_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Defer to an error when GetRightAligned() does not panic
@@ -198,15 +191,15 @@ func TestContents_GetRightAligned_Panic(t *testing.T) {
 }
 
 // Tests that SetRightAligned() sets the correct bytes right-aligned to Content's
-// serial and copies the correct number of bytes.
+// serial.
 func TestContents_SetRightAligned(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen-padMinLen)
+	randSlice := make([]byte, ContentsLen-PadMinLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
-	c := NewContents(make([]byte, contentsLen))
+	c := NewContents(make([]byte, ContentsLen))
 
 	// Set Content's serial right-aligned
 	size := c.SetRightAligned(randSlice)
@@ -218,11 +211,11 @@ func TestContents_SetRightAligned(t *testing.T) {
 			c.GetRightAligned(), randSlice)
 	}
 
-	if size != contentsLen-padMinLen {
+	if size != ContentsLen-PadMinLen {
 		t.Errorf("SetRightAligned() did not copy the correct number of"+
 			"bytes into Content's serial"+
 			"\n\treceived: %v\n\texpected: %v",
-			size, contentsLen-padMinLen)
+			size, ContentsLen-PadMinLen)
 	}
 }
 
@@ -231,11 +224,11 @@ func TestContents_SetRightAligned(t *testing.T) {
 func TestContents_SetRightAligned_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
-	c := NewContents(make([]byte, contentsLen))
+	c := NewContents(make([]byte, ContentsLen))
 
 	// Defer to an error when SetRightAligned() does not panic
 	defer func() {
@@ -253,20 +246,20 @@ func TestContents_SetRightAligned_Panic(t *testing.T) {
 func TestContents_GetPosition(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen-padMinLen)
+	randSlice := make([]byte, ContentsLen-PadMinLen)
 	rand.Read(randSlice)
 
 	// Create new Contents
-	c := NewContents(make([]byte, contentsLen))
+	c := NewContents(make([]byte, ContentsLen))
 
 	// Set Content's serial right-aligned
 	c.SetRightAligned(randSlice)
 
-	if c.GetPosition() != padMinLen {
+	if c.GetPosition() != PadMinLen {
 		t.Errorf("GetPosition() did not return the correct content "+
 			"starting position"+
 			"\n\treceived: %v\n\texpected: %v",
-			c.GetPosition(), padMinLen)
+			c.GetPosition(), PadMinLen)
 	}
 }
 
@@ -275,8 +268,8 @@ func TestContents_GetPosition(t *testing.T) {
 func TestContents_DeepCopy(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, contentsLen)
-	randSlice2 := make([]byte, contentsLen)
+	randSlice := make([]byte, ContentsLen)
+	randSlice2 := make([]byte, ContentsLen)
 	rand.Read(randSlice)
 
 	// Create new Contents

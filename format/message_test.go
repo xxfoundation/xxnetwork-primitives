@@ -40,39 +40,39 @@ func TestNewMessage_Length(t *testing.T) {
 	msg := NewMessage()
 
 	// Test lengths
-	if len(msg.Contents.serial) != contentsLen {
+	if len(msg.Contents.serial) != ContentsLen {
 		t.Errorf("NewMessage() did not create Message's Contents "+
 			"with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(msg.Contents.serial), contentsLen)
+			len(msg.Contents.serial), ContentsLen)
 	}
 
-	if len(msg.AssociatedData.serial) != associatedDataLen {
+	if len(msg.AssociatedData.serial) != AssociatedDataLen {
 		t.Errorf("NewMessage() did not create Message's AssociatedData "+
 			"with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(msg.AssociatedData.serial), associatedDataLen)
+			len(msg.AssociatedData.serial), AssociatedDataLen)
 	}
 
-	if len(msg.payloadA) != subPayloadLen {
+	if len(msg.payloadA) != PayloadLen {
 		t.Errorf("NewMessage() did not create Message's payloadA "+
 			"with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(msg.payloadA), subPayloadLen)
+			len(msg.payloadA), PayloadLen)
 	}
 
-	if len(msg.payloadB) != subPayloadLen {
+	if len(msg.payloadB) != PayloadLen {
 		t.Errorf("NewMessage() did not create Message's payloadB "+
 			"with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(msg.payloadB), subPayloadLen)
+			len(msg.payloadB), PayloadLen)
 	}
 
-	if len(msg.grpByte) != grpByteLen {
+	if len(msg.grpByte) != GrpByteLen {
 		t.Errorf("NewMessage() did not create Message's grpByte "+
 			"with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(msg.grpByte), grpByteLen)
+			len(msg.grpByte), GrpByteLen)
 	}
 
 	// Check that the summation of the length of Content's and AssociatedData's
@@ -124,46 +124,46 @@ func TestNewMessage_Overlap(t *testing.T) {
 			reflect.ValueOf(msg.Contents.serial[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.payloadA[:subPayloadLen-1]).Pointer() >=
+	if reflect.ValueOf(msg.payloadA[:PayloadLen-1]).Pointer() >=
 		reflect.ValueOf(msg.payloadB[:0]).Pointer() {
 		t.Errorf("The end of payloadA overlaps with the start of payloadB"+
 			"\n\tend of payloadA:   %d\n\tstart of payloadB: %d",
-			reflect.ValueOf(msg.payloadA[:subPayloadLen-1]).Pointer(),
+			reflect.ValueOf(msg.payloadA[:PayloadLen-1]).Pointer(),
 			reflect.ValueOf(msg.payloadB[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.Contents.serial[:contentsLen-1]).Pointer() >=
+	if reflect.ValueOf(msg.Contents.serial[:ContentsLen-1]).Pointer() >=
 		reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer() {
 		t.Errorf("The end of Contents overlaps with the start of AssociatedData"+
 			"\n\tend of Contents:         %d\n\tstart of AssociatedData: %d",
-			reflect.ValueOf(msg.Contents.serial[:contentsLen-1]).Pointer(),
+			reflect.ValueOf(msg.Contents.serial[:ContentsLen-1]).Pointer(),
 			reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.AssociatedData.serial[:associatedDataLen-1]).Pointer() >=
+	if reflect.ValueOf(msg.AssociatedData.serial[:AssociatedDataLen-1]).Pointer() >=
 		reflect.ValueOf(msg.grpByte[:0]).Pointer() {
 		t.Errorf("The end of AssociatedData overlaps with the start of grpByte"+
 			"\n\tend of AssociatedData:   %d\n\tstart of grpByte:        %d",
-			reflect.ValueOf(msg.AssociatedData.serial[:associatedDataLen-1]).Pointer(),
+			reflect.ValueOf(msg.AssociatedData.serial[:AssociatedDataLen-1]).Pointer(),
 			reflect.ValueOf(msg.grpByte[:0]).Pointer())
 	}
 
 	if reflect.ValueOf(msg.master[TotalLen-1:]).Pointer() !=
-		reflect.ValueOf(msg.payloadB[subPayloadLen-1:]).Pointer() {
+		reflect.ValueOf(msg.payloadB[PayloadLen-1:]).Pointer() {
 		t.Errorf("The end of master is not the same pointer as the "+
 			"end of payloadB"+
 			"\n\tend of master:   %d\n\tend of payloadB: %d",
 			reflect.ValueOf(msg.master[TotalLen-1:]).Pointer(),
-			reflect.ValueOf(msg.payloadB[subPayloadLen-1:]).Pointer())
+			reflect.ValueOf(msg.payloadB[PayloadLen-1:]).Pointer())
 	}
 
 	if reflect.ValueOf(msg.master[TotalLen-1:]).Pointer() !=
-		reflect.ValueOf(msg.grpByte[grpByteLen-1:]).Pointer() {
+		reflect.ValueOf(msg.grpByte[GrpByteLen-1:]).Pointer() {
 		t.Errorf("The end of master is not the same pointer as the "+
 			"end of payloadB"+
 			"\n\tend of master:  %d\n\tend of grpByte: %d",
 			reflect.ValueOf(msg.master[TotalLen-1:]).Pointer(),
-			reflect.ValueOf(msg.grpByte[grpByteLen-1:]).Pointer())
+			reflect.ValueOf(msg.grpByte[GrpByteLen-1:]).Pointer())
 	}
 }
 
@@ -172,13 +172,13 @@ func TestNewMessage_Overlap(t *testing.T) {
 func TestMessage_Values(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randPayloadA := make([]byte, subPayloadLen)
+	randPayloadA := make([]byte, PayloadLen)
 	rand.Read(randPayloadA)
-	randPayloadB := make([]byte, subPayloadLen)
+	randPayloadB := make([]byte, PayloadLen)
 	rand.Read(randPayloadB)
-	randContents := make([]byte, contentsLen)
+	randContents := make([]byte, ContentsLen)
 	rand.Read(randContents)
-	randAssociatedData := make([]byte, associatedDataLen)
+	randAssociatedData := make([]byte, AssociatedDataLen)
 	rand.Read(randAssociatedData)
 
 	// Create new Message and set payload fields
@@ -258,9 +258,9 @@ func TestMessage_Consistency(t *testing.T) {
 
 	// Generate random byte slice
 	rand.Seed(42)
-	randPayloadA := make([]byte, subPayloadLen)
+	randPayloadA := make([]byte, PayloadLen)
 	rand.Read(randPayloadA)
-	randPayloadB := make([]byte, subPayloadLen)
+	randPayloadB := make([]byte, PayloadLen)
 	rand.Read(randPayloadB)
 
 	// Create new Message and set payload fields
@@ -318,7 +318,7 @@ func TestMessage_GetPayloadA(t *testing.T) {
 func TestMessage_SetPayloadA(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen)
+	randSlice := make([]byte, PayloadLen)
 	rand.Read(randSlice)
 
 	// Create new Message and set payloadA
@@ -337,7 +337,7 @@ func TestMessage_SetPayloadA(t *testing.T) {
 func TestMessage_SetPayloadA_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen+5)
+	randSlice := make([]byte, PayloadLen+5)
 	rand.Read(randSlice)
 
 	// Defer to an error when SetPayloadA() does not panic
@@ -376,7 +376,7 @@ func TestMessage_GetPayloadB(t *testing.T) {
 func TestMessage_SetPayloadB(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen)
+	randSlice := make([]byte, PayloadLen)
 	rand.Read(randSlice)
 
 	// Create new Message and set payloadB
@@ -395,7 +395,7 @@ func TestMessage_SetPayloadB(t *testing.T) {
 func TestMessage_SetPayloadB_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen+5)
+	randSlice := make([]byte, PayloadLen+5)
 	rand.Read(randSlice)
 
 	// Defer to an error when SetPayloadB() does not panic
@@ -424,11 +424,11 @@ func TestMessage_GetPayloadBForEncryption(t *testing.T) {
 	msg := NewMessage()
 	copy(msg.master[:], randSlice)
 
-	if !bytes.Equal(msg.GetPayloadBForEncryption()[1:subPayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1]) {
+	if !bytes.Equal(msg.GetPayloadBForEncryption()[1:PayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1]) {
 		t.Errorf("GetPayloadBForEncryption() did not return the correct data from "+
 			"Message's payloadB"+
 			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadBForEncryption()[1:subPayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1])
+			msg.GetPayloadBForEncryption()[1:PayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1])
 	}
 
 	if msg.GetPayloadBForEncryption()[0] != 0 {
@@ -437,11 +437,11 @@ func TestMessage_GetPayloadBForEncryption(t *testing.T) {
 			msg.GetPayloadBForEncryption()[0], 0)
 	}
 
-	if msg.GetPayloadBForEncryption()[subPayloadLen-1] != randSlice[payloadBStart] {
+	if msg.GetPayloadBForEncryption()[PayloadLen-1] != randSlice[payloadBStart] {
 		t.Errorf("GetPayloadBForEncryption() did not correctly swap the "+
 			"first and last byte"+
 			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadBForEncryption()[subPayloadLen-1], randSlice[payloadBStart])
+			msg.GetPayloadBForEncryption()[PayloadLen-1], randSlice[payloadBStart])
 	}
 }
 
@@ -451,31 +451,31 @@ func TestMessage_GetPayloadBForEncryption(t *testing.T) {
 func TestMessage_SetDecryptedPayloadB(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen)
+	randSlice := make([]byte, PayloadLen)
 	rand.Read(randSlice)
 
 	// Create new Message and set payloadB
 	msg := NewMessage()
 	msg.SetDecryptedPayloadB(randSlice)
 
-	if !bytes.Equal(msg.GetPayloadB()[1:subPayloadLen-1], randSlice[1:subPayloadLen-1]) {
+	if !bytes.Equal(msg.GetPayloadB()[1:PayloadLen-1], randSlice[1:PayloadLen-1]) {
 		t.Errorf("SetDecryptedPayloadB() did not return the correct data from "+
 			"Message's payloadB"+
 			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[1:subPayloadLen-1], randSlice[1:subPayloadLen-1])
+			msg.GetPayloadB()[1:PayloadLen-1], randSlice[1:PayloadLen-1])
 	}
 
-	if msg.GetPayloadB()[subPayloadLen-1] != 0 {
+	if msg.GetPayloadB()[PayloadLen-1] != 0 {
 		t.Errorf("SetDecryptedPayloadB() did not set the last byte to zero"+
 			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[subPayloadLen-1], 0)
+			msg.GetPayloadB()[PayloadLen-1], 0)
 	}
 
-	if msg.GetPayloadB()[0] != randSlice[subPayloadLen-1] {
+	if msg.GetPayloadB()[0] != randSlice[PayloadLen-1] {
 		t.Errorf("SetDecryptedPayloadB() did not correctly swap the "+
 			"first and last byte"+
 			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[0], randSlice[subPayloadLen-1])
+			msg.GetPayloadB()[0], randSlice[PayloadLen-1])
 	}
 }
 
@@ -484,7 +484,7 @@ func TestMessage_SetDecryptedPayloadB(t *testing.T) {
 func TestMessage_SetDecryptedPayloadB_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, subPayloadLen+5)
+	randSlice := make([]byte, PayloadLen+5)
 	rand.Read(randSlice)
 
 	// Defer to an error when SetPayloadB() does not panic

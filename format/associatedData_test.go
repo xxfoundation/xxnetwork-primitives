@@ -20,7 +20,7 @@ import (
 func TestNewAssociatedData(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -68,7 +68,7 @@ func TestNewAssociatedData(t *testing.T) {
 func TestNewAssociatedData_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen-5)
+	randSlice := make([]byte, AssociatedDataLen-5)
 	rand.Read(randSlice)
 
 	// Defer to an error when NewAssociatedData() does not panic
@@ -87,46 +87,46 @@ func TestNewAssociatedData_Panic(t *testing.T) {
 func TestNewAssociatedData_Length(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
 	ad := NewAssociatedData(randSlice)
 
 	// Test lengths
-	if len(ad.serial) != associatedDataLen {
+	if len(ad.serial) != AssociatedDataLen {
 		t.Errorf("NewAssociatedData() did not create "+
 			"AssociatedData's serial with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(ad.serial), associatedDataLen)
+			len(ad.serial), AssociatedDataLen)
 	}
 
-	if len(ad.recipientID) != recipientIDLen {
+	if len(ad.recipientID) != RecipientIDLen {
 		t.Errorf("NewAssociatedData() did not create "+
 			"AssociatedData's recipientID with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(ad.recipientID), recipientIDLen)
+			len(ad.recipientID), RecipientIDLen)
 	}
 
-	if len(ad.keyFP) != keyFPLen {
+	if len(ad.keyFP) != KeyFPLen {
 		t.Errorf("NewAssociatedData() did not create "+
 			"AssociatedData's keyFP with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(ad.keyFP), keyFPLen)
+			len(ad.keyFP), KeyFPLen)
 	}
 
-	if len(ad.timestamp) != timestampLen {
+	if len(ad.timestamp) != TimestampLen {
 		t.Errorf("NewAssociatedData() did not create "+
 			"AssociatedData's timestamp with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(ad.timestamp), timestampLen)
+			len(ad.timestamp), TimestampLen)
 	}
 
-	if len(ad.mac) != macLen {
+	if len(ad.mac) != MacLen {
 		t.Errorf("NewAssociatedData() did not create "+
 			"AssociatedData's mac with the correct length"+
 			"\n\treceived: %d\n\texpected: %d",
-			len(ad.mac), macLen)
+			len(ad.mac), MacLen)
 	}
 
 	// Check that the summation of the length of all fields equals the length
@@ -147,7 +147,7 @@ func TestNewAssociatedData_Length(t *testing.T) {
 func TestNewAssociatedData_Overlap(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -163,37 +163,37 @@ func TestNewAssociatedData_Overlap(t *testing.T) {
 			reflect.ValueOf(ad.recipientID[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.recipientID[:recipientIDLen-1]).Pointer() >=
+	if reflect.ValueOf(ad.recipientID[:RecipientIDLen-1]).Pointer() >=
 		reflect.ValueOf(ad.keyFP[:0]).Pointer() {
 		t.Errorf("The end of recipientID overlaps with the start of keyFP"+
 			"\n\tend of recipientID: %d\n\tstart of keyFP:     %d",
-			reflect.ValueOf(ad.recipientID[recipientIDLen-1:]).Pointer(),
+			reflect.ValueOf(ad.recipientID[RecipientIDLen-1:]).Pointer(),
 			reflect.ValueOf(ad.keyFP[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.keyFP[:keyFPLen-1]).Pointer() >=
+	if reflect.ValueOf(ad.keyFP[:KeyFPLen-1]).Pointer() >=
 		reflect.ValueOf(ad.timestamp[:0]).Pointer() {
 		t.Errorf("The end of keyFP overlaps with the start of timestamp"+
 			"\n\tend of keyFP:       %d\n\tstart of timestamp: %d",
-			reflect.ValueOf(ad.keyFP[keyFPLen-1:]).Pointer(),
+			reflect.ValueOf(ad.keyFP[KeyFPLen-1:]).Pointer(),
 			reflect.ValueOf(ad.timestamp[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.timestamp[:timestampLen-1]).Pointer() >=
+	if reflect.ValueOf(ad.timestamp[:TimestampLen-1]).Pointer() >=
 		reflect.ValueOf(ad.mac[:0]).Pointer() {
 		t.Errorf("The end of timestamp overlaps with the start of mac"+
 			"\n\tend of timestamp: %d\n\tstart of mac:     %d",
-			reflect.ValueOf(ad.timestamp[timestampLen-1:]).Pointer(),
+			reflect.ValueOf(ad.timestamp[TimestampLen-1:]).Pointer(),
 			reflect.ValueOf(ad.mac[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.serial[associatedDataLen-1:]).Pointer() !=
-		reflect.ValueOf(ad.mac[macLen-1:]).Pointer() {
+	if reflect.ValueOf(ad.serial[AssociatedDataLen-1:]).Pointer() !=
+		reflect.ValueOf(ad.mac[MacLen-1:]).Pointer() {
 		t.Errorf("The end of serial is not the same pointer as the "+
 			"end of mac"+
 			"\n\tend of serial: %d\n\tend of mac:    %d",
-			reflect.ValueOf(ad.serial[associatedDataLen-1:]).Pointer(),
-			reflect.ValueOf(ad.mac[macLen-1:]).Pointer())
+			reflect.ValueOf(ad.serial[AssociatedDataLen-1:]).Pointer(),
+			reflect.ValueOf(ad.mac[MacLen-1:]).Pointer())
 	}
 }
 
@@ -202,16 +202,16 @@ func TestNewAssociatedData_Overlap(t *testing.T) {
 func TestAssociatedData_Values(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randAD := make([]byte, associatedDataLen)
+	randAD := make([]byte, AssociatedDataLen)
 	rand.Read(randAD)
-	randRecipientID := make([]byte, recipientIDLen)
+	randRecipientID := make([]byte, RecipientIDLen)
 	rand.Read(randRecipientID)
-	randKeyFP := make([]byte, keyFPLen)
+	randKeyFP := make([]byte, KeyFPLen)
 	rand.Read(randKeyFP)
 	fp := NewFingerprint(randKeyFP)
-	randTimestamp := make([]byte, timestampLen)
+	randTimestamp := make([]byte, TimestampLen)
 	rand.Read(randTimestamp)
-	randMAC := make([]byte, macLen)
+	randMAC := make([]byte, MacLen)
 	rand.Read(randMAC)
 
 	// Create new AssociatedData and set fields
@@ -257,16 +257,16 @@ func TestAssociatedData_Consistency(t *testing.T) {
 
 	// Generate random byte slice
 	rand.Seed(42)
-	randAD := make([]byte, associatedDataLen)
+	randAD := make([]byte, AssociatedDataLen)
 	rand.Read(randAD)
-	randRecipientID := make([]byte, recipientIDLen)
+	randRecipientID := make([]byte, RecipientIDLen)
 	rand.Read(randRecipientID)
-	randKeyFP := make([]byte, keyFPLen)
+	randKeyFP := make([]byte, KeyFPLen)
 	rand.Read(randKeyFP)
 	fp := NewFingerprint(randKeyFP)
-	randTimestamp := make([]byte, timestampLen)
+	randTimestamp := make([]byte, TimestampLen)
 	rand.Read(randTimestamp)
-	randMAC := make([]byte, macLen)
+	randMAC := make([]byte, MacLen)
 	rand.Read(randMAC)
 
 	// Create new AssociatedData and set fields
@@ -287,7 +287,7 @@ func TestAssociatedData_Consistency(t *testing.T) {
 func TestAssociatedData_Get(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -306,26 +306,19 @@ func TestAssociatedData_Get(t *testing.T) {
 func TestAssociatedData_Set(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's serial
-	size := ad.Set(randSlice)
+	ad.Set(randSlice)
 
 	if !bytes.Equal(ad.Get(), randSlice) {
 		t.Errorf("Set() did not properly set AssociatedData's serial"+
 			"\n\treceived: %v\n\texpected: %v",
 			ad.Get(), randSlice)
-	}
-
-	if size != associatedDataLen {
-		t.Errorf("Set() did not copy the correct number of bytes into "+
-			"AssociatedData's serial"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, associatedDataLen)
 	}
 }
 
@@ -333,11 +326,11 @@ func TestAssociatedData_Set(t *testing.T) {
 func TestAssociatedData_Set_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	serialRand := make([]byte, associatedDataLen-5)
+	serialRand := make([]byte, AssociatedDataLen-5)
 	rand.Read(serialRand)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Defer to an error when Set() does not panic
 	defer func() {
@@ -355,7 +348,7 @@ func TestAssociatedData_Set_Panic(t *testing.T) {
 func TestAssociatedData_GetRecipientID(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -370,31 +363,24 @@ func TestAssociatedData_GetRecipientID(t *testing.T) {
 }
 
 // Tests that SetRecipientID() sets the correct bytes to AssociatedData's
-// recipientID and copies the correct number of bytes.
+// recipientID.
 func TestAssociatedData_SetRecipientID(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, recipientIDLen)
+	randSlice := make([]byte, RecipientIDLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's recipientID
-	size := ad.SetRecipientID(randSlice)
+	ad.SetRecipientID(randSlice)
 
 	if !bytes.Equal(ad.GetRecipientID(), randSlice) {
 		t.Errorf("SetRecipientID() did not properly set AssociatedData's "+
 			"recipientID"+
 			"\n\treceived: %v\n\texpected: %v",
 			ad.GetRecipientID(), randSlice)
-	}
-
-	if size != recipientIDLen {
-		t.Errorf("SetRecipientID() did not copy the correct number of "+
-			"bytes into AssociatedData's recipientID"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, recipientIDLen)
 	}
 }
 
@@ -403,11 +389,11 @@ func TestAssociatedData_SetRecipientID(t *testing.T) {
 func TestAssociatedData_SetRecipientID_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	serialRand := make([]byte, recipientIDLen-5)
+	serialRand := make([]byte, RecipientIDLen-5)
 	rand.Read(serialRand)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Defer to an error when SetRecipientID() does not panic
 	defer func() {
@@ -424,7 +410,7 @@ func TestAssociatedData_SetRecipientID_Panic(t *testing.T) {
 func TestAssociatedData_GetRecipient(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -441,19 +427,19 @@ func TestAssociatedData_GetRecipient(t *testing.T) {
 }
 
 // Tests that SetRecipient() sets the correct bytes from a *id.User to
-// AssociatedData's recipientID and copies the correct number of bytes.
+// AssociatedData's recipientID.
 func TestAssociatedData_SetRecipient(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, recipientIDLen)
+	randSlice := make([]byte, RecipientIDLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's recipient
 	userID := id.NewUserFromBytes(randSlice)
-	size := ad.SetRecipient(userID)
+	ad.SetRecipient(userID)
 
 	if !reflect.DeepEqual(ad.GetRecipient(), userID) {
 		t.Errorf("SetRecipient() did not properly set AssociatedData's "+
@@ -461,20 +447,13 @@ func TestAssociatedData_SetRecipient(t *testing.T) {
 			"\n\treceived: %v\n\texpected: %v",
 			ad.GetRecipient(), userID)
 	}
-
-	if size != recipientIDLen {
-		t.Errorf("SetRecipient() did not copy the correct number of "+
-			"bytes into AssociatedData's recipientID"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, recipientIDLen)
-	}
 }
 
 // Tests that NewFingerprint() creates a new Fingerprint with the correct data.
 func TestNewFingerprint(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, keyFPLen)
+	randSlice := make([]byte, KeyFPLen)
 	rand.Read(randSlice)
 
 	// Create Fingerprint
@@ -493,7 +472,7 @@ func TestNewFingerprint(t *testing.T) {
 func TestNewFingerprint_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, keyFPLen-5)
+	randSlice := make([]byte, KeyFPLen-5)
 	rand.Read(randSlice)
 
 	// Defer to an error when NewFingerprint() does not panic
@@ -511,7 +490,7 @@ func TestNewFingerprint_Panic(t *testing.T) {
 func TestAssociatedData_GetKeyFP(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -528,32 +507,25 @@ func TestAssociatedData_GetKeyFP(t *testing.T) {
 }
 
 // Tests that SetKeyFP() sets the correct bytes from a Fingerprint to
-// AssociatedData's keyFP and copies the correct number of bytes.
+// AssociatedData's keyFP.
 func TestAssociatedData_SetKeyFP(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, recipientIDLen)
+	randSlice := make([]byte, RecipientIDLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's keyFP
 	fp := NewFingerprint(randSlice)
-	size := ad.SetKeyFP(*fp)
+	ad.SetKeyFP(*fp)
 
 	if !reflect.DeepEqual(ad.GetKeyFP(), *fp) {
 		t.Errorf("SetKeyFP() did not properly set AssociatedData's "+
 			"keyFP from a Fingerprint"+
 			"\n\treceived: %v\n\texpected: %v",
 			ad.GetKeyFP(), *fp)
-	}
-
-	if size != keyFPLen {
-		t.Errorf("SetKeyFP() did not copy the correct number of "+
-			"bytes into AssociatedData's keyFP"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, keyFPLen)
 	}
 }
 
@@ -562,7 +534,7 @@ func TestAssociatedData_SetKeyFP(t *testing.T) {
 func TestAssociatedData_GetTimestamp(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -577,31 +549,24 @@ func TestAssociatedData_GetTimestamp(t *testing.T) {
 }
 
 // Tests that SetTimestamp() sets the correct bytes to AssociatedData's
-// timestamp and copies the correct number of bytes.
+// timestamp.
 func TestAssociatedData_SetTimestamp(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, timestampLen)
+	randSlice := make([]byte, TimestampLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's timestamp
-	size := ad.SetTimestamp(randSlice)
+	ad.SetTimestamp(randSlice)
 
 	if !bytes.Equal(ad.GetTimestamp(), randSlice) {
 		t.Errorf("SetTimestamp() did not properly set AssociatedData's "+
 			"timestamp"+
 			"\n\treceived: %v\n\texpected: %v",
 			ad.GetTimestamp(), randSlice)
-	}
-
-	if size != timestampLen {
-		t.Errorf("SetTimestamp() did not copy the correct number of "+
-			"bytes into AssociatedData's timestamp"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, timestampLen)
 	}
 }
 
@@ -610,11 +575,11 @@ func TestAssociatedData_SetTimestamp(t *testing.T) {
 func TestAssociatedData_SetTimestamp_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	serialRand := make([]byte, timestampLen-5)
+	serialRand := make([]byte, TimestampLen-5)
 	rand.Read(serialRand)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Defer to an error when SetTimestamp() does not panic
 	defer func() {
@@ -632,7 +597,7 @@ func TestAssociatedData_SetTimestamp_Panic(t *testing.T) {
 func TestAssociatedData_GetMAC(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
@@ -646,32 +611,25 @@ func TestAssociatedData_GetMAC(t *testing.T) {
 	}
 }
 
-// Tests that SetMAC() sets the correct bytes to AssociatedData's
-// mac and copies the correct number of bytes.
+// Tests that SetMAC() sets the correct bytes to AssociatedData's mac and copies
+// the correct number of bytes.
 func TestAssociatedData_SetMAC(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, macLen)
+	randSlice := make([]byte, MacLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's mac
-	size := ad.SetMAC(randSlice)
+	ad.SetMAC(randSlice)
 
 	if !bytes.Equal(ad.GetMAC(), randSlice) {
 		t.Errorf("SetMAC() did not properly set AssociatedData's "+
 			"mac"+
 			"\n\treceived: %v\n\texpected: %v",
 			ad.GetMAC(), randSlice)
-	}
-
-	if size != macLen {
-		t.Errorf("SetMAC() did not copy the correct number of "+
-			"bytes into AssociatedData's mac"+
-			"\n\treceived: %v\n\texpected: %v",
-			size, macLen)
 	}
 }
 
@@ -680,11 +638,11 @@ func TestAssociatedData_SetMAC(t *testing.T) {
 func TestAssociatedData_SetMAC_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	serialRand := make([]byte, macLen-5)
+	serialRand := make([]byte, MacLen-5)
 	rand.Read(serialRand)
 
 	// Create new AssociatedData
-	ad := NewAssociatedData(make([]byte, associatedDataLen))
+	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Defer to an error when SetMAC() does not panic
 	defer func() {
@@ -702,8 +660,8 @@ func TestAssociatedData_SetMAC_Panic(t *testing.T) {
 func TestAssociatedData_DeepCopy(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, associatedDataLen)
-	randSlice2 := make([]byte, associatedDataLen)
+	randSlice := make([]byte, AssociatedDataLen)
+	randSlice2 := make([]byte, AssociatedDataLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
