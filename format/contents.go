@@ -8,12 +8,12 @@ package format
 
 const (
 	// Length, start index, and end index of the Contents serial
-	contentsLen   = 399 // 3192 bits
+	ContentsLen   = 399 // 3192 bits
 	contentsStart = 0
-	contentsEnd   = contentsStart + contentsLen
+	contentsEnd   = contentsStart + ContentsLen
 
 	// The smallest length that the padding can be
-	padMinLen = 11 // 88 bits
+	PadMinLen = 11 // 88 bits
 
 	// The initial value of position; indicates content start is unknown
 	invalidPosition = -1
@@ -37,12 +37,12 @@ type Contents struct {
 // NewContents creates a new Contents for a message and sets serial. If the new
 // serial is not exactly the same length as serial, then it panics.
 func NewContents(newSerial []byte) *Contents {
-	if len(newSerial) != contentsLen {
+	if len(newSerial) != ContentsLen {
 		panic("new serial not the same size as Contents serial")
 	}
 
 	newContents := &Contents{
-		serial:   make([]byte, contentsLen),
+		serial:   make([]byte, ContentsLen),
 		position: invalidPosition,
 	}
 
@@ -58,15 +58,14 @@ func (c *Contents) Get() []byte {
 	return c.serial
 }
 
-// Set sets the entire serial content. The number of bytes copied is returned.
-// If the specified byte array is not exactly the same size as serial, then it
-// panics.
-func (c *Contents) Set(newSerial []byte) int {
-	if len(newSerial) != contentsLen {
+// Set sets the entire serial content. If the specified byte array is not
+// exactly the same size as serial, then it panics.
+func (c *Contents) Set(newSerial []byte) {
+	if len(newSerial) != ContentsLen {
 		panic("new serial not the same size as Contents serial")
 	}
 
-	return copy(c.serial, newSerial)
+	copy(c.serial, newSerial)
 }
 
 // GetRightAligned returns the entire serial content, excluding the padding. If
@@ -85,11 +84,11 @@ func (c *Contents) GetRightAligned() []byte {
 // bytes copied is returned. If the specified byte array is larger than serial,
 // then it panics.
 func (c *Contents) SetRightAligned(newSerial []byte) int {
-	if len(newSerial) > contentsLen-padMinLen {
+	if len(newSerial) > ContentsLen-PadMinLen {
 		panic("new serial is larger than Contents serial")
 	}
 
-	c.position = contentsLen - len(newSerial)
+	c.position = ContentsLen - len(newSerial)
 	return copy(c.serial[c.position:], newSerial)
 }
 
@@ -101,7 +100,7 @@ func (c *Contents) GetPosition() int {
 
 // DeepCopy creates a copy of Contents.
 func (c *Contents) DeepCopy() *Contents {
-	newCopy := NewContents(make([]byte, contentsLen))
+	newCopy := NewContents(make([]byte, ContentsLen))
 	copy(newCopy.serial[:], c.serial)
 
 	return newCopy

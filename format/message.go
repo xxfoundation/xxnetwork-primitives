@@ -11,16 +11,16 @@ const (
 	TotalLen = 512 // 4096 bits
 
 	// Length, start index, and end index of the payloads
-	subPayloadLen = 256 // 2048 bits
+	PayloadLen    = 256 // 2048 bits
 	payloadAStart = 0
-	payloadAEnd   = payloadAStart + subPayloadLen
+	payloadAEnd   = payloadAStart + PayloadLen
 	payloadBStart = payloadAEnd
-	payloadBEnd   = payloadBStart + subPayloadLen
+	payloadBEnd   = payloadBStart + PayloadLen
 
 	// Length, start index, and end index of grpByte
-	grpByteLen   = 1 // 8 bits
+	GrpByteLen   = 1 // 8 bits
 	grpByteStart = associatedDataEnd
-	grpByteEnd   = grpByteStart + grpByteLen
+	grpByteEnd   = grpByteStart + GrpByteLen
 )
 
 /*                               Message Structure (not to scale)
@@ -77,15 +77,14 @@ func (m *Message) GetPayloadA() []byte {
 	return m.payloadA
 }
 
-// SetPayloadA copies the passed byte slice into payloadA. The number of bytes
-// copied is returned. If the specified byte array is not exactly the same size
-// as payloadA, then it panics.
-func (m *Message) SetPayloadA(payload []byte) int {
-	if len(payload) != subPayloadLen {
+// SetPayloadA copies the passed byte slice into payloadA. If the specified byte
+// array is not exactly the same size as payloadA, then it panics.
+func (m *Message) SetPayloadA(payload []byte) {
+	if len(payload) != PayloadLen {
 		panic("new payload not the same size as PayloadA")
 	}
 
-	return copy(m.payloadA, payload)
+	copy(m.payloadA, payload)
 }
 
 // GetPayloadB returns payload B, which is the last half of the message.
@@ -93,24 +92,23 @@ func (m *Message) GetPayloadB() []byte {
 	return m.payloadB
 }
 
-// SetPayloadB copies the passed byte slice into payloadB. The number of bytes
-// copied is returned. If the specified byte array is not exactly the same size
-// as payloadB, then it panics.
-func (m *Message) SetPayloadB(payload []byte) int {
-	if len(payload) != subPayloadLen {
+// SetPayloadB copies the passed byte slice into payloadB. If the specified byte
+// array is not exactly the same size as payloadB, then it panics.
+func (m *Message) SetPayloadB(payload []byte) {
+	if len(payload) != PayloadLen {
 		panic("new payload not the same size as PayloadB")
 	}
 
-	return copy(m.payloadB, payload)
+	copy(m.payloadB, payload)
 }
 
 // GetPayloadBForEncryption ensures payload B is in the group for encrypting.
 // Specifically, it moves the first byte to the end and sets the first byte to
 // zero.
 func (m *Message) GetPayloadBForEncryption() []byte {
-	payloadCopy := make([]byte, subPayloadLen)
+	payloadCopy := make([]byte, PayloadLen)
 	copy(payloadCopy, m.payloadB)
-	payloadCopy[subPayloadLen-1] = payloadCopy[0]
+	payloadCopy[PayloadLen-1] = payloadCopy[0]
 	payloadCopy[0] = 0
 
 	return payloadCopy
@@ -119,16 +117,14 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 // SetDecryptedPayloadB is used when receiving a decrypted payload B to ensure
 // all data is put back in the right order. If the specified byte array is not
 // exactly the same size as payloadB, then it panics. Specifically, it moves the
-// last byte to the front and sets the last byte to zero. The number of bytes
-// copied is returned. Assumes the newPayload is in the group and that its first
-// byte is zero.
-func (m *Message) SetDecryptedPayloadB(newPayload []byte) int {
-	if len(newPayload) != subPayloadLen {
+// last byte to the front and sets the last byte to zero. Assumes the newPayload
+// is in the group and that its first byte is zero.
+func (m *Message) SetDecryptedPayloadB(newPayload []byte) {
+	if len(newPayload) != PayloadLen {
 		panic("new payload not the same size as PayloadB")
 	}
 
-	size := copy(m.payloadB, newPayload)
-	m.payloadB[0] = m.payloadB[subPayloadLen-1]
-	m.payloadB[subPayloadLen-1] = 0
-	return size
+	copy(m.payloadB, newPayload)
+	m.payloadB[0] = m.payloadB[PayloadLen-1]
+	m.payloadB[PayloadLen-1] = 0
 }
