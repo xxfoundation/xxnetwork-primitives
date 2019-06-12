@@ -47,24 +47,19 @@ type AssociatedData struct {
 	mac         []byte // message authentication code
 }
 
-// Length of the key fingerprint
-const KeyFPLen = 32
-
 // Array form for storing a fingerprint
-type Fingerprint [KeyFPLen]byte
+type Fingerprint [keyFPLen]byte
 
 // NewAssociatedData creates a new AssociatedData for a message and points
 // recipientID, keyFP, timestamp, mac, and grpByte to serial. If the new serial
 // is not exactly the same length as serial, then it panics.
 func NewAssociatedData(newSerial []byte) *AssociatedData {
-	newAD := &AssociatedData{}
-
-	if len(newSerial) == associatedDataLen {
-		newAD.serial = newSerial
-	} else {
+	if len(newSerial) != associatedDataLen {
 		panic("new serial not the same size as Associated Data serial")
 	}
 
+	newAD := &AssociatedData{}
+	newAD.serial = newSerial
 	newAD.recipientID = newAD.serial[recipientIDStart:recipientIDEnd]
 	newAD.keyFP = newAD.serial[keyFPStart:keyFPEnd]
 	newAD.timestamp = newAD.serial[timestampStart:timestampEnd]
@@ -84,11 +79,11 @@ func (a *AssociatedData) Get() []byte {
 // returned. If the specified byte array is not exactly the same size as serial,
 // then it panics.
 func (a *AssociatedData) Set(newSerial []byte) int {
-	if len(newSerial) == associatedDataLen {
-		return copy(a.serial, newSerial)
-	} else {
+	if len(newSerial) != associatedDataLen {
 		panic("new serial not the same size as AssociatedData serial")
 	}
+
+	return copy(a.serial, newSerial)
 }
 
 // GetRecipientID returns the recipientID. The caller can read or write the data
@@ -102,11 +97,11 @@ func (a *AssociatedData) GetRecipientID() []byte {
 // If the specified byte array is not exactly the same size as recipientID, then
 // it panics.
 func (a *AssociatedData) SetRecipientID(newRecipientID []byte) int {
-	if len(newRecipientID) == recipientIDLen {
-		return copy(a.recipientID, newRecipientID)
-	} else {
+	if len(newRecipientID) != recipientIDLen {
 		panic("new recipientID not the same size as AssociatedData newRecipientID")
 	}
+
+	return copy(a.recipientID, newRecipientID)
 }
 
 // GetRecipient returns the recipientID as a user ID.
@@ -143,11 +138,11 @@ func (a *AssociatedData) GetTimestamp() []byte {
 // the specified byte array is not exactly the same size as timestamp, then it
 // panics.
 func (a *AssociatedData) SetTimestamp(newTimestamp []byte) int {
-	if len(newTimestamp) == timestampLen {
-		return copy(a.timestamp, newTimestamp)
-	} else {
+	if len(newTimestamp) != timestampLen {
 		panic("new timestamp not the same size as AssociatedData timestamp")
 	}
+
+	return copy(a.timestamp, newTimestamp)
 }
 
 // GetMAC returns the mac. The caller can read or write the data within this
@@ -159,11 +154,11 @@ func (a *AssociatedData) GetMAC() []byte {
 // SetMac sets the mac. The number of bytes copied is returned. If the specified
 // byte array is not exactly the same size as mac, then it panics.
 func (a *AssociatedData) SetMAC(newMAC []byte) int {
-	if len(newMAC) == macLen {
-		return copy(a.mac, newMAC)
-	} else {
+	if len(newMAC) != macLen {
 		panic("new timestamp not the same size as AssociatedData timestamp")
 	}
+
+	return copy(a.mac, newMAC)
 }
 
 // DeepCopy creates a copy of AssociatedData.
@@ -177,11 +172,11 @@ func (a *AssociatedData) DeepCopy() *AssociatedData {
 // NewFingerprint creates a new fingerprint from a byte slice. If the specified
 // data iis not exactly the same size as keyFP, then it panics.
 func NewFingerprint(data []byte) *Fingerprint {
-	if len(data) == KeyFPLen {
-		fp := &Fingerprint{}
-		copy(fp[:], data[:])
-		return fp
-	} else {
+	if len(data) != keyFPLen {
 		panic("data is not smaller than or equal to AssociatedData keyFP")
 	}
+
+	fp := &Fingerprint{}
+	copy(fp[:], data[:])
+	return fp
 }

@@ -124,7 +124,7 @@ func TestNewMessage_Overlap(t *testing.T) {
 			reflect.ValueOf(msg.Contents.serial[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.payloadA[:subPayloadLen-1]).Pointer() ==
+	if reflect.ValueOf(msg.payloadA[:subPayloadLen-1]).Pointer() >=
 		reflect.ValueOf(msg.payloadB[:0]).Pointer() {
 		t.Errorf("The end of payloadA overlaps with the start of payloadB"+
 			"\n\tend of payloadA:   %d\n\tstart of payloadB: %d",
@@ -132,7 +132,7 @@ func TestNewMessage_Overlap(t *testing.T) {
 			reflect.ValueOf(msg.payloadB[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.Contents.serial[:contentsLen-1]).Pointer() ==
+	if reflect.ValueOf(msg.Contents.serial[:contentsLen-1]).Pointer() >=
 		reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer() {
 		t.Errorf("The end of Contents overlaps with the start of AssociatedData"+
 			"\n\tend of Contents:         %d\n\tstart of AssociatedData: %d",
@@ -140,7 +140,7 @@ func TestNewMessage_Overlap(t *testing.T) {
 			reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(msg.AssociatedData.serial[:associatedDataLen-1]).Pointer() ==
+	if reflect.ValueOf(msg.AssociatedData.serial[:associatedDataLen-1]).Pointer() >=
 		reflect.ValueOf(msg.grpByte[:0]).Pointer() {
 		t.Errorf("The end of AssociatedData overlaps with the start of grpByte"+
 			"\n\tend of AssociatedData:   %d\n\tstart of grpByte:        %d",

@@ -163,7 +163,7 @@ func TestNewAssociatedData_Overlap(t *testing.T) {
 			reflect.ValueOf(ad.recipientID[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.recipientID[:recipientIDLen-1]).Pointer() ==
+	if reflect.ValueOf(ad.recipientID[:recipientIDLen-1]).Pointer() >=
 		reflect.ValueOf(ad.keyFP[:0]).Pointer() {
 		t.Errorf("The end of recipientID overlaps with the start of keyFP"+
 			"\n\tend of recipientID: %d\n\tstart of keyFP:     %d",
@@ -171,7 +171,7 @@ func TestNewAssociatedData_Overlap(t *testing.T) {
 			reflect.ValueOf(ad.keyFP[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.keyFP[:keyFPLen-1]).Pointer() ==
+	if reflect.ValueOf(ad.keyFP[:keyFPLen-1]).Pointer() >=
 		reflect.ValueOf(ad.timestamp[:0]).Pointer() {
 		t.Errorf("The end of keyFP overlaps with the start of timestamp"+
 			"\n\tend of keyFP:       %d\n\tstart of timestamp: %d",
@@ -179,7 +179,7 @@ func TestNewAssociatedData_Overlap(t *testing.T) {
 			reflect.ValueOf(ad.timestamp[:0]).Pointer())
 	}
 
-	if reflect.ValueOf(ad.timestamp[:timestampLen-1]).Pointer() ==
+	if reflect.ValueOf(ad.timestamp[:timestampLen-1]).Pointer() >=
 		reflect.ValueOf(ad.mac[:0]).Pointer() {
 		t.Errorf("The end of timestamp overlaps with the start of mac"+
 			"\n\tend of timestamp: %d\n\tstart of mac:     %d",
@@ -474,7 +474,7 @@ func TestAssociatedData_SetRecipient(t *testing.T) {
 func TestNewFingerprint(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, KeyFPLen)
+	randSlice := make([]byte, keyFPLen)
 	rand.Read(randSlice)
 
 	// Create Fingerprint
@@ -493,7 +493,7 @@ func TestNewFingerprint(t *testing.T) {
 func TestNewFingerprint_Panic(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, KeyFPLen-5)
+	randSlice := make([]byte, keyFPLen-5)
 	rand.Read(randSlice)
 
 	// Defer to an error when NewFingerprint() does not panic
