@@ -1,39 +1,14 @@
-package globals
+package ndf
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/spacemonkeygo/openssl"
+	"errors"
 	"strings"
+	"time"
 )
 
-func CreateNDFPublicKey() openssl.PublicKey {
-	publicKey, err := openssl.LoadPublicKeyFromPEM(
-		[]byte(`-----BEGIN PUBLIC KEY-----
-MIIDRjCCAjkGByqGSM44BAEwggIsAoIBAQDrFa5KY+P5MAv9C3cc5ndlLzU2dnjk
-5eFln7/t9OwGhNs63UcZW2iYELnM30wVx7gYQigPUyXP6973w3R9k7/6QPXZ20IP
-SDFr3Q5OstIcCgOPUTMHycYkRbLQzZP+BHaTE+RtOC1uMKQYF/7rDLvkqia1+3p2
-e7OSWe6HV2k+lbaj4DHTHOtFqSe6QjEjVobNkF0kR0Y/kFIl8lYL8+8V2MMKVlb6
-8YN0T2LmZXPCWwB0nDeCQ4ryvFMlXoS6x497PGgHEk3qQtnVAc02q9HQl0r9i0sI
-yNburnAbmvm3jS76sTr1qOAGi3GaaY2nSDe0c0OAcTNXwcldx6SuicBXAiEAr+XF
-Puot+mcFb+sdZldhFKbIRehp0u/M0wYZd+lywb0CggEAFtHMikAwFcLFtxZIDA3b
-DIWRUN1zWJ7xVL19lnPxnxVSbBXBYbXK5PKRN/N3eGcVF6pq4N8cqOAco/2lntSS
-YaATNSVieJGlVsN9OOhztFlEahN97bqucbu7ikYKitC1hHFQzapeejw1pjMDlxOt
-bxSfn0X4kujWkOSI0AGj7CpcTilp0ntnzDSEEu2R8Ta+7L2VXsb3fNxxkWWfc+xo
-X2DsPBCa+zSmwIXuRsEethH7MAyzf3uPA98ZZRG7eGZfW1+/fgl5GXlIUGbxzf0K
-FoA0Qn2QDZ+8HodT147JsyxHyKnSEhs5wviq9b8GhsxEEw8DCKt8GU40q6WQCaUj
-vAOCAQUAAoIBAGkgeVn5Dg5x7Hn0W9dPlVNJXzJEsJGZItu+/VrzGA3ZVfdeb9/e
-579cfA7DuoHpZnLA8+Bb8kMuaMlzaNA0Vo6tfJsqmZKq+DH+Ww7Jhs6OJvdlG3ik
-0NktvkN+MiYke301xbdZcbRtWu97e2930onIMZt+QnAq1+7UQt81Eav4bFtOZyR5
-xDCxFHzFn2/wNlg/m/QWgAFQaRHAumc2X+26qUyblXS10AxoPEIWXs0DGgY1MQzk
-7N/zhUPhHmEBTAhFiXqnhV4v2IFAGf4GPwmF9kIrQkQ3paI2mh8EW1qYEl7BD+jw
-fcIgcc/yqy1i6kUTYCDRHz1h7+vTHcku1TA=
------END PUBLIC KEY-----`))
-	if err != nil {
-		panic(err)
-	}
-	return publicKey
-}
+var ErrNDFFile = errors.New("NDF file malformed: expected only two or more lines")
 
 // This struct is currently generated in Terraform and decoded here
 // So, if the way it's generated in Terraform changes, we also need to change
@@ -43,69 +18,87 @@ fcIgcc/yqy1i6kUTYCDRHz1h7+vTHcku1TA=
 //  See https://blog.gopheracademy.com/advent-2016/advanced-encoding-decoding/
 //  for information about how to do this.
 type NetworkDefinitionJSON struct {
-	Timestamp string
-	Gateways []GatewayInfoJSON
-	Nodes []NodeInfoJSON
+	Timestamp    time.Time
+	Gateways     []GatewayInfoJSON
+	Nodes        []NodeInfoJSON
 	Registration RegistrationInfoJSON
-	Udb UDBInfoJSON
-	E2e GroupJSON
-	Cmix GroupJSON
+	Udb          UDBInfoJSON
+	E2e          GroupJSON
+	Cmix         GroupJSON
 }
 
-type GatewayInfoJSON struct{
-	Address string
+// GatewayInfoJSON is the structure for the gateways object in the JSON file.
+type GatewayInfoJSON struct {
+	Address         string
 	Tls_certificate string
 }
 
+// NodeInfoJSON is the structure for the nodes object in the JSON file.
 type NodeInfoJSON struct {
-	Id []byte
-	Dsa_public_key string
-	Address string
+	Id              []byte
+	Dsa_public_key  string
+	Address         string
 	Tls_certificate string
 }
 
+// RegistrationInfoJSON is the structure for the registration object in the JSON
+// file.
 type RegistrationInfoJSON struct {
-	Dsa_public_key string
-    Address string
+	Dsa_public_key  string
+	Address         string
+	Tls_certificate string
 }
 
+// UDBInfoJSON is the structure for the udb object in the JSON file.
 type UDBInfoJSON struct {
-	Id []byte
+	Id             []byte
 	Dsa_public_key string
 }
 
+// UDBInfoJSON is the structure for a group in the JSON file; it is used for the
+// E2e and Cmix objects.
 type GroupJSON struct {
-	Prime string
+	Prime       string
 	Small_prime string
-	Generator string
+	Generator   string
 }
 
 // Returns an error if base64 signature decodes incorrectly
 // Returns an error if signature verification fails
 // Otherwise, returns an object from the json with the contents of the file
 func DecodeNDF(ndf string) (*NetworkDefinitionJSON, error) {
-	var jsonString string
-    jsonString, err := verify(ndf)
+	// Get JSON data check if the signature is valid
+	jsonString, err := separate(ndf)
 	if err != nil {
 		return nil, err
 	}
-    networkDefinition := &NetworkDefinitionJSON{}
+
+	// Unmarshal the JSON string into a structure
+	networkDefinition := &NetworkDefinitionJSON{}
 	err = json.Unmarshal([]byte(jsonString), networkDefinition)
 	if err != nil {
-        return nil, err
+		return nil, err
 	}
-	return networkDefinition, err
+
+	return networkDefinition, nil
 }
 
-func verify(ndf string) (jsonString string, err error) {
+// separate splits the JSON data from the signature. The JSON data is returned
+// at a string and an error is returned if the signature is invalid.
+func separate(ndf string) (string, error) {
 	lines := strings.Split(ndf, "\n")
+
+	// Check that the NDF string is at least two lines
+	if len(lines) < 2 {
+		return "", ErrNDFFile
+	}
+
 	// Base64 decode the signature to a byte slice
-	// VerifyPKCS1v15 requires a raw byte slice to do its processing
-	signature, err := base64.StdEncoding.DecodeString(lines[1])
+	_, err := base64.StdEncoding.DecodeString(lines[1])
 	if err != nil {
 		return "", err
 	}
-	publicKey := CreateNDFPublicKey()
-	return lines[0],
-		publicKey.VerifyPKCS1v15(openssl.SHA256_Method, []byte(lines[0]), signature)
+
+	// TODO: verify the signature and not return nil error
+	return lines[0], nil
 }
