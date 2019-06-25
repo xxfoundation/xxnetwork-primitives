@@ -100,9 +100,12 @@ func NewUserFromBytes(data []byte) *User {
 	return user
 }
 
-// Utility function to convert a user ID to a byte slice
+// Bytes returns a copy of a User ID as a byte slice.
 func (u *User) Bytes() []byte {
-	return u[:]
+	bytes := make([]byte, UserLen)
+	copy(bytes, u[:])
+
+	return bytes
 }
 
 // Utility function to determine whether two user IDs are equal

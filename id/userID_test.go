@@ -29,8 +29,8 @@ func TestUserID_RegistrationCode(t *testing.T) {
 // Proves that results from setting up a new user ID from one uint64 are as
 // expected, i.e. the first 3 uints worth of space are zero and the last uint
 // worth of space is filled.
-// You shouldn't use NewUserFromUint in production code! Use NewUserFromUints instead
-// and have the first three uints be zero.
+// You shouldn't use NewUserFromUint in production code! Use NewUserFromUints
+// instead and have the first three uints be zero.
 // I wrote NewUserFromUint for compatibility with a lot of our tests that
 // populated user IDs from a single uint64 and don't care too much about
 // propagating the whole thing.
@@ -99,6 +99,25 @@ func TestUserID_Bytes(t *testing.T) {
 	}
 }
 
+// Tests that Bytes() correctly makes a new copy of the bytes.
+func TestUserID_Bytes_Copy(t *testing.T) {
+	idBytes := make([]byte, UserLen)
+	rand.Read(idBytes)
+	id := NewUserFromBytes(idBytes)
+
+	userBytes := id.Bytes()
+
+	// Modify the original
+	for j := 0; j < UserLen; j++ {
+		id[j] = ^id[j]
+	}
+
+	if !bytes.Equal(userBytes, idBytes) {
+		t.Errorf("Bytes() returned incorrect byte slice of User ID"+
+			"\n\treceived: %v\n\texpected: %v", userBytes, idBytes)
+	}
+}
+
 // Proves that equal returns true when two IDs are equal and returns false when
 // they aren't
 func TestUser_Cmp(t *testing.T) {
@@ -114,7 +133,8 @@ func TestUser_Cmp(t *testing.T) {
 	}
 }
 
-//Test that deep copy returns an exact copy and that changing one does nto change the other
+//Test that deep copy returns an exact copy and that changing one does not
+// change the other
 func TestUser_DeepCopy(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
 	for i := 0; i < 100; i++ {
@@ -123,7 +143,8 @@ func TestUser_DeepCopy(t *testing.T) {
 		deepcopy := (&original).DeepCopy()
 
 		if !reflect.DeepEqual(original, *deepcopy) {
-			t.Errorf("User.DeepCopy: On Attempt %v copy does not equal origonal %v %v", i, original, deepcopy)
+			t.Errorf("User.DeepCopy: On Attempt %v copy does not equal "+
+				"origonal %v %v", i, original, deepcopy)
 		}
 
 		for j := 0; j < UserLen; j++ {
