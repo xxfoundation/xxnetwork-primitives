@@ -14,7 +14,6 @@ var ErrNDFFile = errors.New("NDF file malformed: expected only two or more lines
 // So, if the way it's generated in Terraform changes, we also need to change
 // the struct
 // TODO Use UnmarshalJSON for user and node IDs and groups, at the least
-//  We also need to unmarshal the Timestamp to a time.Time
 //  See https://blog.gopheracademy.com/advent-2016/advanced-encoding-decoding/
 //  for information about how to do this.
 type NetworkDefinition struct {
