@@ -51,19 +51,20 @@ type AssociatedData struct {
 type Fingerprint [KeyFPLen]byte
 
 // NewAssociatedData creates a new AssociatedData for a message and points
-// recipientID, keyFP, timestamp, mac, and grpByte to serial. If the new serial
-// is not exactly the same length as serial, then it panics.
+// recipientID, keyFP, timestamp, and mac to serial. If the new serial is not
+// exactly the same length as serial, then it panics.
 func NewAssociatedData(newSerial []byte) *AssociatedData {
 	if len(newSerial) != AssociatedDataLen {
 		panic("new serial not the same size as Associated Data serial")
 	}
 
-	newAD := &AssociatedData{}
-	newAD.serial = newSerial
-	newAD.recipientID = newAD.serial[recipientIDStart:recipientIDEnd]
-	newAD.keyFP = newAD.serial[keyFPStart:keyFPEnd]
-	newAD.timestamp = newAD.serial[timestampStart:timestampEnd]
-	newAD.mac = newAD.serial[macStart:macEnd]
+	newAD := &AssociatedData{
+		serial:      newSerial[:],
+		recipientID: newSerial[recipientIDStart:recipientIDEnd],
+		keyFP:       newSerial[keyFPStart:keyFPEnd],
+		timestamp:   newSerial[timestampStart:timestampEnd],
+		mac:         newSerial[macStart:macEnd],
+	}
 
 	return newAD
 }

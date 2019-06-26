@@ -64,6 +64,9 @@ func NewMessage() *Message {
 	newMsg.grpByte = newMsg.master[grpByteStart:grpByteEnd]
 	copy(newMsg.grpByte, []byte{0})
 
+	newMsg.Contents.position = invalidPosition
+	newMsg.AssociatedData = *NewAssociatedData(newMsg.AssociatedData.serial)
+
 	return newMsg
 }
 
