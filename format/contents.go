@@ -42,11 +42,9 @@ func NewContents(newSerial []byte) *Contents {
 	}
 
 	newContents := &Contents{
-		serial:   make([]byte, ContentsLen),
+		serial:   newSerial,
 		position: invalidPosition,
 	}
-
-	newContents.serial = newSerial
 
 	return newContents
 }
