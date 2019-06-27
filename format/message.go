@@ -56,16 +56,13 @@ type Message struct {
 func NewMessage() *Message {
 	newMsg := &Message{master: [TotalLen]byte{}}
 
-	newMsg.Contents.serial = newMsg.master[contentsStart:contentsEnd]
-	newMsg.AssociatedData.serial = newMsg.master[associatedDataStart:associatedDataEnd]
+	newMsg.Contents = *NewContents(newMsg.master[contentsStart:contentsEnd])
+	newMsg.AssociatedData = *NewAssociatedData(newMsg.master[associatedDataStart:associatedDataEnd])
 	newMsg.payloadA = newMsg.master[payloadAStart:payloadAEnd]
 	newMsg.payloadB = newMsg.master[payloadBStart:payloadBEnd]
 
 	newMsg.grpByte = newMsg.master[grpByteStart:grpByteEnd]
 	copy(newMsg.grpByte, []byte{0})
-
-	newMsg.Contents.position = invalidPosition
-	newMsg.AssociatedData = *NewAssociatedData(newMsg.AssociatedData.serial)
 
 	return newMsg
 }
