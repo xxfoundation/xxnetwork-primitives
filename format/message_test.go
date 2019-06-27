@@ -203,10 +203,42 @@ func TestMessage_Values(t *testing.T) {
 			msg.Contents.Get(), msg.master[contentsStart:contentsEnd])
 	}
 
+	if msg.Contents.GetPosition() != invalidPosition {
+		t.Errorf("Contents position is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.Contents.GetPosition(), invalidPosition)
+	}
+
 	if !bytes.Equal(msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd]) {
 		t.Errorf("AssociatedData is not properly mapped to master"+
 			"\n\treceived: %v\n\texpected: %v",
 			msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen]) {
+		t.Errorf("AssociatedData recipientID is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen])
+	}
+
+	fp := msg.AssociatedData.GetKeyFP()
+
+	if !bytes.Equal([]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
+		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			[]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {
+		t.Errorf("AssociatedData timestamp is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen]) {
+		t.Errorf("AssociatedData MAC is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen])
 	}
 
 	// Create new Message and set Contents and AssociatedData
@@ -236,6 +268,32 @@ func TestMessage_Values(t *testing.T) {
 		t.Errorf("AssociatedData is not properly mapped to master"+
 			"\n\treceived: %v\n\texpected: %v",
 			msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen]) {
+		t.Errorf("AssociatedData recipientID is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen])
+	}
+
+	fp = msg.AssociatedData.GetKeyFP()
+
+	if !bytes.Equal([]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
+		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			[]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {
+		t.Errorf("AssociatedData timestamp is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen])
+	}
+
+	if !bytes.Equal(msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen]) {
+		t.Errorf("AssociatedData MAC is not properly mapped to master"+
+			"\n\treceived: %v\n\texpected: %v",
+			msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen])
 	}
 }
 
