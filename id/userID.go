@@ -129,7 +129,8 @@ func (u *User) DeepCopy() *User {
 // string "dummy"
 func MakeDummyUserID() *User {
 	dummyBytes := make([]byte, UserLen)
-	_, err := base64.Encoding.Decode(base64.StdEncoding, dummyBytes, []byte("dummy"))
+	encoder := &base64.Encoding{}
+	_, err := encoder.Decode(dummyBytes, []byte("dummy"))
 	if err != nil {
 		panic(fmt.Sprintf("Error on creating dummy userID: %+v", err))
 	}
