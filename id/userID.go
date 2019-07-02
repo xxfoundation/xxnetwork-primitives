@@ -8,9 +8,7 @@ package id
 
 import (
 	"encoding/base32"
-	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"golang.org/x/crypto/blake2b"
 	"testing"
 )
@@ -129,11 +127,7 @@ func (u *User) DeepCopy() *User {
 // string "dummy"
 func MakeDummyUserID() *User {
 	dummyBytes := make([]byte, UserLen)
-	encoder := &base64.Encoding{}
-	_, err := encoder.Decode(dummyBytes, []byte("dummy"))
-	if err != nil {
-		panic(fmt.Sprintf("Error on creating dummy userID: %+v", err))
-	}
-
+	dummystr := []byte("dummy")
+	copy(dummyBytes[:len(dummystr)], dummystr)
 	return NewUserFromBytes(dummyBytes)
 }
