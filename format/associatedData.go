@@ -7,6 +7,7 @@
 package format
 
 import (
+	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/primitives/id"
 )
 
@@ -55,7 +56,9 @@ type Fingerprint [KeyFPLen]byte
 // exactly the same length as serial, then it panics.
 func NewAssociatedData(newSerial []byte) *AssociatedData {
 	if len(newSerial) != AssociatedDataLen {
-		panic("new serial not the same size as Associated Data serial")
+		jww.ERROR.Panicf("new serial not the same size as "+
+			"AssociatedData serial; Expected: %v, Recieved: %v",
+			AssociatedDataLen, len(newSerial))
 	}
 
 	newAD := &AssociatedData{
@@ -80,7 +83,9 @@ func (a *AssociatedData) Get() []byte {
 // is not exactly the same size as serial, then it panics.
 func (a *AssociatedData) Set(newSerial []byte) {
 	if len(newSerial) != AssociatedDataLen {
-		panic("new serial not the same size as AssociatedData serial")
+		jww.ERROR.Panicf("new serial not the same size as "+
+			"AssociatedData serial; Expected: %v, Recieved: %v",
+			AssociatedDataLen, len(newSerial))
 	}
 
 	copy(a.serial, newSerial)
@@ -97,7 +102,9 @@ func (a *AssociatedData) GetRecipientID() []byte {
 // exactly the same size as recipientID, then it panics.
 func (a *AssociatedData) SetRecipientID(newRecipientID []byte) {
 	if len(newRecipientID) != RecipientIDLen {
-		panic("new recipientID not the same size as AssociatedData newRecipientID")
+		jww.ERROR.Panicf("new recipientID not the same size as "+
+			"AssociatedData newRecipientID; Expected: %v, Recieved: %v",
+			RecipientIDLen, len(newRecipientID))
 	}
 
 	copy(a.recipientID, newRecipientID)
@@ -135,7 +142,9 @@ func (a *AssociatedData) GetTimestamp() []byte {
 // the same size as timestamp, then it panics.
 func (a *AssociatedData) SetTimestamp(newTimestamp []byte) {
 	if len(newTimestamp) != TimestampLen {
-		panic("new timestamp not the same size as AssociatedData timestamp")
+		jww.ERROR.Panicf("new timestamp not the same size as "+
+			"AssociatedData timestamp; Expected: %v, Recieved: %v",
+			TimestampLen, len(newTimestamp))
 	}
 
 	copy(a.timestamp, newTimestamp)
@@ -151,7 +160,9 @@ func (a *AssociatedData) GetMAC() []byte {
 // as mac, then it panics.
 func (a *AssociatedData) SetMAC(newMAC []byte) {
 	if len(newMAC) != MacLen {
-		panic("new timestamp not the same size as AssociatedData timestamp")
+		jww.ERROR.Panicf("new MAC not the same size as "+
+			"AssociatedData MAC; Expected: %v, Recieved: %v",
+			MacLen, len(newMAC))
 	}
 
 	copy(a.mac, newMAC)
@@ -169,7 +180,9 @@ func (a *AssociatedData) DeepCopy() *AssociatedData {
 // data iis not exactly the same size as keyFP, then it panics.
 func NewFingerprint(data []byte) *Fingerprint {
 	if len(data) != KeyFPLen {
-		panic("data is not smaller than or equal to AssociatedData keyFP")
+		jww.ERROR.Panicf("fingerprint not the same size as "+
+			"AssociatedData fingerprint; Expected: %v, Recieved: %v",
+			KeyFPLen, len(data))
 	}
 
 	fp := &Fingerprint{}

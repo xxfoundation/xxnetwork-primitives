@@ -6,6 +6,8 @@
 
 package format
 
+import jww "github.com/spf13/jwalterweatherman"
+
 const (
 	// Length, start index, and end index of the Contents serial
 	ContentsLen   = 399 // 3192 bits
@@ -38,7 +40,9 @@ type Contents struct {
 // serial is not exactly the same length as serial, then it panics.
 func NewContents(newSerial []byte) *Contents {
 	if len(newSerial) != ContentsLen {
-		panic("new serial not the same size as Contents serial")
+		jww.ERROR.Panicf("new serial not the same size as Contents serial;"+
+			"Expected: %v, Recieved: %v",
+			ContentsLen, len(newSerial))
 	}
 
 	newContents := &Contents{
@@ -60,7 +64,9 @@ func (c *Contents) Get() []byte {
 // exactly the same size as serial, then it panics.
 func (c *Contents) Set(newSerial []byte) {
 	if len(newSerial) != ContentsLen {
-		panic("new serial not the same size as Contents serial")
+		jww.ERROR.Panicf("new serial not the same size as Contents serial;"+
+			"Expected: %v, Recieved: %v",
+			ContentsLen, len(newSerial))
 	}
 
 	copy(c.serial, newSerial)
@@ -72,7 +78,7 @@ func (c *Contents) Set(newSerial []byte) {
 // slice header in the actual structure.
 func (c *Contents) GetRightAligned() []byte {
 	if c.position == invalidPosition {
-		panic("invalid padding when getting right-aligned data")
+		jww.ERROR.Panicf("invalid padding when getting right-aligned data")
 	}
 
 	return c.serial[c.position:]
@@ -83,7 +89,9 @@ func (c *Contents) GetRightAligned() []byte {
 // then it panics.
 func (c *Contents) SetRightAligned(newSerial []byte) int {
 	if len(newSerial) > ContentsLen-PadMinLen {
-		panic("new serial is larger than Contents serial")
+		jww.ERROR.Panicf("right aligned serial larger then Contents serial;"+
+			"Expected: %v, Recieved: %v",
+			ContentsLen-PadMinLen, len(newSerial))
 	}
 
 	c.position = ContentsLen - len(newSerial)
