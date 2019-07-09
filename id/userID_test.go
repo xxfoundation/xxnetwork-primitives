@@ -156,3 +156,16 @@ func TestUser_DeepCopy(t *testing.T) {
 		}
 	}
 }
+
+func TestMakeDummyUserID(t *testing.T) {
+
+	expected := []byte{100, 117, 109, 109, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	id := MakeDummyUserID()
+
+	if !reflect.DeepEqual((*id)[:], expected) {
+		t.Errorf("Dummy id not as expected")
+	}
+
+}

@@ -6,6 +6,8 @@
 
 package format
 
+import jww "github.com/spf13/jwalterweatherman"
+
 const (
 	// Length of the entire message serial
 	TotalLen = 512 // 4096 bits
@@ -81,7 +83,9 @@ func (m *Message) GetPayloadA() []byte {
 // array is not exactly the same size as payloadA, then it panics.
 func (m *Message) SetPayloadA(payload []byte) {
 	if len(payload) != PayloadLen {
-		panic("new payload not the same size as PayloadA")
+		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
+			"Expected: %v, Recieved: %v",
+			PayloadLen, len(payload))
 	}
 
 	copy(m.payloadA, payload)
@@ -96,7 +100,9 @@ func (m *Message) GetPayloadB() []byte {
 // array is not exactly the same size as payloadB, then it panics.
 func (m *Message) SetPayloadB(payload []byte) {
 	if len(payload) != PayloadLen {
-		panic("new payload not the same size as PayloadB")
+		jww.ERROR.Panicf("new payload not the same size as PayloadB;"+
+			"Expected: %v, Recieved: %v",
+			PayloadLen, len(payload))
 	}
 
 	copy(m.payloadB, payload)
@@ -121,7 +127,9 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 // is in the group and that its first byte is zero.
 func (m *Message) SetDecryptedPayloadB(newPayload []byte) {
 	if len(newPayload) != PayloadLen {
-		panic("new payload not the same size as PayloadB")
+		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
+			"Expected: %v, Recieved: %v",
+			PayloadLen, len(newPayload))
 	}
 
 	copy(m.payloadB, newPayload)
