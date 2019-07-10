@@ -7,6 +7,7 @@
 package ndf
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -68,31 +69,37 @@ type Group struct {
 }
 
 // DecodeNDF decodes the given JSON string into the NetworkDefinition structure
-// and signature. The NDF string is expected to have the JSON data on line 1 and
-// its signature on line 2. Returns an error if separating the lines fails or if
-// the JSON unmarshal fails.
-func DecodeNDF(ndf string) (*NetworkDefinition, string, error) {
+// and decodes the base 64 signature to a byte slice. The NDF string is expected
+// to have the JSON data on line 1 and its signature on line 2. Returns an error
+// if separating the lines fails or if the JSON unmarshal fails.
+func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	// Get JSON data and check if the separating failed
 	jsonData, signature, err := separate(ndf)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
+	}
+
+	// Decode the signature form base 64 and check for errors
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Unmarshal the JSON string into a structure
 	networkDefinition := &NetworkDefinition{}
 	err = json.Unmarshal([]byte(jsonData), networkDefinition)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
-	return networkDefinition, signature, nil
+	return networkDefinition, signatureBytes, nil
 }
 
 // separate splits the JSON data from the signature. The NDF string is expected
 // to have the JSON data on line 1 and its signature on line 2. Returns JSON
 // data and signature as separate strings. Returns an error if there are less
 // than two lines in the NDF string.
-func separate(ndf string) (jsonData, signature string, err error) {
+func separate(ndf string) (string, string, error) {
 	lines := strings.Split(ndf, "\n")
 
 	// Check that the NDF string is at least two lines
