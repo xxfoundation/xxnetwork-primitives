@@ -117,7 +117,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert timestamp to a byte slice
 	timeBytes, err := ndf.Timestamp.MarshalBinary()
 	if err != nil {
-		jww.ERROR.Println(err)
+		jww.FATAL.Panicf("Failed to marshal NetworkDefinition timestamp: %v", err)
 	}
 
 	b = append(b, timeBytes...)
