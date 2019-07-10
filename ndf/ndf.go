@@ -1,18 +1,20 @@
-// //////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Copyright © 2018 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
-// //////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 package ndf
 
 import (
 	"encoding/json"
 	"errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"strings"
 	"time"
 )
 
+// Error for when the NDF file has less than two lines
 var ErrNDFFile = errors.New(
 	"NDF file malformed: expected only two or more lines")
 
@@ -65,38 +67,86 @@ type Group struct {
 	Generator  string
 }
 
-// DecodeNDF decodes the given JSON string into the NetworkDefinition structure.
-// The JSON string is expected to have the JSON data on line 1 and its signature
-// on line 2. Returns an error if separating the lines fails or if the JSON
-// unmarshal fails.
-func DecodeNDF(ndf string) (*NetworkDefinition, error) {
+// DecodeNDF decodes the given JSON string into the NetworkDefinition structure
+// and signature. The NDF string is expected to have the JSON data on line 1 and
+// its signature on line 2. Returns an error if separating the lines fails or if
+// the JSON unmarshal fails.
+func DecodeNDF(ndf string) (*NetworkDefinition, string, error) {
 	// Get JSON data and check if the separating failed
-	jsonString, err := separate(ndf)
+	jsonData, signature, err := separate(ndf)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Unmarshal the JSON string into a structure
 	networkDefinition := &NetworkDefinition{}
-	err = json.Unmarshal([]byte(jsonString), networkDefinition)
+	err = json.Unmarshal([]byte(jsonData), networkDefinition)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return networkDefinition, nil
+	return networkDefinition, signature, nil
 }
 
-// separate splits the JSON data from the signature. The JSON string is expected
+// separate splits the JSON data from the signature. The NDF string is expected
 // to have the JSON data on line 1 and its signature on line 2. Returns JSON
-// data as a string. Returns an error if there are less than two lines in the
-// NDF string.
-func separate(ndf string) (string, error) {
+// data and signature as separate strings. Returns an error if there are less
+// than two lines in the NDF string.
+func separate(ndf string) (jsonData, signature string, err error) {
 	lines := strings.Split(ndf, "\n")
 
 	// Check that the NDF string is at least two lines
 	if len(lines) < 2 {
-		return "", ErrNDFFile
+		return "", "", ErrNDFFile
 	}
 
-	return lines[0], nil
+	return lines[0], lines[1], nil
+}
+
+// Serialize converts the NetworkDefinition into a byte slice.
+func (ndf *NetworkDefinition) Serialize() []byte {
+	b := make([]byte, 0)
+
+	// Convert timestamp to a byte slice
+	timeBytes, err := ndf.Timestamp.MarshalBinary()
+	if err != nil {
+		jww.ERROR.Println(err)
+	}
+
+	b = append(b, timeBytes...)
+
+	// Convert Gateways slice to byte slice
+	for _, val := range ndf.Gateways {
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Nodes slice to byte slice
+	for _, val := range ndf.Nodes {
+		b = append(b, val.ID...)
+		b = append(b, []byte(val.DsaPublicKey)...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Registration to byte slice
+	b = append(b, []byte(ndf.Registration.DsaPublicKey)...)
+	b = append(b, []byte(ndf.Registration.Address)...)
+	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
+
+	// Convert UDB to byte slice
+	b = append(b, []byte(ndf.UDB.ID)...)
+	b = append(b, []byte(ndf.UDB.DsaPublicKey)...)
+
+	// Convert E2E to byte slice
+	b = append(b, []byte(ndf.E2E.Prime)...)
+	b = append(b, []byte(ndf.E2E.Generator)...)
+	b = append(b, []byte(ndf.E2E.SmallPrime)...)
+
+	// Convert CMIX to byte slice
+	b = append(b, []byte(ndf.CMIX.Prime)...)
+	b = append(b, []byte(ndf.CMIX.Generator)...)
+	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
+
+	return b
 }
