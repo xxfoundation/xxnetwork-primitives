@@ -9,15 +9,10 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"strings"
 	"time"
 )
-
-// Error for when the NDF file has less than two lines
-var ErrNDFFile = errors.New(
-	"NDF file malformed: expected only two or more lines")
 
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go. If the JSON structure
@@ -60,8 +55,8 @@ type UDB struct {
 	DsaPublicKey string `json:"Dsa_public_key"`
 }
 
-// UDB is the structure for a group in the JSON file; it is used for the E2E and
-// CMIX objects.
+// Group is the structure for a group in the JSON file; it is used for the E2E
+// and CMIX objects.
 type Group struct {
 	Prime      string
 	SmallPrime string `json:"Small_prime"`
@@ -74,10 +69,7 @@ type Group struct {
 // if separating the lines fails or if the JSON unmarshal fails.
 func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	// Get JSON data and check if the separating failed
-	jsonData, signature, err := separate(ndf)
-	if err != nil {
-		return nil, nil, err
-	}
+	jsonData, signature := separate(ndf)
 
 	// Decode the signature form base 64 and check for errors
 	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
@@ -97,17 +89,18 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 
 // separate splits the JSON data from the signature. The NDF string is expected
 // to have the JSON data on line 1 and its signature on line 2. Returns JSON
-// data and signature as separate strings. Returns an error if there are less
-// than two lines in the NDF string.
-func separate(ndf string) (string, string, error) {
+// data and signature as separate strings. If the signature is not present, it
+// is returned as an empty string.
+func separate(ndf string) (string, string) {
 	lines := strings.Split(ndf, "\n")
 
-	// Check that the NDF string is at least two lines
-	if len(lines) < 2 {
-		return "", "", ErrNDFFile
+	// If there are more than two lines, then return the JSON and signature;
+	// otherwise, the JSON is returned with an empty signature
+	if len(lines) > 1 {
+		return lines[0], lines[1]
+	} else {
+		return lines[0], ""
 	}
-
-	return lines[0], lines[1], nil
 }
 
 // Serialize converts the NetworkDefinition into a byte slice.
