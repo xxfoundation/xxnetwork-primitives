@@ -196,26 +196,6 @@ func TestDecodeNDF(t *testing.T) {
 
 }
 
-// Tests that DecodeNDF() returns an error when separate() returns an error.
-func TestDecodeNDF_ErrSeparate(t *testing.T) {
-	jsonData, signature, err := DecodeNDF(ExampleJSON)
-
-	if jsonData != nil {
-		t.Errorf("DecodeNDF() did not corectly return nil NetworkDefinition on error"+
-			"\n\treceived: %#v\n\texpected: %#v", jsonData, nil)
-	}
-
-	if !bytes.Equal(signature, nil) {
-		t.Errorf("DecodeNDF() did not corectly return the signature on error"+
-			"\n\treceived: %v\n\texpected: %v", signature, nil)
-	}
-
-	if err != ErrNDFFile {
-		t.Errorf("DecodeNDF() did not issue the expected error"+
-			"\n\treceived: %#v\n\texpected: %#v", err, ErrNDFFile)
-	}
-}
-
 // Tests that DecodeNDF() returns an error when Unmarshal() returns an error.
 func TestDecodeNDF_ErrUnmarshal(t *testing.T) {
 	jsonData, signature, err := DecodeNDF(ExampleJSON + "test\n" + ExampleSignature)
@@ -258,7 +238,7 @@ func TestDecodeNDF_ErrDecode(t *testing.T) {
 
 // Tests that separate() correctly splits the JSON data from the string.
 func TestSeparate(t *testing.T) {
-	jsonData, signature, err := separate(ExampleNDF)
+	jsonData, signature := separate(ExampleNDF)
 
 	if jsonData != ExampleJSON {
 		t.Errorf("separate() did not corectly seperate the JSON data"+
@@ -269,31 +249,21 @@ func TestSeparate(t *testing.T) {
 		t.Errorf("DecodeNDF() did not corectly return the signature"+
 			"\n\treceived: %#v\n\texpected: %#v", signature, ExampleSignature)
 	}
-
-	if err != nil {
-		t.Errorf("separate() unexpectedly had an error verifying the signature"+
-			"\n\treceived: %#v\n\texpected: %#v", err, nil)
-	}
 }
 
-// Tests that separate() throws an error if the NDF file does not have at least
-// two lines.
+// Tests that separate() returns the JSON string with an empty signature when
+// the NDF file does not have at least two lines.
 func TestSeparate_ErrorLines(t *testing.T) {
-	jsonData, signature, err := separate(ExampleJSON)
+	jsonData, signature := separate(ExampleJSON)
 
-	if jsonData != "" {
-		t.Errorf("separate() did not return empty JSON string on error"+
+	if jsonData != ExampleJSON {
+		t.Errorf("separate() did not return the JSON string on empty signature"+
 			"\n\treceived: %#v\n\texpected: %#v", jsonData, "")
 	}
 
 	if signature != "" {
-		t.Errorf("DecodeNDF() did not corectly return the signature on error"+
+		t.Errorf("DecodeNDF() did not corectly return an empty signature"+
 			"\n\treceived: %#v\n\texpected: %#v", signature, "")
-	}
-
-	if err != ErrNDFFile {
-		t.Errorf("separate() did not issue the expected error"+
-			"\n\treceived: %#v\n\texpected: %#v", err, ErrNDFFile)
 	}
 }
 
