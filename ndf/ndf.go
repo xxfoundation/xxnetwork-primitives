@@ -88,19 +88,28 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 }
 
 // separate splits the JSON data from the signature. The NDF string is expected
-// to have the JSON data on line 1 and its signature on line 2. Returns JSON
-// data and signature as separate strings. If the signature is not present, it
-// is returned as an empty string.
+// to have the JSON data starting on line 1 and its signature on the last line.
+// Returns JSON data and signature as separate strings. If the signature is not
+// present, it is returned as an empty string.
 func separate(ndf string) (string, string) {
+	var jsonLineEnd int
+	var signature string
 	lines := strings.Split(ndf, "\n")
 
-	// If there are more than two lines, then return the JSON and signature;
-	// otherwise, the JSON is returned with an empty signature
-	if len(lines) > 1 {
-		return lines[0], lines[1]
-	} else {
-		return lines[0], ""
+	// Determine which line the JSON ends and which line the signature is on
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			if strings.HasSuffix(line, "}") {
+				jsonLineEnd = i
+				break
+			} else {
+				signature = line
+			}
+		}
 	}
+
+	return strings.Join(lines[0:jsonLineEnd+1], "\n"), signature
 }
 
 // Serialize converts the NetworkDefinition into a byte slice.
