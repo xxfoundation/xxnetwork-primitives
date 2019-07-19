@@ -22,7 +22,7 @@ func TestListeningQueue_Hear(t *testing.T) {
 	wg.Add(numThreads * numItems)
 
 	s := NewSwitchboard()
-	_, queue := s.ListenChannel(0, 0, id.ZeroID, 12)
+	_, queue := s.ListenChannel(0, id.ZeroID, 12)
 
 	var items []Item
 
@@ -35,7 +35,6 @@ func TestListeningQueue_Hear(t *testing.T) {
 					Contents:    []byte{},
 					Sender:      user,
 					MessageType: 5,
-					CryptoType:  2,
 				})
 				wg.Done()
 				time.Sleep(time.Millisecond)
