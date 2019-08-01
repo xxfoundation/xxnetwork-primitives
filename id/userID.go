@@ -70,6 +70,9 @@ func NewUserFromUint(newId uint64, t *testing.T) *User {
 	// the real codebase. Then, replace those occurrences with better code.
 	//t.Log("Warning: Creating a new user ID from uint. " +
 	//	"You should create user IDs some other way.")
+	if t == nil {
+		panic("This can only be used in testing")
+	}
 	var result User
 	binary.BigEndian.PutUint64(result[UserLen-sizeofUint64:], newId)
 	return &result
@@ -113,6 +116,7 @@ func (u *User) Cmp(y *User) bool {
 	return *u == *y
 }
 
+//Deep Copy makes a separate memory space copy of the user ID
 func (u *User) DeepCopy() *User {
 	if u == nil {
 		return nil
@@ -120,4 +124,13 @@ func (u *User) DeepCopy() *User {
 	var nu User
 	copy(nu[:], (*u)[:])
 	return &nu
+}
+
+// MakeDummyUserID returns the id for a user id as a base64 encoding of the
+// string "dummy"
+func MakeDummyUserID() *User {
+	dummyBytes := make([]byte, UserLen)
+	dummystr := []byte("dummy")
+	copy(dummyBytes[:len(dummystr)], dummystr)
+	return NewUserFromBytes(dummyBytes)
 }

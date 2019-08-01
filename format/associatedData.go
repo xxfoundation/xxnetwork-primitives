@@ -7,175 +7,185 @@
 package format
 
 import (
-	"crypto/rand"
-	"errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
-	// First byte to ensure that the associated data are always within the
-	// cyclic group
-	AD_FIRST_LEN   int = 1
-	AD_FIRST_START int = 0
-	AD_FIRST_END   int = AD_FIRST_START + AD_FIRST_LEN
+	// Length, start index, and end index of the Associated Data serial
+	AssociatedDataLen   = 112 // 896 bits
+	associatedDataStart = contentsEnd
+	associatedDataEnd   = associatedDataStart + AssociatedDataLen
 
-	// Length and position of the Recipient ID
-	AD_RID_LEN   int = id.UserLen
-	AD_RID_START int = AD_FIRST_END
-	AD_RID_END   int = AD_RID_START + AD_RID_LEN
+	// Length, start index, and end index of recipientID
+	RecipientIDLen   = 32 // 256 bits
+	recipientIDStart = 0
+	recipientIDEnd   = recipientIDStart + RecipientIDLen
 
-	// Length and position of the key fingerprint
-	AD_KEYFP_LEN   int = 32
-	AD_KEYFP_START int = AD_RID_END
-	AD_KEYFP_END   int = AD_KEYFP_START + AD_KEYFP_LEN
+	// Length, start index, and end index of keyFP
+	KeyFPLen   = 32 // 256 bits
+	keyFPStart = recipientIDEnd
+	keyFPEnd   = keyFPStart + KeyFPLen
 
-	// Length and position of the encrypted timestamp
-	// 128 bits, seconds+nanoseconds
-	// Encrypt as one AES block
-	AD_TIMESTAMP_LEN   int = 16
-	AD_TIMESTAMP_START int = AD_KEYFP_END
-	AD_TIMESTAMP_END   int = AD_TIMESTAMP_START + AD_TIMESTAMP_LEN
+	// Length, start index, and end index of timestamp
+	TimestampLen   = 16 // 128 bits
+	timestampStart = keyFPEnd
+	timestampEnd   = timestampStart + TimestampLen
 
-	// Length and Position of the MAC
-	AD_MAC_LEN   int = 32
-	AD_MAC_START int = AD_TIMESTAMP_END
-	AD_MAC_END   int = AD_MAC_START + AD_MAC_LEN
-
-	// TODO Delete this when the third phase has been removed
-	// Length and position of the recipient MIC
-	AD_RMIC_LEN   int = 32
-	AD_RMIC_START int = AD_MAC_END
-	AD_RMIC_END   int = AD_RMIC_START + AD_RMIC_LEN
-
-	// Length of unused region in recipient payloadData
-	// TODO @mario Should the empty data go at the end or in the middle
-	// somewhere? Should this be PKCS padding instead?
-	AD_EMPTY_LEN   int = TOTAL_LEN - AD_RID_LEN - AD_KEYFP_LEN - AD_MAC_LEN - AD_FIRST_LEN - AD_TIMESTAMP_LEN - AD_RMIC_LEN
-	AD_EMPTY_START int = AD_RMIC_END
-	AD_EMPTY_END   int = AD_EMPTY_START + AD_EMPTY_LEN
+	// Length, start index, and end index of mac
+	MacLen   = 32 // 256 bits
+	macStart = timestampEnd
+	macEnd   = macStart + MacLen
 )
 
-// Structure containing the components of the recipient payloadData
+// Structure for the associated data section of the message points to a
+// subsection of the serialised Message structure.
 type AssociatedData struct {
-	associatedDataSerial [TOTAL_LEN]byte
-	recipientID          []byte
-	keyFingerprint       []byte
-	timestamp            []byte
-	mac                  []byte
-	rmic                 []byte
+	serial      []byte // points to region in master
+	recipientID []byte
+	keyFP       []byte // key fingerprint
+	timestamp   []byte
+	mac         []byte // message authentication code
 }
 
-type Fingerprint [AD_KEYFP_LEN]byte
+// Array form for storing a fingerprint
+type Fingerprint [KeyFPLen]byte
 
-// Initializes an Associated data with the correct slices
-func NewAssociatedData() *AssociatedData {
-	result := AssociatedData{associatedDataSerial: [TOTAL_LEN]byte{}}
+// NewAssociatedData creates a new AssociatedData for a message and points
+// recipientID, keyFP, timestamp, and mac to serial. If the new serial is not
+// exactly the same length as serial, then it panics.
+func NewAssociatedData(newSerial []byte) *AssociatedData {
+	if len(newSerial) != AssociatedDataLen {
+		jww.ERROR.Panicf("new serial not the same size as "+
+			"AssociatedData serial; Expected: %v, Recieved: %v",
+			AssociatedDataLen, len(newSerial))
+	}
 
-	result.recipientID = result.associatedDataSerial[AD_RID_START:AD_RID_END]
-	result.keyFingerprint = result.associatedDataSerial[AD_KEYFP_START:AD_KEYFP_END]
-	result.timestamp = result.associatedDataSerial[AD_TIMESTAMP_START:AD_TIMESTAMP_END]
-	result.mac = result.associatedDataSerial[AD_MAC_START:AD_MAC_END]
-	result.rmic = result.associatedDataSerial[AD_RMIC_START:AD_RMIC_END]
+	newAD := &AssociatedData{
+		serial:      newSerial[:],
+		recipientID: newSerial[recipientIDStart:recipientIDEnd],
+		keyFP:       newSerial[keyFPStart:keyFPEnd],
+		timestamp:   newSerial[timestampStart:timestampEnd],
+		mac:         newSerial[macStart:macEnd],
+	}
 
-	ensureGroup(result.associatedDataSerial[AD_FIRST_START:AD_FIRST_END])
-
-	return &result
+	return newAD
 }
 
-func NewFingerprint(data []byte) (fp *Fingerprint) {
-	fp = &Fingerprint{}
+// Get returns the AssociatedData's serialised data. The caller can read or
+// write the data within this slice, but cannot change the slice header in the
+// actual structure.
+func (a *AssociatedData) Get() []byte {
+	return a.serial
+}
+
+// Set sets the entire content of associated data. If the specified byte array
+// is not exactly the same size as serial, then it panics.
+func (a *AssociatedData) Set(newSerial []byte) {
+	if len(newSerial) != AssociatedDataLen {
+		jww.ERROR.Panicf("new serial not the same size as "+
+			"AssociatedData serial; Expected: %v, Recieved: %v",
+			AssociatedDataLen, len(newSerial))
+	}
+
+	copy(a.serial, newSerial)
+}
+
+// GetRecipientID returns the recipientID. The caller can read or write the data
+// within this slice, but cannot change the slice header in the actual
+// structure.
+func (a *AssociatedData) GetRecipientID() []byte {
+	return a.recipientID
+}
+
+// SetRecipientID sets the recipientID. If the specified byte array is not
+// exactly the same size as recipientID, then it panics.
+func (a *AssociatedData) SetRecipientID(newRecipientID []byte) {
+	if len(newRecipientID) != RecipientIDLen {
+		jww.ERROR.Panicf("new recipientID not the same size as "+
+			"AssociatedData newRecipientID; Expected: %v, Recieved: %v",
+			RecipientIDLen, len(newRecipientID))
+	}
+
+	copy(a.recipientID, newRecipientID)
+}
+
+// GetRecipient returns the recipientID as a user ID.
+func (a *AssociatedData) GetRecipient() *id.User {
+	return id.NewUserFromBytes(a.recipientID)
+}
+
+// SetRecipient sets the value of recipientID from a user ID.
+func (a *AssociatedData) SetRecipient(newRecipientID *id.User) {
+	copy(a.recipientID, newRecipientID.Bytes())
+}
+
+// GetKeyFP returns the keyFP as a Fingerprint.
+func (a *AssociatedData) GetKeyFP() (fp Fingerprint) {
+	copy(fp[:], a.keyFP)
+	return fp
+}
+
+// SetKeyFP sets the keyFP from a Fingerprint.
+func (a *AssociatedData) SetKeyFP(fp Fingerprint) {
+	copy(a.keyFP, fp[:])
+}
+
+// GetTimestamp returns the timestamp. The caller can read or write the data
+// within this slice, but cannot change the slice header in the actual
+// structure.
+func (a *AssociatedData) GetTimestamp() []byte {
+	return a.timestamp
+}
+
+// SetTimestamp sets the timestamp. If the specified byte array is not exactly
+// the same size as timestamp, then it panics.
+func (a *AssociatedData) SetTimestamp(newTimestamp []byte) {
+	if len(newTimestamp) != TimestampLen {
+		jww.ERROR.Panicf("new timestamp not the same size as "+
+			"AssociatedData timestamp; Expected: %v, Recieved: %v",
+			TimestampLen, len(newTimestamp))
+	}
+
+	copy(a.timestamp, newTimestamp)
+}
+
+// GetMAC returns the mac. The caller can read or write the data within this
+// slice, but cannot change the slice header in the actual structure.
+func (a *AssociatedData) GetMAC() []byte {
+	return a.mac
+}
+
+// SetMac sets the mac. If the specified byte array is not exactly the same size
+// as mac, then it panics.
+func (a *AssociatedData) SetMAC(newMAC []byte) {
+	if len(newMAC) != MacLen {
+		jww.ERROR.Panicf("new MAC not the same size as "+
+			"AssociatedData MAC; Expected: %v, Recieved: %v",
+			MacLen, len(newMAC))
+	}
+
+	copy(a.mac, newMAC)
+}
+
+// DeepCopy creates a copy of AssociatedData.
+func (a *AssociatedData) DeepCopy() *AssociatedData {
+	newCopy := NewAssociatedData(make([]byte, AssociatedDataLen))
+	copy(newCopy.serial[:], a.serial)
+
+	return newCopy
+}
+
+// NewFingerprint creates a new fingerprint from a byte slice. If the specified
+// data iis not exactly the same size as keyFP, then it panics.
+func NewFingerprint(data []byte) *Fingerprint {
+	if len(data) != KeyFPLen {
+		jww.ERROR.Panicf("fingerprint not the same size as "+
+			"AssociatedData fingerprint; Expected: %v, Recieved: %v",
+			KeyFPLen, len(data))
+	}
+
+	fp := &Fingerprint{}
 	copy(fp[:], data[:])
 	return fp
-}
-
-func ensureGroup(overwriteRegion []byte) (numRead int, err error) {
-	numRead, err = rand.Read(overwriteRegion)
-	if len(overwriteRegion) > 0 {
-		overwriteRegion[0] &= 0x7f
-	} else {
-		err = errors.New("can't use a slice with zero length to ensure the" +
-			" message is inside the group")
-	}
-	return numRead, err
-}
-
-// This function returns the recipient ID slice
-// The caller can read or write the data within this slice, but can't change
-// the slice header in the actual structure
-func (r *AssociatedData) GetRecipientID() []byte {
-	return r.recipientID
-}
-
-func (r *AssociatedData) GetRecipient() *id.User {
-	return id.NewUserFromBytes(r.recipientID)
-}
-
-// Returns number of bytes copied
-func (r *AssociatedData) SetRecipientID(newID []byte) int {
-	return copy(r.recipientID, newID)
-}
-
-func (r *AssociatedData) SetRecipient(newID *id.User) {
-	copy(r.recipientID, newID.Bytes())
-}
-
-// Get the key fingerprint
-// The caller can read or write the data within this slice, but can't change
-// the slice header in the actual structure
-func (r *AssociatedData) GetKeyFingerprint() (fp Fingerprint) {
-	copy(fp[:], r.keyFingerprint)
-	return fp
-}
-
-// Returns number of bytes copied
-func (r *AssociatedData) SetKeyFingerprint(fp Fingerprint) int {
-	return copy(r.keyFingerprint, fp[:])
-}
-
-// Get the MAC for the message
-// The caller can read or write the data within this slice, but can't change
-// the slice header in the actual structure
-func (r *AssociatedData) GetMAC() []byte {
-	return r.mac
-}
-
-// Returns number of bytes copied
-func (r *AssociatedData) SetMAC(newMAC []byte) int {
-	return copy(r.mac, newMAC)
-}
-
-// Get the MIC for the recipient ID
-func (r *AssociatedData) GetRecipientMIC() []byte {
-	return r.rmic
-}
-
-// Returns number of bytes copied
-func (r *AssociatedData) SetRecipientMIC(newRecipientMIC []byte) int {
-	return copy(r.rmic, newRecipientMIC)
-}
-
-// Get the message's timestamp
-func (r *AssociatedData) GetTimestamp() []byte {
-	return r.timestamp
-}
-
-func (r *AssociatedData) SetTimestamp(newTimestamp []byte) int {
-	return copy(r.timestamp, newTimestamp)
-}
-
-// Returns the serialized Associated Data, without copying
-func (r *AssociatedData) SerializeAssociatedData() []byte {
-	return r.associatedDataSerial[:]
-}
-
-// Slices a serialized Associated Data into its constituent fields
-func DeserializeAssociatedData(rSerial []byte) *AssociatedData {
-	result := NewAssociatedData()
-	copy(result.associatedDataSerial[:], rSerial)
-	return result
-}
-
-// Creates a deep copy of the Associated Data, used for sending multiple messages
-func (r *AssociatedData) DeepCopy() *AssociatedData {
-	return DeserializeAssociatedData(r.associatedDataSerial[:])
 }
