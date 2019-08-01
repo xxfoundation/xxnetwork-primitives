@@ -1,103 +1,161 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2018 Privategrity Corporation                                   /
+//                                                                             /
+// All rights reserved.                                                        /
+////////////////////////////////////////////////////////////////////////////////
+
 package ndf
 
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"strings"
 	"time"
 )
 
-var ErrNDFFile = errors.New("NDF file malformed: expected only two or more lines")
-
-// This struct is currently generated in Terraform and decoded here
-// So, if the way it's generated in Terraform changes, we also need to change
-// the struct
-// TODO Use UnmarshalJSON for user and node IDs and groups, at the least
-//  See https://blog.gopheracademy.com/advent-2016/advanced-encoding-decoding/
-//  for information about how to do this.
+// NetworkDefinition structure matches the JSON structure generated in
+// Terraform, which allows it to be decoded to Go. If the JSON structure
+// changes, then this structure needs to be updated.
 type NetworkDefinition struct {
 	Timestamp    time.Time
 	Gateways     []Gateway
 	Nodes        []Node
 	Registration Registration
-	Udb          UDB
-	E2e          Group
-	Cmix         Group
+	UDB          UDB   `json:"Udb"`
+	E2E          Group `json:"E2e"`
+	CMIX         Group `json:"Cmix"`
 }
 
 // Gateway is the structure for the gateways object in the JSON file.
 type Gateway struct {
-	Address         string
-	Tls_certificate string
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
 // Node is the structure for the nodes object in the JSON file.
 type Node struct {
-	Id              []byte
-	Dsa_public_key  string
-	Address         string
-	Tls_certificate string
+	ID             []byte `json:"Id"`
+	DsaPublicKey   string `json:"Dsa_public_key"`
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
 // Registration is the structure for the registration object in the JSON
 // file.
 type Registration struct {
-	Dsa_public_key  string
-	Address         string
-	Tls_certificate string
+	DsaPublicKey   string `json:"Dsa_public_key"`
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
 // UDB is the structure for the udb object in the JSON file.
 type UDB struct {
-	Id             []byte
-	Dsa_public_key string
+	ID           []byte `json:"Id"`
+	DsaPublicKey string `json:"Dsa_public_key"`
 }
 
-// UDB is the structure for a group in the JSON file; it is used for the
-// E2e and Cmix objects.
+// Group is the structure for a group in the JSON file; it is used for the E2E
+// and CMIX objects.
 type Group struct {
-	Prime       string
-	Small_prime string
-	Generator   string
+	Prime      string
+	SmallPrime string `json:"Small_prime"`
+	Generator  string
 }
 
-// Returns an error if base64 signature decodes incorrectly
-// Returns an error if signature verification fails
-// Otherwise, returns an object from the json with the contents of the file
-func DecodeNDF(ndf string) (*NetworkDefinition, error) {
-	// Get JSON data check if the signature is valid
-	jsonString, err := separate(ndf)
+// DecodeNDF decodes the given JSON string into the NetworkDefinition structure
+// and decodes the base 64 signature to a byte slice. The NDF string is expected
+// to have the JSON data on line 1 and its signature on line 2. Returns an error
+// if separating the lines fails or if the JSON unmarshal fails.
+func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
+	// Get JSON data and check if the separating failed
+	jsonData, signature := separate(ndf)
+
+	// Decode the signature form base 64 and check for errors
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Unmarshal the JSON string into a structure
 	networkDefinition := &NetworkDefinition{}
-	err = json.Unmarshal([]byte(jsonString), networkDefinition)
+	err = json.Unmarshal([]byte(jsonData), networkDefinition)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return networkDefinition, nil
+	return networkDefinition, signatureBytes, nil
 }
 
-// separate splits the JSON data from the signature. The JSON data is returned
-// at a string and an error is returned if the signature is invalid.
-func separate(ndf string) (string, error) {
+// separate splits the JSON data from the signature. The NDF string is expected
+// to have the JSON data starting on line 1 and its signature on the last line.
+// Returns JSON data and signature as separate strings. If the signature is not
+// present, it is returned as an empty string.
+func separate(ndf string) (string, string) {
+	var jsonLineEnd int
+	var signature string
 	lines := strings.Split(ndf, "\n")
 
-	// Check that the NDF string is at least two lines
-	if len(lines) < 2 {
-		return "", ErrNDFFile
+	// Determine which line the JSON ends and which line the signature is on
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			if strings.HasSuffix(line, "}") {
+				jsonLineEnd = i
+				break
+			} else {
+				signature = line
+			}
+		}
 	}
 
-	// Base64 decode the signature to a byte slice
-	_, err := base64.StdEncoding.DecodeString(lines[1])
+	return strings.Join(lines[0:jsonLineEnd+1], "\n"), signature
+}
+
+// Serialize converts the NetworkDefinition into a byte slice.
+func (ndf *NetworkDefinition) Serialize() []byte {
+	b := make([]byte, 0)
+
+	// Convert timestamp to a byte slice
+	timeBytes, err := ndf.Timestamp.MarshalBinary()
 	if err != nil {
-		return "", err
+		jww.FATAL.Panicf("Failed to marshal NetworkDefinition timestamp: %v", err)
 	}
 
-	// TODO: verify the signature and not return nil error
-	return lines[0], nil
+	b = append(b, timeBytes...)
+
+	// Convert Gateways slice to byte slice
+	for _, val := range ndf.Gateways {
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Nodes slice to byte slice
+	for _, val := range ndf.Nodes {
+		b = append(b, val.ID...)
+		b = append(b, []byte(val.DsaPublicKey)...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Registration to byte slice
+	b = append(b, []byte(ndf.Registration.DsaPublicKey)...)
+	b = append(b, []byte(ndf.Registration.Address)...)
+	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
+
+	// Convert UDB to byte slice
+	b = append(b, []byte(ndf.UDB.ID)...)
+	b = append(b, []byte(ndf.UDB.DsaPublicKey)...)
+
+	// Convert E2E to byte slice
+	b = append(b, []byte(ndf.E2E.Prime)...)
+	b = append(b, []byte(ndf.E2E.Generator)...)
+	b = append(b, []byte(ndf.E2E.SmallPrime)...)
+
+	// Convert CMIX to byte slice
+	b = append(b, []byte(ndf.CMIX.Prime)...)
+	b = append(b, []byte(ndf.CMIX.Generator)...)
+	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
+
+	return b
 }
