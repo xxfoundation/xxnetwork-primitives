@@ -9,6 +9,7 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	jww "github.com/spf13/jwalterweatherman"
 	"testing"
 )
 
@@ -22,7 +23,15 @@ type Node [NodeIdLen]byte
 // the correct length. Otherwise, it returns a user ID that is all zeroes.
 func NewNodeFromBytes(data []byte) *Node {
 	node := new(Node)
-	if len(data) == NodeIdLen {
+	if len(data) < NodeIdLen {
+		jww.WARN.Printf("NodeID create from too short byte slice of "+
+			"length %v bits", len(data)*8)
+		copy(node[:len(data)], data)
+	} else if len(data) > NodeIdLen {
+		jww.WARN.Printf("NodeID create from too long byte slice of "+
+			"length %v bits", len(data)*8)
+		copy(node[:], data[:NodeIdLen])
+	} else {
 		copy(node[:], data)
 	}
 	return node
