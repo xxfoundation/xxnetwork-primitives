@@ -36,7 +36,6 @@ type Gateway struct {
 // Node is the structure for the nodes object in the JSON file.
 type Node struct {
 	ID             []byte `json:"Id"`
-	DsaPublicKey   string `json:"Dsa_public_key"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -44,15 +43,13 @@ type Node struct {
 // Registration is the structure for the registration object in the JSON
 // file.
 type Registration struct {
-	DsaPublicKey   string `json:"Dsa_public_key"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
 
 // UDB is the structure for the udb object in the JSON file.
 type UDB struct {
-	ID           []byte `json:"Id"`
-	DsaPublicKey string `json:"Dsa_public_key"`
+	ID []byte `json:"Id"`
 }
 
 // Group is the structure for a group in the JSON file; it is used for the E2E
@@ -133,19 +130,16 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert Nodes slice to byte slice
 	for _, val := range ndf.Nodes {
 		b = append(b, val.ID...)
-		b = append(b, []byte(val.DsaPublicKey)...)
 		b = append(b, []byte(val.Address)...)
 		b = append(b, []byte(val.TlsCertificate)...)
 	}
 
 	// Convert Registration to byte slice
-	b = append(b, []byte(ndf.Registration.DsaPublicKey)...)
 	b = append(b, []byte(ndf.Registration.Address)...)
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
 
 	// Convert UDB to byte slice
 	b = append(b, []byte(ndf.UDB.ID)...)
-	b = append(b, []byte(ndf.UDB.DsaPublicKey)...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
