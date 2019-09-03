@@ -31,16 +31,30 @@ const (
 //	   directory.
 //	6. Any occurrences of slash are replaced by Separator.
 func ExpandPath(path string) (string, error) {
+	// If the path is empty, then return nothing
+	if path == "" {
+		return "", nil
+	}
+
 	// Replace the '~' character with the user's home directory
 	path, err := homedir.Expand(path)
 	if err != nil {
 		return "", err
 	}
 
-	// Cleans the path
+	// Cleans the path using the rules in the function description
 	path = filepath.Clean(path)
 
 	return path, nil
+}
+
+// mkdirAll creates all the folders in a path that do not exist.
+func mkdirAll(path string, perm os.FileMode) error {
+	// Strip file name from the path
+	dir := filepath.Dir(path)
+
+	// Create the directories
+	return os.MkdirAll(dir, perm)
 }
 
 // MakeDirs expands and cleans the path and then creates all the folders in a
@@ -54,15 +68,6 @@ func MakeDirs(path string, perm os.FileMode) error {
 
 	// Create all directories in path, if they do not already exist
 	return mkdirAll(path, perm)
-}
-
-// mkdirAll creates all the folders in a path that do not exist.
-func mkdirAll(path string, perm os.FileMode) error {
-	// Strip file name from the path
-	dir := filepath.Dir(path)
-
-	// Create the directories
-	return os.MkdirAll(dir, perm)
 }
 
 // WriteFile creates any directories in the path that do not exists and write
