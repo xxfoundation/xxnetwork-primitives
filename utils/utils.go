@@ -48,7 +48,8 @@ func ExpandPath(path string) (string, error) {
 	return path, nil
 }
 
-// mkdirAll creates all the folders in a path that do not exist.
+// mkdirAll creates all the folders in a path that do not exist. If the path
+// already exists, then nothing is done and nil is returned.
 func mkdirAll(path string, perm os.FileMode) error {
 	// Strip file name from the path
 	dir := filepath.Dir(path)
