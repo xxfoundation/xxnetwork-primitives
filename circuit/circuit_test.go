@@ -304,6 +304,88 @@ func TestCircuit_IsLastNode(t *testing.T) {
 	}
 }
 
+// Tests GetOrdering() by checking the position of each rotated node list.
+func TestCircuit_GetOrdering(t *testing.T) {
+	length := 5
+	list := makeTestingNodeIdList(length)
+	c := New(list)
+	cs := c.GetOrdering()
+
+	checkShift(t, list, cs[0].nodes, 0)
+	checkShift(t, list, cs[1].nodes, 1)
+	checkShift(t, list, cs[2].nodes, 2)
+	checkShift(t, list, cs[3].nodes, 3)
+	checkShift(t, list, cs[4].nodes, 4)
+}
+
+// Tests ShiftLeft() by creating list of node IDs, shifting them, and checking
+// their position.
+func TestShiftLeft(t *testing.T) {
+	rotations := 0
+	list := makeTestingNodeIdList(5)
+	newList := shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 1
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 2
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 3
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 4
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 5
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 6
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 10
+	list = makeTestingNodeIdList(5)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 1
+	list = makeTestingNodeIdList(1)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+
+	rotations = 0
+	list = makeTestingNodeIdList(1)
+	newList = shiftLeft(list, rotations)
+	checkShift(t, list, newList, rotations)
+}
+
+// checkShift checks that each element in list a is in the correct shifted
+// position in list b.
+func checkShift(t *testing.T, a, b []*id.Node, rotations int) {
+	length := len(a)
+	for i := 0; i < length; i++ {
+		newIndex := (i - (rotations % length) + length) % length
+		if !reflect.DeepEqual(a[i], b[newIndex]) {
+			t.Errorf("RotateLeft() did not properly shift item #%d to position #%d"+
+				"\n\texpected: %#v\n\treceived: %#v",
+				i, newIndex, a[i], b[newIndex])
+		}
+	}
+}
+
 //Utility function
 func makeTestingNodeIdList(len int) []*id.Node {
 	var nodeIdList []*id.Node

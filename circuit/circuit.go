@@ -118,3 +118,31 @@ func (c *Circuit) IsFirstNode(node *id.Node) bool {
 func (c *Circuit) IsLastNode(node *id.Node) bool {
 	return c.GetNodeLocation(node) == c.Len()-1
 }
+
+// GetOrdering returns a slice of Circuits with each one having a different
+// shifted ordering.
+func (c *Circuit) GetOrdering() []*Circuit {
+	list := c.nodes
+	circuits := make([]*Circuit, len(list))
+
+	for i := range list {
+		circuits[i] = New(shiftLeft(list, i))
+	}
+
+	return circuits
+}
+
+// shiftLeft rotates the node IDs in a slice to the left the specified number of
+// times.
+func shiftLeft(list []*id.Node, rotation int) []*id.Node {
+	var newList []*id.Node
+	size := len(list)
+
+	for i := 0; i < rotation; i++ {
+		newList = list[1:size]
+		newList = append(newList, list[0])
+		list = newList
+	}
+
+	return list
+}
