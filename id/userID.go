@@ -65,7 +65,7 @@ const sizeofUint64 = 8
 // Only tests should use this method for compatibility with the old user ID
 // structure, as a utility method to easily create user IDs with the correct
 // length. So this func takes a testing.T.
-func NewUserFromUint(newId uint64, t *testing.T) *User {
+func NewUserFromUint(newId uint64, t testing.TB) *User {
 	// TODO Uncomment these lines to cause failure where this method's used in
 	// the real codebase. Then, replace those occurrences with better code.
 	//t.Log("Warning: Creating a new user ID from uint. " +
