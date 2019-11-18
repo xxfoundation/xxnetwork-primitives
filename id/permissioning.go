@@ -1,3 +1,3 @@
 package id
 
-const PERMISSIONING_ID = "Permissioning"
+const PERMISSIONING = "Permissioning"
