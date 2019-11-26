@@ -171,7 +171,7 @@ func (lm *Switchboard) Speak(item Item) {
 			// If you want to be able to hear things on the switchboard on
 			// multiple goroutines, you should call Speak() on the switchboard
 			// from multiple goroutines
-			listener.l.Hear(item, len(matches) > 1, listener.i...)
+			go listener.l.Hear(item, len(matches) > 1, listener.i...)
 		}
 	} else {
 		jww.ERROR.Printf(

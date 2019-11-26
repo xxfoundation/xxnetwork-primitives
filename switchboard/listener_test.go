@@ -47,6 +47,11 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{})
 		ml.LastMessage = msg.Contents
 		ml.LastMessageType = msg.GetMessageType()
 	}
+
+	if len(i) > 0 {
+		hearChan := i[0].(chan struct{})
+		hearChan <- struct{}{}
+	}
 }
 
 var specificUser = id.NewUserFromUints(&[4]uint64{0, 0, 0, 5})
@@ -312,15 +317,23 @@ func TestListenerMap_Unregister(t *testing.T) {
 func TestListenerMap_SpecificListener(t *testing.T) {
 	listeners := NewSwitchboard()
 	l := &MockListener{}
-	listeners.Register(id.ZeroID, 3, l)
+	hearChan := make(chan struct{}, 5)
+	listeners.Register(id.ZeroID, 3, l, hearChan)
 	// Should match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 0"),
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 3,
 	})
-	if l.NumHeard != 1 {
-		t.Error("Listener should have heard")
+	tmr := time.NewTimer(time.Second)
+
+	select {
+	case <-hearChan:
+		if l.NumHeard != 1 {
+			t.Error("Listener heard but didn't record")
+		}
+	case <-tmr.C:
+		t.Error("Listener did not hear")
 	}
 
 	l.NumHeard = 0
@@ -330,7 +343,13 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 0,
 	})
-	if l.NumHeard != 0 {
-		t.Error("Listener should not have heard")
+
+	select {
+	case <-hearChan:
+		t.Error("Listener heard but should not have")
+	case <-tmr.C:
+		if l.NumHeard != 0 {
+			t.Error("Listener should not have heard")
+		}
 	}
 }
