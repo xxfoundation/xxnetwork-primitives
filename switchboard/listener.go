@@ -23,12 +23,13 @@ type Item interface {
 
 // This is an interface so you can receive callbacks through the Gomobile boundary
 type Listener interface {
-	Hear(item Item, isHeardElsewhere bool)
+	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
 
 type listenerRecord struct {
 	l  Listener
 	id string
+	i  []interface{}
 }
 
 type Switchboard struct {
@@ -60,8 +61,8 @@ func NewSwitchboard() *Switchboard {
 // Don't pass nil to this.
 //
 // If a message matches multiple listeners, all of them will hear the message.
-func (lm *Switchboard) Register(user *id.User,
-	messageType int32, newListener Listener) string {
+func (lm *Switchboard) Register(user *id.User, messageType int32,
+	newListener Listener, i ...interface{}) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
 
@@ -73,6 +74,7 @@ func (lm *Switchboard) Register(user *id.User,
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
+		i:  i,
 	}
 	lm.listeners[*user][messageType] = append(
 		lm.listeners[*user][messageType],
@@ -169,7 +171,7 @@ func (lm *Switchboard) Speak(item Item) {
 			// If you want to be able to hear things on the switchboard on
 			// multiple goroutines, you should call Speak() on the switchboard
 			// from multiple goroutines
-			listener.l.Hear(item, len(matches) > 1)
+			listener.l.Hear(item, len(matches) > 1, listener.i...)
 		}
 	} else {
 		jww.ERROR.Printf(
