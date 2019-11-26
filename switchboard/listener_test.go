@@ -36,7 +36,7 @@ func (m *Message) GetMessageType() int32 {
 	return m.MessageType
 }
 
-func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
+func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
 	ml.mux.Lock()
 	defer ml.mux.Unlock()
 
@@ -59,8 +59,7 @@ func OneListenerSetup() (*Switchboard, *MockListener) {
 	// add one listener to the map
 	fullyMatchedListener := &MockListener{}
 	// TODO different type for message types?
-	listeners.Register(specificUser, specificMessageType,
-		fullyMatchedListener)
+	listeners.Register(specificUser, specificMessageType, fullyMatchedListener)
 	return listeners, fullyMatchedListener
 }
 
