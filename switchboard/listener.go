@@ -21,7 +21,8 @@ type Item interface {
 	GetMessageType() int32
 }
 
-// This is an interface so you can receive callbacks through the Gomobile boundary
+// This is an interface so you can receive callbacks through the Gomobile
+// boundary
 type Listener interface {
 	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
