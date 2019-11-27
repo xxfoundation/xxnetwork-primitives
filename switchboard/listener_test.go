@@ -36,7 +36,7 @@ func (m *Message) GetMessageType() int32 {
 	return m.MessageType
 }
 
-func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
+func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 	ml.mux.Lock()
 	defer ml.mux.Unlock()
 
@@ -46,11 +46,6 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{})
 		ml.NumHeard++
 		ml.LastMessage = msg.Contents
 		ml.LastMessageType = msg.GetMessageType()
-	}
-
-	if len(i) > 0 {
-		hearChan := i[0].(chan struct{})
-		hearChan <- struct{}{}
 	}
 }
 
@@ -64,7 +59,8 @@ func OneListenerSetup() (*Switchboard, *MockListener) {
 	// add one listener to the map
 	fullyMatchedListener := &MockListener{}
 	// TODO different type for message types?
-	listeners.Register(specificUser, specificMessageType, fullyMatchedListener)
+	listeners.Register(specificUser, specificMessageType,
+		fullyMatchedListener)
 	return listeners, fullyMatchedListener
 }
 
@@ -317,23 +313,15 @@ func TestListenerMap_Unregister(t *testing.T) {
 func TestListenerMap_SpecificListener(t *testing.T) {
 	listeners := NewSwitchboard()
 	l := &MockListener{}
-	hearChan := make(chan struct{}, 5)
-	listeners.Register(id.ZeroID, 3, l, hearChan)
+	listeners.Register(id.ZeroID, 3, l)
 	// Should match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 0"),
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 3,
 	})
-	tmr := time.NewTimer(time.Second)
-
-	select {
-	case <-hearChan:
-		if l.NumHeard != 1 {
-			t.Error("Listener heard but didn't record")
-		}
-	case <-tmr.C:
-		t.Error("Listener did not hear")
+	if l.NumHeard != 1 {
+		t.Error("Listener should have heard")
 	}
 
 	l.NumHeard = 0
@@ -343,13 +331,7 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 0,
 	})
-
-	select {
-	case <-hearChan:
-		t.Error("Listener heard but should not have")
-	case <-tmr.C:
-		if l.NumHeard != 0 {
-			t.Error("Listener should not have heard")
-		}
+	if l.NumHeard != 0 {
+		t.Error("Listener should not have heard")
 	}
 }
