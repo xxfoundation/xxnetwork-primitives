@@ -25,6 +25,6 @@ func (s *Switchboard) ListenChannel(
 // Multiple threads can write to this buffer simultaneously through the
 // switchboard using this method, although because the writes are to adjacent
 // elements, performance is likely to be suboptimal
-func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
+func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool) {
 	l <- item
 }
