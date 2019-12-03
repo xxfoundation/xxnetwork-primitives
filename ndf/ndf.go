@@ -35,7 +35,9 @@ type Gateway struct {
 
 // Node is the structure for the nodes object in the JSON file.
 type Node struct {
-	ID []byte `json:"Id"`
+	ID             []byte `json:"Id"`
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
 // Registration is the structure for the registration object in the JSON
@@ -128,6 +130,8 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert Nodes slice to byte slice
 	for _, val := range ndf.Nodes {
 		b = append(b, val.ID...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
 	}
 
 	// Convert Registration to byte slice
