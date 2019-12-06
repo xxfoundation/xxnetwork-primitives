@@ -24,7 +24,7 @@ type Item interface {
 // This is an interface so you can receive callbacks through the Gomobile
 // boundary
 type Listener interface {
-	Hear(item Item, isHeardElsewhere bool)
+	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
 
 type listenerRecord struct {
