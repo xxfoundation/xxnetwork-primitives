@@ -36,7 +36,7 @@ func (m *Message) GetMessageType() int32 {
 	return m.MessageType
 }
 
-func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
+func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
 	ml.mux.Lock()
 	defer ml.mux.Unlock()
 
