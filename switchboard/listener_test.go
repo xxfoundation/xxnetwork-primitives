@@ -322,7 +322,6 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 	hearChan := make(chan struct{}, 5)
 	listeners.Register(id.ZeroID, 3, l, hearChan)
 
-	listeners.Register(id.ZeroID, 3, l)
 	// Should match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 0"),
