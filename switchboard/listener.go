@@ -62,7 +62,7 @@ func NewSwitchboard() *Switchboard {
 //
 // If a message matches multiple listeners, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
-	messageType int32, newListener Listener) string {
+	messageType int32, newListener Listener, i ...interface{}) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
 
