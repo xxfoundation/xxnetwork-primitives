@@ -17,7 +17,7 @@ func (s *Switchboard) ListenChannel(
 	messageType int32, sender *id.User, channelBufferSize int) (id string,
 	messageQueue ListeningQueue) {
 	messageQueue = make(ListeningQueue, channelBufferSize)
-	id = s.Register(sender, messageType, messageQueue)
+	id = s.Register(sender, messageType, messageQueue, nil)
 	return id, messageQueue
 }
 
