@@ -30,6 +30,7 @@ type Listener interface {
 type listenerRecord struct {
 	l  Listener
 	id string
+	i  []interface{}
 }
 
 type Switchboard struct {
@@ -74,6 +75,7 @@ func (lm *Switchboard) Register(user *id.User,
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
+		i:  i,
 	}
 	lm.listeners[*user][messageType] = append(
 		lm.listeners[*user][messageType],
