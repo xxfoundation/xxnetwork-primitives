@@ -86,6 +86,9 @@ func (lm *Switchboard) Register(user *id.User,
 		newListenerRecordSlice = append(listenerArray, newListenerRecord)
 	}
 
+	//store listener id into the map that links them back to map ids for the o(1) search in unregister
+	lm.listenerIds.Store(newListenerRecord.id, mapId)
+
 	lm.listeners.Store(mapId, newListenerRecordSlice)
 
 	return newListenerRecord.id
@@ -149,8 +152,8 @@ func getMatches(matches []*listenerRecord, user id.User, messageType int32, lm *
 
 	mapId := listenerMapId{user, messageType}
 	listener_i, ok := lm.listeners.Load(mapId)
-	listeners := listener_i.([]*listenerRecord)
 	if ok {
+		listeners := listener_i.([]*listenerRecord)
 		for _, listener := range listeners {
 			matches = appendIfUnique(matches, listener)
 		}
