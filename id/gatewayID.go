@@ -13,9 +13,6 @@ import (
 // Length of gateway IDs in bytes
 const GatewayIdLen = 32
 
-// Gateway ID array
-type Gateway [GatewayIdLen]byte
-
 // NewGateway returns a new Gateway ID from a Node ID if the byte slice has the
 // correct length. Otherwise, it returns a Gateway ID that is all zeroes.
 func (n *Node) NewGateway() *Gateway {
