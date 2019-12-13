@@ -31,19 +31,26 @@ type listenerRecord struct {
 	id string
 }
 
+//We use this structure to map these value to a listenerRecord array in the sync.Map
+type listenerMapId struct {
+	userId      id.User
+	messageType int32
+}
+
 type Switchboard struct {
 	// By matching with the keys for each level of the map,
 	// you can find the listeners that meet each criterion
-	listeners map[id.User]map[int32][]*listenerRecord
-	lastID    int
-	mux       sync.RWMutex
+	listeners   sync.Map
+	listenerIds sync.Map
+	lastID      int
 }
 
 var Listeners = NewSwitchboard()
 
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
-		listeners: make(map[id.User]map[int32][]*listenerRecord),
+		//make(map[id.User]map[int32][]*listenerRecord)
+		listeners: sync.Map{},
 		lastID:    0,
 	}
 }
@@ -62,78 +69,118 @@ func NewSwitchboard() *Switchboard {
 // If a message matches multiple listeners, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
 	messageType int32, newListener Listener) string {
-	lm.mux.Lock()
-	defer lm.mux.Unlock()
+
+	mapId := listenerMapId{*user, messageType}
 
 	lm.lastID++
-	if lm.listeners[*user] == nil {
-		lm.listeners[*user] = make(map[int32][]*listenerRecord)
-	}
 
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
 	}
-	lm.listeners[*user][messageType] = append(
-		lm.listeners[*user][messageType],
-		newListenerRecord)
+
+	listenerArray_i, ok := lm.listeners.Load(mapId)
+	newListenerRecordSlice := []*listenerRecord{}
+	if ok {
+		//sync map returns an interface, so give it a type then append and save
+		listenerArray := listenerArray_i.([]*listenerRecord)
+		newListenerRecordSlice = append(listenerArray, newListenerRecord)
+	}
+
+	lm.listeners.Store(mapId, newListenerRecordSlice)
 
 	return newListenerRecord.id
 }
 
+//FIXME: should this require user ID why we searching by listener id this is inefficient?
+//TWO options here it
 func (lm *Switchboard) Unregister(listenerID string) {
-	lm.mux.Lock()
-	defer lm.mux.Unlock()
 
-	// Iterate over all listeners in the map.
-	for u, perUser := range lm.listeners {
-		for messageType, perMessageType := range perUser {
-			for i, listener := range perMessageType {
-				if listener.id == listenerID {
-					// this matches, so remove listener from data structure
-					lm.listeners[u][messageType] = append(
-						perMessageType[:i], perMessageType[i+1:]...)
-					// since the id is unique per listener,
-					// we can terminate the loop early.
-					return
-				}
+	lm.listeners.Range(func(key interface{}, value interface{}) bool {
+		listeners := value.([]*listenerRecord)
+		for i := range listeners {
+			if listenerID == listeners[i].id {
+				//In deleting here is it important to maintain order? quicker solution if not
+				newListeners := deleteElem(i, listeners)
+				lm.listeners.Store(key.(listenerMapId), newListeners)
 			}
+
+			return true
 		}
-	}
+		return false
+	})
+
+	return
+
+	// This method uses a map of listenr ids to listenerMapId objects so we know whats where potentially making this more efficient
+	//
+	//unregisterId_i, ok := lm.listenerIds.Load(listenerID)
+	//
+	//if ok{
+	//	unregisterMapId := unregisterId_i.(listenerMapId)
+	//	listeners_i, ok := lm.listeners.Load(unregisterMapId)
+	//	if ok{
+	//		listeners := listeners_i.([]*listenerRecord)
+	//		for i := range listeners{
+	//			if listenerID == listeners[i].id{
+	//				//In deleting here is it important to maintain order? quicker solution if not
+	//				newListeners := deleteElem(i, listeners)
+	//				lm.listeners.Store(unregisterMapId, newListeners)
+	//				return
+	//			}
+	//		}
+	//
+	//	} else{
+	//		// Could not be found therefore doesnt exist
+	//		return
+	//	}
+	//}
+}
+
+func deleteElem(loc int, records []*listenerRecord) []*listenerRecord {
+	//TODO: Pick which method we want
+
+	// Remove the element at index i from a.
+	records[loc] = records[len(records)-1] // Copy last element to index i.
+	records[len(records)-1] = ""           // Erase last element (write zero value).
+	records = records[:len(records)-1]     // Truncate slice.
+
+	//removes listener and keeps order but is less efficient
+	//copy(records[loc:], records[loc+1:]) // Shift a[i+1:] left one index.
+	//records[len(records)-1] = ""     // Erase last element (write zero value).
+	//records = records[:len(records)-1]     // Truncate slice.
+
+	return records
 }
 
 func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
-
 	matches := make([]*listenerRecord, 0)
 
 	// 8 cases total, for matching both specific and general listeners
 	// This seems inefficient
-	for _, listener := range lm.listeners[*item.GetSender()][item.GetMessageType()] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*id.ZeroID][item.GetMessageType()] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*item.GetSender()][0] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*id.ZeroID][0] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*item.GetSender()][0] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*id.ZeroID][0] {
-		matches = appendIfUnique(matches, listener)
-	}
+	matches = getMatches(matches, *item.GetSender(), item.GetMessageType(), lm)
+	matches = getMatches(matches, *id.ZeroID, item.GetMessageType(), lm)
+	matches = getMatches(matches, *item.GetSender(), 0, lm)
+	matches = getMatches(matches, *id.ZeroID, 0, lm)
+	matches = getMatches(matches, *item.GetSender(), 0, lm)
+	matches = getMatches(matches, *id.ZeroID, 0, lm)
 	// Match all, but with generic outer type
-	for _, listener := range lm.listeners[*item.GetSender()][item.GetMessageType()] {
-		matches = appendIfUnique(matches, listener)
-	}
-	for _, listener := range lm.listeners[*id.ZeroID][item.GetMessageType()] {
-		matches = appendIfUnique(matches, listener)
-	}
+	matches = getMatches(matches, *item.GetSender(), item.GetMessageType(), lm)
+	matches = getMatches(matches, *id.ZeroID, item.GetMessageType(), lm)
 
+	return matches
+}
+
+func getMatches(matches []*listenerRecord, user id.User, messageType int32, lm *Switchboard) []*listenerRecord {
+
+	mapId := listenerMapId{user, messageType}
+	listener_i, ok := lm.listeners.Load(mapId)
+	listeners := listener_i.([]*listenerRecord)
+	if ok {
+		for _, listener := range listeners {
+			matches = appendIfUnique(matches, listener)
+		}
+	}
 	return matches
 }
 
@@ -154,9 +201,6 @@ func appendIfUnique(matches []*listenerRecord, newListener *listenerRecord) []*l
 
 // Broadcast a message to the appropriate listeners
 func (lm *Switchboard) Speak(item Item) {
-	lm.mux.RLock()
-	defer lm.mux.RUnlock()
-
 	// Matching listeners include those that match all criteria perfectly,
 	// as well as those that don't care about certain criteria.
 	matches := lm.matchListeners(item)
