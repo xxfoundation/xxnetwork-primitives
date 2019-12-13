@@ -299,7 +299,9 @@ func TestListenerMap_Unregister(t *testing.T) {
 	listenerID := listeners.Register(specificUser, specificMessageType,
 		&MockListener{})
 	listeners.Unregister(listenerID)
-	if len(listeners.listeners[*specificUser][specificMessageType]) != 0 {
+	 mapId := listenerMapId{*specificUser, specificMessageType}
+	 records, ok:=listeners.listeners.Load(mapId)
+	if ok && records != 0 {
 		t.Error("The listener was still in the map after we stopped" +
 			" listening on it")
 	}
