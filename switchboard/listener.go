@@ -40,7 +40,8 @@ type listenerMapId struct {
 type Switchboard struct {
 	// By matching with the keys for each level of the map,
 	// you can find the listeners that meet each criterion
-	listeners   sync.Map
+	listeners sync.Map
+	//listenerIds maps listener ids to listenerMapIds making the reverse search in unregister o(k).
 	listenerIds sync.Map
 	lastID      int
 }
@@ -92,63 +93,37 @@ func (lm *Switchboard) Register(user *id.User,
 	return newListenerRecord.id
 }
 
-//FIXME: should this require user ID why we searching by listener id this is inefficient?
-//TWO options here it
 func (lm *Switchboard) Unregister(listenerID string) {
+	// This method uses a map of listenerIds to listenerMapId objects so we know where the listener object is making the
+	// search o(k).
+	unregisterId_i, ok := lm.listenerIds.Load(listenerID)
 
-	lm.listeners.Range(func(key interface{}, value interface{}) bool {
-		listeners := value.([]*listenerRecord)
-		for i := range listeners {
-			if listenerID == listeners[i].id {
-				//In deleting here is it important to maintain order? quicker solution if not
-				newListeners := deleteElem(i, listeners)
-				lm.listeners.Store(key.(listenerMapId), newListeners)
+	if ok {
+		unregisterMapId := unregisterId_i.(listenerMapId)
+		listeners_i, ok := lm.listeners.Load(unregisterMapId)
+		if ok {
+			listeners := listeners_i.([]*listenerRecord)
+			for i := range listeners {
+				if listenerID == listeners[i].id {
+					//In deleting here is it important to maintain order? quicker solution if not
+					newListeners := deleteElem(i, listeners)
+					lm.listeners.Store(unregisterMapId, newListeners)
+					return
+				}
 			}
 
-			return true
+		} else {
+			// Could not be found therefore doesnt exist
+			return
 		}
-		return false
-	})
-
-	return
-
-	// This method uses a map of listenr ids to listenerMapId objects so we know whats where potentially making this more efficient
-	//
-	//unregisterId_i, ok := lm.listenerIds.Load(listenerID)
-	//
-	//if ok{
-	//	unregisterMapId := unregisterId_i.(listenerMapId)
-	//	listeners_i, ok := lm.listeners.Load(unregisterMapId)
-	//	if ok{
-	//		listeners := listeners_i.([]*listenerRecord)
-	//		for i := range listeners{
-	//			if listenerID == listeners[i].id{
-	//				//In deleting here is it important to maintain order? quicker solution if not
-	//				newListeners := deleteElem(i, listeners)
-	//				lm.listeners.Store(unregisterMapId, newListeners)
-	//				return
-	//			}
-	//		}
-	//
-	//	} else{
-	//		// Could not be found therefore doesnt exist
-	//		return
-	//	}
-	//}
+	}
 }
 
 func deleteElem(loc int, records []*listenerRecord) []*listenerRecord {
-	//TODO: Pick which method we want
-
-	// Remove the element at index i from a.
-	records[loc] = records[len(records)-1] // Copy last element to index i.
-	records[len(records)-1] = ""           // Erase last element (write zero value).
-	records = records[:len(records)-1]     // Truncate slice.
-
-	//removes listener and keeps order but is less efficient
-	//copy(records[loc:], records[loc+1:]) // Shift a[i+1:] left one index.
-	//records[len(records)-1] = ""     // Erase last element (write zero value).
-	//records = records[:len(records)-1]     // Truncate slice.
+	//removes listener and keeps order
+	copy(records[loc:], records[loc+1:])        // Shift a[i+1:] left one index.
+	records[len(records)-1] = &listenerRecord{} // Erase last element (write zero value).
+	records = records[:len(records)-1]          // Truncate slice.
 
 	return records
 }
