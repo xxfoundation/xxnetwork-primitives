@@ -220,15 +220,20 @@ func (lm *Switchboard) Speak(item Item) {
 			"Message of type %v from user %q didn't match any listeners in"+
 				" the map", item.GetMessageType(), item.GetSender())
 		// dump representation of the map
-		for u, perUser := range lm.listeners {
-			for messageType, perMessageType := range perUser {
-				for i, listener := range perMessageType {
+		printRecordsMap(lm.listeners)
 
-					jww.ERROR.Printf("Listener %v: %v, user %v, "+
-						" type %v, ",
-						i, listener.id, u, messageType)
-				}
-			}
-		}
 	}
+}
+
+func printRecordsMap(lm sync.Map) {
+	lm.Range(func(key interface{}, value interface{}) bool {
+		mapId := key.(listenerMapId)
+		listeners := value.([]*listenerRecord)
+		for i := range listeners {
+			jww.ERROR.Printf("Listener %v: %v, user %v, "+
+				" type %v, ", i, listeners[i].id, mapId.userId, mapId.messageType)
+			return true
+		}
+		return false
+	})
 }
