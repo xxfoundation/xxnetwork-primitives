@@ -50,9 +50,7 @@ var Listeners = NewSwitchboard()
 
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
-		//make(map[id.User]map[int32][]*listenerRecord)
-		listeners: sync.Map{},
-		lastID:    0,
+		lastID: 0,
 	}
 }
 
@@ -146,6 +144,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	return matches
 }
 
+//loops through the listener getting all matches and returning the appended matches object
 func getMatches(matches []*listenerRecord, user id.User, messageType int32, lm *Switchboard) []*listenerRecord {
 
 	mapId := listenerMapId{user, messageType}
@@ -195,12 +194,12 @@ func (lm *Switchboard) Speak(item Item) {
 			"Message of type %v from user %q didn't match any listeners in"+
 				" the map", item.GetMessageType(), item.GetSender())
 		// dump representation of the map
-		printRecordsMap(lm.listeners)
-
+		printListenersMap(lm.listeners)
 	}
 }
 
-func printRecordsMap(lm sync.Map) {
+// Loops through the sync map to print out a representation of the map in the error logs. that can be used for debugging.
+func printListenersMap(lm sync.Map) {
 	lm.Range(func(key interface{}, value interface{}) bool {
 		mapId := key.(listenerMapId)
 		listeners := value.([]*listenerRecord)
