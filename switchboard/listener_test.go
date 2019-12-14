@@ -295,13 +295,13 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 }
 
 func TestListenerMap_Unregister(t *testing.T) {
-	listeners := NewSwitchboard()
-	listenerID := listeners.Register(specificUser, specificMessageType,
+	switchboard := NewSwitchboard()
+	listenerID := switchboard.Register(specificUser, specificMessageType,
 		&MockListener{})
-	listeners.Unregister(listenerID)
+	switchboard.Unregister(listenerID)
 	mapId := listenerMapId{*specificUser, specificMessageType}
-	records, ok := listeners.listeners.Load(mapId)
-	if ok && records != 0 {
+	records, ok := switchboard.listeners.Load(mapId)
+	if ok && len(records.([]*listenerRecord)) != 0 {
 		t.Error("The listener was still in the map after we stopped" +
 			" listening on it")
 	}

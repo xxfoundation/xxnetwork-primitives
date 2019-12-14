@@ -84,11 +84,12 @@ func (lm *Switchboard) Register(user *id.User,
 		//sync map returns an interface, so give it a type then append and save
 		listenerArray := listenerArray_i.([]*listenerRecord)
 		newListenerRecordSlice = append(listenerArray, newListenerRecord)
+	} else {
+		newListenerRecordSlice = append(newListenerRecordSlice, newListenerRecord)
 	}
 
 	//store listener id into the map that links them back to map ids for the o(1) search in unregister
 	lm.listenerIds.Store(newListenerRecord.id, mapId)
-
 	lm.listeners.Store(mapId, newListenerRecordSlice)
 
 	return newListenerRecord.id
@@ -108,6 +109,7 @@ func (lm *Switchboard) Unregister(listenerID string) {
 				if listenerID == listeners[i].id {
 					//In deleting here is it important to maintain order? quicker solution if not
 					newListeners := deleteElem(i, listeners)
+					lm.listenerIds.Delete(listenerID)
 					lm.listeners.Store(unregisterMapId, newListeners)
 					return
 				}
