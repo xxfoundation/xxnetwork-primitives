@@ -132,12 +132,8 @@ func deleteElem(loc int, records []*listenerRecord) []*listenerRecord {
 func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	matches := make([]*listenerRecord, 0)
 
-	// 8 cases total, for matching both specific and general listeners
+	// 4 cases total, for matching both specific and general listeners
 	// This seems inefficient
-	matches = getMatches(matches, *item.GetSender(), item.GetMessageType(), lm)
-	matches = getMatches(matches, *id.ZeroID, item.GetMessageType(), lm)
-	matches = getMatches(matches, *item.GetSender(), 0, lm)
-	matches = getMatches(matches, *id.ZeroID, 0, lm)
 	matches = getMatches(matches, *item.GetSender(), 0, lm)
 	matches = getMatches(matches, *id.ZeroID, 0, lm)
 	// Match all, but with generic outer type
