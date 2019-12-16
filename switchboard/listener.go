@@ -78,7 +78,6 @@ func (lm *Switchboard) Register(user *id.User,
 		id: strconv.Itoa(lm.lastID),
 	}
 
-
 	listenerArray, ok := getListenerRecords(mapId, lm.listeners)
 	newListenerRecordSlice := []*listenerRecord{}
 	if ok {
@@ -216,9 +215,9 @@ func printListenersMap(lm sync.Map) {
 }
 
 // This function loads the listenerRecord slice from our sync map, and typing the interface
-func getListenerRecords(mapId listenerMapId, listenerMap sync.Map) ([]*listenerRecord, bool){
+func getListenerRecords(mapId listenerMapId, listenerMap sync.Map) ([]*listenerRecord, bool) {
 	listenerArray_i, ok := listenerMap.Load(mapId)
-	if(ok){
+	if ok {
 		return listenerArray_i.([]*listenerRecord), ok
 	}
 	return nil, ok
