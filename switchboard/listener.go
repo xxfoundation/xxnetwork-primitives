@@ -78,11 +78,11 @@ func (lm *Switchboard) Register(user *id.User,
 		id: strconv.Itoa(lm.lastID),
 	}
 
-	listenerArray_i, ok := lm.listeners.Load(mapId)
+
+	listenerArray, ok := getListenerRecords(mapId, lm.listeners)
 	newListenerRecordSlice := []*listenerRecord{}
 	if ok {
 		//sync map returns an interface, so give it a type then append and save
-		listenerArray := listenerArray_i.([]*listenerRecord)
 		newListenerRecordSlice = append(listenerArray, newListenerRecord)
 	} else {
 		newListenerRecordSlice = append(newListenerRecordSlice, newListenerRecord)
@@ -102,9 +102,8 @@ func (lm *Switchboard) Unregister(listenerID string) {
 
 	if ok {
 		unregisterMapId := unregisterId_i.(listenerMapId)
-		listeners_i, ok := lm.listeners.Load(unregisterMapId)
+		listeners, ok := getListenerRecords(unregisterMapId, lm.listeners)
 		if ok {
-			listeners := listeners_i.([]*listenerRecord)
 			for i := range listeners {
 				if listenerID == listeners[i].id {
 					//In deleting here is it important to maintain order? quicker solution if not
@@ -153,9 +152,8 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 func getMatches(matches []*listenerRecord, user id.User, messageType int32, lm *Switchboard) []*listenerRecord {
 
 	mapId := listenerMapId{user, messageType}
-	listener_i, ok := lm.listeners.Load(mapId)
+	listeners, ok := getListenerRecords(mapId, lm.listeners)
 	if ok {
-		listeners := listener_i.([]*listenerRecord)
 		for _, listener := range listeners {
 			matches = appendIfUnique(matches, listener)
 		}
@@ -215,4 +213,13 @@ func printListenersMap(lm sync.Map) {
 		}
 		return false
 	})
+}
+
+// This function loads the listenerRecord slice from our sync map, and typing the interface
+func getListenerRecords(mapId listenerMapId, listenerMap sync.Map) ([]*listenerRecord, bool){
+	listenerArray_i, ok := listenerMap.Load(mapId)
+	if(ok){
+		return listenerArray_i.([]*listenerRecord), ok
+	}
+	return nil, ok
 }
