@@ -1,9 +1,9 @@
 package switchboard
 
 import (
+	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/primitives/id"
 	"sync"
-	jww "github.com/spf13/jwalterweatherman"
 )
 
 //We use this structure to map these value to a listenerRecord array in the sync.Map
@@ -12,7 +12,7 @@ type listenerMapKey struct {
 	messageType int32
 }
 
-type listenersMap struct{
+type listenersMap struct {
 	// Key = listenerMapKey , value = []*listenerRecords
 	listeners sync.Map
 	// Key = listenerId String, Value listenerMapKey
@@ -22,10 +22,10 @@ type listenersMap struct{
 
 // Given a user id and message type it will return the slice stored for this user
 // and a boolean identifying that the lookup was successful
-func (lm *listenersMap) GetListenerRecords(user *id.User, messageType int32) ([]*listenerRecord, bool){
+func (lm *listenersMap) GetListenerRecords(user *id.User, messageType int32) ([]*listenerRecord, bool) {
 	mapKey := listenerMapKey{user, messageType}
 	//sync map returns an interface, so give it a type then return that slice
-	listenerRecords_i, ok :=  lm.listeners.Load(mapKey)
+	listenerRecords_i, ok := lm.listeners.Load(mapKey)
 	if ok {
 		return listenerRecords_i.([]*listenerRecord), ok
 	}
@@ -34,7 +34,7 @@ func (lm *listenersMap) GetListenerRecords(user *id.User, messageType int32) ([]
 }
 
 // Stores a new listener to a sync map with the key of {id.User, MessageType}
-func (lm *listenersMap) StoreListener(user *id.User, messageType int32, newListener *listenerRecord){
+func (lm *listenersMap) StoreListener(user *id.User, messageType int32, newListener *listenerRecord) {
 	mapKey := listenerMapKey{user, messageType}
 	newListenerRecordSlice := []*listenerRecord{}
 
@@ -58,7 +58,7 @@ func (lm *listenersMap) StoreListener(user *id.User, messageType int32, newListe
 
 // Removes a listener using its listener ID, This method uses a map of listenerIds
 // to listenerMapKey objects so we know where the listener object is making the search o(k).
-func (lm *listenersMap) RemoveListener(listenerID string) bool{
+func (lm *listenersMap) RemoveListener(listenerID string) bool {
 	// Load the map of the stored listenerId, returns an interface
 	unregisterId_i, ok := lm.listenerKeys.Load(listenerID)
 	if ok {
@@ -85,7 +85,7 @@ func (lm *listenersMap) RemoveListener(listenerID string) bool{
 	return false
 }
 
-func (lm *listenersMap) String(){
+func (lm *listenersMap) String() {
 	lm.listeners.Range(func(key interface{}, value interface{}) bool {
 		mapKey := key.(listenerMapKey)
 		listeners := value.([]*listenerRecord)
@@ -99,7 +99,7 @@ func (lm *listenersMap) String(){
 }
 
 //loops through the listener getting all matches and returning the appended matches object
-func (lm *listenersMap) GetMatches(matches []*listenerRecord, user *id.User, messageType int32) ([]*listenerRecord) {
+func (lm *listenersMap) GetMatches(matches []*listenerRecord, user *id.User, messageType int32) []*listenerRecord {
 	listeners, ok := lm.GetListenerRecords(user, messageType)
 	if ok {
 		for _, listener := range listeners {

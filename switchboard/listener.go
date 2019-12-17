@@ -77,7 +77,6 @@ func (lm *Switchboard) Unregister(listenerID string) {
 	lm.listenersMap.RemoveListener(listenerID)
 }
 
-
 func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	matches := make([]*listenerRecord, 0)
 
@@ -91,8 +90,6 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 
 	return matches
 }
-
-
 
 // Broadcast a message to the appropriate listenersMap
 func (lm *Switchboard) Speak(item Item) {
