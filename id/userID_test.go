@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ func TestUserID_Bytes(t *testing.T) {
 	id := NewUserFromBytes(idBytes)
 	if !bytes.Equal(idBytes, id.Bytes()) {
 		t.Error("Surprisingly, " +
-			"the Bytes() method didn't return an equivalent byteslice")
+			"the Bytes() method didn't return an equivalent byte slice")
 	}
 }
 
@@ -133,7 +133,7 @@ func TestUser_Cmp(t *testing.T) {
 	}
 }
 
-//Test that deep copy returns an exact copy and that changing one does not
+// Test that deep copy returns an exact copy and that changing one does not
 // change the other
 func TestUser_DeepCopy(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))

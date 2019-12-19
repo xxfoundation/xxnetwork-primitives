@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ func TestMkdirAll(t *testing.T) {
 		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
 	}
 
-	if _, err := os.Stat(filepath.Dir(path)); os.IsExist(err) {
+	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("mkdirAll() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
@@ -108,7 +108,7 @@ func TestMkdirAll_DirectoryPath(t *testing.T) {
 		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
 	}
 
-	if _, err := os.Stat(filepath.Dir(path)); os.IsExist(err) {
+	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("mkdirAll() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
@@ -126,7 +126,7 @@ func TestMkdirAll_EmptyPath(t *testing.T) {
 		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
 	}
 
-	if _, err := os.Stat(filepath.Dir(path)); os.IsExist(err) {
+	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("mkdirAll() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
@@ -141,7 +141,7 @@ func TestMakeDirs(t *testing.T) {
 		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
 	}
 
-	if _, err := os.Stat(filepath.Dir(path)); os.IsExist(err) {
+	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("MakeDirs() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
@@ -173,7 +173,7 @@ func TestWriteFile(t *testing.T) {
 		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
 	}
 
-	if _, err := os.Stat(path); os.IsExist(err) {
+	if _, err = os.Stat(path); os.IsExist(err) {
 		t.Errorf("WriteFile() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}

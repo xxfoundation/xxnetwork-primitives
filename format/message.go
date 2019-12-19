@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,9 +41,9 @@ const (
 +-----------------+------------------+-------------+-------+-----------+-------+---------+
 */
 
-// Structure for the message stores all the data serially. Subsequent fields
-// point to subsections of the serialised data so that the message is always
-// serialized, is ready to go, and no copies are required.
+// Message structure stores all the data serially. Subsequent fields point to
+// subsections of the serialised data so that the message is always serialized,
+// it is ready to go, and no copies are required.
 type Message struct {
 	master         [TotalLen]byte // serialised message data
 	Contents                      // points to the contents of the message
@@ -59,7 +59,9 @@ func NewMessage() *Message {
 	newMsg := &Message{master: [TotalLen]byte{}}
 
 	newMsg.Contents = *NewContents(newMsg.master[contentsStart:contentsEnd])
-	newMsg.AssociatedData = *NewAssociatedData(newMsg.master[associatedDataStart:associatedDataEnd])
+	newMsg.AssociatedData = *NewAssociatedData(
+		newMsg.master[associatedDataStart:associatedDataEnd])
+
 	newMsg.payloadA = newMsg.master[payloadAStart:payloadAEnd]
 	newMsg.payloadB = newMsg.master[payloadBStart:payloadBEnd]
 
@@ -79,8 +81,8 @@ func (m *Message) GetPayloadA() []byte {
 	return m.payloadA
 }
 
-// SetPayloadA copies the passed byte slice into payloadA. If the specified byte
-// array is not exactly the same size as payloadA, then it panics.
+// SetPayloadA copies the passed byte slice into payload A. If the specified
+// byte slice is not exactly the same size as payload A, then it panics.
 func (m *Message) SetPayloadA(payload []byte) {
 	if len(payload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
@@ -96,8 +98,8 @@ func (m *Message) GetPayloadB() []byte {
 	return m.payloadB
 }
 
-// SetPayloadB copies the passed byte slice into payloadB. If the specified byte
-// array is not exactly the same size as payloadB, then it panics.
+// SetPayloadB copies the passed byte slice into payload B. If the specified
+// byte slice is not exactly the same size as payload B, then it panics.
 func (m *Message) SetPayloadB(payload []byte) {
 	if len(payload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadB;"+
@@ -108,9 +110,9 @@ func (m *Message) SetPayloadB(payload []byte) {
 	copy(m.payloadB, payload)
 }
 
-// GetPayloadBForEncryption ensures payload B is in the group for encrypting.
-// Specifically, it moves the first byte to the end and sets the first byte to
-// zero.
+// GetPayloadBForEncryption ensures payload B is in the group for encrypting. It
+// returns payload B with the first byte swapped to the end and the first byte
+// to zero.
 func (m *Message) GetPayloadBForEncryption() []byte {
 	payloadCopy := make([]byte, PayloadLen)
 	copy(payloadCopy, m.payloadB)
@@ -122,9 +124,9 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 
 // SetDecryptedPayloadB is used when receiving a decrypted payload B to ensure
 // all data is put back in the right order. If the specified byte array is not
-// exactly the same size as payloadB, then it panics. Specifically, it moves the
-// last byte to the front and sets the last byte to zero. Assumes the newPayload
-// is in the group and that its first byte is zero.
+// exactly the same size as payload B, then it panics. Specifically, it moves
+// the last byte to the front and sets the last byte to zero. Assumes the
+// newPayload is in the group and that its first byte is zero.
 func (m *Message) SetDecryptedPayloadB(newPayload []byte) {
 	if len(newPayload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+

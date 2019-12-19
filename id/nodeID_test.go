@@ -32,7 +32,7 @@ func TestNewNodeFromBytes_Error(t *testing.T) {
 	}
 }
 
-//Tests that node ids generated with NewNodeFromUint are correct
+// Tests that node ids generated with NewNodeFromUint are correct
 func TestNewNodeFromUInt(t *testing.T) {
 
 	expected := [][]byte{
@@ -52,7 +52,7 @@ func TestNewNodeFromUInt(t *testing.T) {
 	}
 }
 
-//Tests that NewNodeFromUint panics when used improperly
+// Tests that NewNodeFromUint panics when used improperly
 func TestNewNodeFromUInt_Panic(t *testing.T) {
 
 	defer func() {
@@ -63,7 +63,7 @@ func TestNewNodeFromUInt_Panic(t *testing.T) {
 
 	NewNodeFromUInt(0, nil)
 
-	t.Error("NewNodeFromUInt should have paniced with nil testing.T")
+	t.Error("NewNodeFromUInt should have panicked with nil testing.T")
 
 }
 
