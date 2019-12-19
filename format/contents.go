@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -21,11 +21,11 @@ const (
 	invalidPosition = -1
 )
 
-// Structure for the content section of the message points to a subsection of
-// the serialised Message structure. For the purpose of E2E, padding is added to
-// the front of serial, with a minimum length of 11 bytes. The first byte of
-// padding is always all zeros so that a byte does not need to be placed at the
-// beginning of serial to ensure it is in the group.
+// Contents is the structure for the content section of the message points to a
+// subsection of the serialised Message structure. For the purpose of E2E,
+// padding is added to the front of serial, with a minimum length of 11 bytes.
+// The first byte of padding is always all zeros so that a byte does not need to
+// be placed at the beginning of serial to ensure it is in the group.
 type Contents struct {
 	// Stores the data of Contents and points to region in master
 	serial []byte
@@ -60,8 +60,8 @@ func (c *Contents) Get() []byte {
 	return c.serial
 }
 
-// Set sets the entire serial content. If the specified byte array is not
-// exactly the same size as serial, then it panics.
+// Set sets the entire serial content to the specified slice. If the specified
+// slice is not exactly the same size as serial, then it panics.
 func (c *Contents) Set(newSerial []byte) {
 	if len(newSerial) != ContentsLen {
 		jww.ERROR.Panicf("new serial not the same size as Contents serial;"+
