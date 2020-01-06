@@ -11,7 +11,6 @@ import (
 	"gitlab.com/elixxir/primitives/id"
 	"reflect"
 	"strconv"
-	"sync"
 )
 
 type Item interface {
@@ -60,21 +59,15 @@ func NewSwitchboard() *Switchboard {
 // If a message matches multiple listenersMap, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
 	messageType int32, newListener Listener) string {
-	lm.mux.Lock()
-	defer lm.mux.Unlock()
 
 	lm.lastID++
-	if lm.listeners[*user] == nil {
-		lm.listeners[*user] = make(map[int32][]*listenerRecord)
-	}
 
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
 	}
-	lm.listeners[*user][messageType] = append(
-		lm.listeners[*user][messageType],
-		newListenerRecord)
+
+	lm.listenersMap.StoreListener(user, messageType, newListenerRecord)
 
 	return newListenerRecord.id
 }
