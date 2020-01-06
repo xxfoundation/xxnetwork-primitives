@@ -15,12 +15,14 @@ import (
 )
 
 type Item interface {
+	// To reviewer: Is this the correct name for this method? It's always the
+	// sender ID in the client, but that might not be the case on the nodes
 	GetSender() *id.User
 	GetMessageType() int32
 }
 
-// Listener interface adds ability to receive callbacks through the Gomobile
-// boundary.
+// This is an interface so you can receive callbacks through the Gomobile
+// boundary
 type Listener interface {
 	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
@@ -32,8 +34,8 @@ type listenerRecord struct {
 }
 
 type Switchboard struct {
-	// By matching with the keys for each level of the map, the listeners that
-	// meet each criterion can be found
+	// By matching with the keys for each level of the map,
+	// you can find the listeners that meet each criterion
 	listeners map[id.User]map[int32][]*listenerRecord
 	lastID    int
 	mux       sync.RWMutex
