@@ -11,6 +11,7 @@ import (
 	"gitlab.com/elixxir/primitives/id"
 	"reflect"
 	"strconv"
+	"sync"
 )
 
 type Item interface {
@@ -46,33 +47,39 @@ func NewSwitchboard() *Switchboard {
 	}
 }
 
-// Add a new listener to the map
-// Returns ID of the new listener. Keep this around if you want to be able to
-// delete the listener later.
+// Register adds a new listener to the map. Returns the ID of the new listener.
+// Keep this around if you want to be able to delete the listener later.
 //
-// user: 0 for all,
-// or any user ID to listen for messages from a particular user.
+// user: 0 for all, or any user ID to listen for messages from a particular
+// user.
 // messageType: 0 for all, or any message type to listen for messages of that
 // type.
-// newListener: something implementing the Listener callback interface.
-// Don't pass nil to this.
+// newListener: something implementing the Listener callback interface. Do not
+// pass nil to this.
 //
 // If a message matches multiple listenersMap, all of them will hear the message.
 func (lm *Switchboard) Register(user *id.User,
 	messageType int32, newListener Listener) string {
+	lm.mux.Lock()
+	defer lm.mux.Unlock()
 
 	lm.lastID++
+	if lm.listeners[*user] == nil {
+		lm.listeners[*user] = make(map[int32][]*listenerRecord)
+	}
 
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
 	}
-
-	lm.listenersMap.StoreListener(user, messageType, newListenerRecord)
+	lm.listeners[*user][messageType] = append(
+		lm.listeners[*user][messageType],
+		newListenerRecord)
 
 	return newListenerRecord.id
 }
 
+// Unregister removes the listener with the specified ID from the listener map.
 func (lm *Switchboard) Unregister(listenerID string) {
 	lm.listenersMap.RemoveListener(listenerID)
 }
@@ -102,9 +109,9 @@ func (lm *Switchboard) Speak(item Item) {
 		for _, listener := range matches {
 			jww.INFO.Printf("Hearing on listener %v of type %v",
 				listener.id, reflect.TypeOf(listener.l))
-			// If you want to be able to hear things on the switchboard on
-			// multiple goroutines, you should call Speak() on the switchboard
-			// from multiple goroutines
+
+			// To hear things on the switchboard on multiple goroutines, call
+			// Speak() on the switchboard from multiple goroutines
 			listener.l.Hear(item, len(matches) > 1)
 		}
 	} else {
