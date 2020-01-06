@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,23 +13,20 @@ import (
 	"testing"
 )
 
-// Length of IDs in bytes
-// 256 bits
+// Length of IDs in bytes (256 bits)
 const UserLen = 32
 
 // Most string types in most languages (with C excepted) support 0 as a
-// character in a string, for Unicode support. So it's possible to use normal
+// character in a string for Unicode support. So it is possible to use normal
 // strings as an immutable container for bytes in all the languages we care
 // about supporting.
-// However, when marshaling strings into protobufs, you'll get errors when
-// the string isn't a valid UTF-8 string. So, the alternative underlying type
-// that you can use as a map key in Go is an array, and that's what the package
+// However, when marshaling strings into protobufs, errors will occur when the
+// string is not a valid UTF-8 string. So, the alternative underlying type that
+// can be used as a map key in Go is an array, and that is what the package
 // should use.
-// TODO Should we enforce any aspects of the user ID generation here?
-// (e.g. the first bit being zero to enforce everything being in the cyclic group)
 type User [UserLen]byte
 
-// Use this if you don't want to have to populate user ids for this manually
+// Use this to avoid having to populate user IDs for this manually
 var ZeroID *User
 
 func init() {
@@ -37,13 +34,12 @@ func init() {
 	ZeroID = NewUserFromBytes(make([]byte, UserLen))
 }
 
-// Length of registration code in raw bytes
-// Must be a multiple of 5 bytes to work with base 32
-// 8 character long reg codes when base-32 encoded currently with length of 5
+// Length of registration code in raw bytes. Must be a multiple of 5 bytes to
+// work with base 32. Eight character long registration codes when base-32
+// encoded currently with length of 5.
 const RegCodeLen = 5
 
-// This is a stopgap to be able to register fake users for fake demos.
-// Replace ASAP!
+// RegistrationCode adds ability to register fake users for fake demos.
 func (u *User) RegistrationCode() string {
 	return base32.StdEncoding.EncodeToString(userHash(u))
 }
@@ -62,14 +58,10 @@ func userHash(uid *User) []byte {
 
 const sizeofUint64 = 8
 
-// Only tests should use this method for compatibility with the old user ID
+// NewUserFromUint is only used by tests for compatibility with the old user ID
 // structure, as a utility method to easily create user IDs with the correct
-// length. So this func takes a testing.T.
+// length.
 func NewUserFromUint(newId uint64, t testing.TB) *User {
-	// TODO Uncomment these lines to cause failure where this method's used in
-	// the real codebase. Then, replace those occurrences with better code.
-	//t.Log("Warning: Creating a new user ID from uint. " +
-	//	"You should create user IDs some other way.")
 	if t == nil {
 		panic("This can only be used in testing")
 	}
@@ -90,16 +82,17 @@ func NewUserFromUints(uints *[4]uint64) *User {
 	return user
 }
 
-// Returns a user ID set to the contents of the byte slice
-// if the byte slice has the correct length.
-// Otherwise, returns a user ID that's all zeroes which
-// should get rejected somewhere along the line due
-// to cryptographic properties that the system provides
+// NewUserFromBytes returns a user ID set to the contents of the byte slice if
+// the byte slice has the correct length. Otherwise, returns a user ID that is
+// all zeroes that should be rejected somewhere along the line due to
+// cryptographic properties that the system provides.
 func NewUserFromBytes(data []byte) *User {
 	user := new(User)
+
 	if len(data) == UserLen {
 		copy(user[:], data)
 	}
+
 	return user
 }
 
@@ -111,12 +104,12 @@ func (u *User) Bytes() []byte {
 	return bytes
 }
 
-// Utility function to determine whether two user IDs are equal
+// Cmp determines the equality of two user IDs.
 func (u *User) Cmp(y *User) bool {
 	return *u == *y
 }
 
-//Deep Copy makes a separate memory space copy of the user ID
+// DeepCopy makes a separate memory space copy of the user ID
 func (u *User) DeepCopy() *User {
 	if u == nil {
 		return nil

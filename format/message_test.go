@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -223,10 +223,10 @@ func TestMessage_Values(t *testing.T) {
 
 	fp := msg.AssociatedData.GetKeyFP()
 
-	if !bytes.Equal([]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
+	if !bytes.Equal(fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
 		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
 			"\n\treceived: %v\n\texpected: %v",
-			[]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
+			fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
 	}
 
 	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {
@@ -278,10 +278,10 @@ func TestMessage_Values(t *testing.T) {
 
 	fp = msg.AssociatedData.GetKeyFP()
 
-	if !bytes.Equal([]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
+	if !bytes.Equal(fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
 		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
 			"\n\treceived: %v\n\texpected: %v",
-			[]byte(fp[:]), msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
+			fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
 	}
 
 	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {

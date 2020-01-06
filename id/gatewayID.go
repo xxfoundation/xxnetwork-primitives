@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +36,7 @@ func (g *Gateway) Bytes() []byte {
 	return bytes
 }
 
-// Equals determines whether two Gateway IDs are the same.
+// Cmp determines whether two Gateway IDs are the same.
 func (g *Gateway) Cmp(y *Gateway) bool {
 	return *g == *y
 }
