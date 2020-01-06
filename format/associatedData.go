@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,8 +38,8 @@ const (
 	macEnd   = macStart + MacLen
 )
 
-// Structure for the associated data section of the message points to a
-// subsection of the serialised Message structure.
+// AssociatedData is the structure for the associated data section of the
+// message.
 type AssociatedData struct {
 	serial      []byte // points to region in master
 	recipientID []byte
@@ -48,7 +48,7 @@ type AssociatedData struct {
 	mac         []byte // message authentication code
 }
 
-// Array form for storing a fingerprint
+// Fingerprint is the array form for storing a fingerprint
 type Fingerprint [KeyFPLen]byte
 
 // NewAssociatedData creates a new AssociatedData for a message and points
@@ -156,7 +156,7 @@ func (a *AssociatedData) GetMAC() []byte {
 	return a.mac
 }
 
-// SetMac sets the mac. If the specified byte array is not exactly the same size
+// SetMAC sets the mac. If the specified byte array is not exactly the same size
 // as mac, then it panics.
 func (a *AssociatedData) SetMAC(newMAC []byte) {
 	if len(newMAC) != MacLen {

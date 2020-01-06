@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -12,19 +12,17 @@ import (
 
 type ListeningQueue chan Item
 
-// Set up a listening queue and add it to the switchboard
-func (s *Switchboard) ListenChannel(
+// ListenChannel sets up a listening queue and adds it to the switchboard.
+func (lm *Switchboard) ListenChannel(
 	messageType int32, sender *id.User, channelBufferSize int) (id string,
 	messageQueue ListeningQueue) {
 	messageQueue = make(ListeningQueue, channelBufferSize)
-	id = s.Register(sender, messageType, messageQueue)
+	id = lm.Register(sender, messageType, messageQueue)
 	return id, messageQueue
 }
 
-// TODO What happens if you use pointer receiver? Should test whether it still works correctly.
-// Multiple threads can write to this buffer simultaneously through the
-// switchboard using this method, although because the writes are to adjacent
-// elements, performance is likely to be suboptimal
-func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
+// Hear allows multiple threads to write to the buffer simultaneously through
+// the switchboard.
+func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool) {
 	l <- item
 }
