@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,6 @@ func OneListenerSetup() (*Switchboard, *MockListener) {
 	listeners = NewSwitchboard()
 	// add one listener to the map
 	fullyMatchedListener := &MockListener{}
-	// TODO different type for message types?
 	listeners.Register(specificUser, specificMessageType,
 		fullyMatchedListener)
 	return listeners, fullyMatchedListener
@@ -155,7 +154,6 @@ func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	listeners = NewSwitchboard()
 	// add one listener to the map
 	wildcardListener := &MockListener{}
-	// TODO different type for message types?
 	listeners.Register(zeroUser, zeroMessageType, wildcardListener)
 	return listeners, wildcardListener
 }

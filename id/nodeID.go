@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ func (n *Node) Bytes() []byte {
 	return bytes
 }
 
-// Equals determines whether two node IDs are the same.
+// Cmp determines the equality of two node IDs.
 func (n *Node) Cmp(y *Node) bool {
 	return *n == *y
 }
