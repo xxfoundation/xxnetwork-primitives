@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2018 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,8 +15,7 @@ import (
 )
 
 // NetworkDefinition structure matches the JSON structure generated in
-// Terraform, which allows it to be decoded to Go. If the JSON structure
-// changes, then this structure needs to be updated.
+// Terraform, which allows it to be decoded to Go.
 type NetworkDefinition struct {
 	Timestamp    time.Time
 	Gateways     []Gateway
@@ -35,17 +34,18 @@ type Gateway struct {
 
 // Node is the structure for the nodes object in the JSON file.
 type Node struct {
-	ID []byte `json:"Id"`
+	ID             []byte `json:"Id"`
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
-// Registration is the structure for the registration object in the JSON
-// file.
+// Registration is the structure for the registration object in the JSON file.
 type Registration struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
 
-// UDB is the structure for the udb object in the JSON file.
+// UDB is the structure for the UDB object in the JSON file.
 type UDB struct {
 	ID []byte `json:"Id"`
 }
@@ -128,6 +128,8 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert Nodes slice to byte slice
 	for _, val := range ndf.Nodes {
 		b = append(b, val.ID...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
 	}
 
 	// Convert Registration to byte slice
@@ -135,7 +137,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
 
 	// Convert UDB to byte slice
-	b = append(b, []byte(ndf.UDB.ID)...)
+	b = append(b, ndf.UDB.ID...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
