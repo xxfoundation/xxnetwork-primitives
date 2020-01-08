@@ -15,24 +15,27 @@ import (
 )
 
 type Item interface {
+	// To reviewer: Is this the correct name for this method? It's always the
+	// sender ID in the client, but that might not be the case on the nodes
 	GetSender() *id.User
 	GetMessageType() int32
 }
 
-// Listener interface adds ability to receive callbacks through the Gomobile
-// boundary.
+// This is an interface so you can receive callbacks through the Gomobile
+// boundary
 type Listener interface {
-	Hear(item Item, isHeardElsewhere bool)
+	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
 
 type listenerRecord struct {
 	l  Listener
 	id string
+	i  []interface{}
 }
 
 type Switchboard struct {
-	// By matching with the keys for each level of the map, the listeners that
-	// meet each criterion can be found
+	// By matching with the keys for each level of the map,
+	// you can find the listeners that meet each criterion
 	listeners map[id.User]map[int32][]*listenerRecord
 	lastID    int
 	mux       sync.RWMutex
@@ -57,8 +60,8 @@ func NewSwitchboard() *Switchboard {
 // pass nil to this.
 //
 // If a message matches multiple listeners, all of them will hear the message.
-func (lm *Switchboard) Register(user *id.User,
-	messageType int32, newListener Listener) string {
+func (lm *Switchboard) Register(user *id.User, messageType int32,
+	newListener Listener, i ...interface{}) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
 
@@ -70,6 +73,7 @@ func (lm *Switchboard) Register(user *id.User,
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
+		i:  i,
 	}
 
 	lm.listeners[*user][messageType] = append(
@@ -158,7 +162,7 @@ func appendIfUnique(matches []*listenerRecord,
 		// Append the new listener to the slice if not found
 		return append(matches, newListener)
 	} else {
-		// Don't append the listener if it has already been matched
+		// Do not append the listener if it has already been matched
 		return matches
 	}
 }
@@ -180,7 +184,7 @@ func (lm *Switchboard) Speak(item Item) {
 
 			// To hear things on the switchboard on multiple goroutines, call
 			// Speak() on the switchboard from multiple goroutines
-			listener.l.Hear(item, len(matches) > 1)
+			go listener.l.Hear(item, len(matches) > 1, listener.i...)
 		}
 	} else {
 		jww.ERROR.Printf(
