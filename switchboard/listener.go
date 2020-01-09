@@ -93,27 +93,6 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	return matches
 }
 
-// appendIfUnique searches for the listener ID and appends it to matches if it
-// has yet to be found.
-func appendIfUnique(matches []*listenerRecord,
-	newListener *listenerRecord) []*listenerRecord {
-	// Search for the listener ID
-	found := false
-
-	for _, l := range matches {
-		found = found || (l.id == newListener.id)
-	}
-
-	if !found {
-		// Append the new listener to the slice if not found
-		return append(matches, newListener)
-	} else {
-		// Do not append the listener if it has already been matched
-		return matches
-	}
-}
-
-
 // Broadcast a message to the appropriate listenersMap
 func (lm *Switchboard) Speak(item Item) {
 	// Matching listenersMap include those that match all criteria perfectly,
