@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2019 Privategrity Corporation                                   /
+// Copyright © 2020 Privategrity Corporation                                   /
 //                                                                             /
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,12 +22,13 @@ type Item interface {
 
 // This is an interface so you can receive callbacks through the Gomobile boundary
 type Listener interface {
-	Hear(item Item, isHeardElsewhere bool)
+	Hear(item Item, isHeardElsewhere bool, i ...interface{})
 }
 
 type listenerRecord struct {
 	l  Listener
 	id string
+	i  []interface{}
 }
 
 type Switchboard struct {
@@ -56,15 +57,16 @@ func NewSwitchboard() *Switchboard {
 // newListener: something implementing the Listener callback interface. Do not
 // pass nil to this.
 //
-// If a message matches multiple listenersMap, all of them will hear the message.
-func (lm *Switchboard) Register(user *id.User,
-	messageType int32, newListener Listener) string {
+// If a message matches multiple listeners, all of them will hear the message.
+func (lm *Switchboard) Register(user *id.User, messageType int32,
+	newListener Listener, i ...interface{}) string {
 
 	lm.lastID++
 
 	newListenerRecord := &listenerRecord{
 		l:  newListener,
 		id: strconv.Itoa(lm.lastID),
+		i:  i,
 	}
 
 	lm.listenersMap.StoreListener(user, messageType, newListenerRecord)
@@ -91,6 +93,27 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 	return matches
 }
 
+// appendIfUnique searches for the listener ID and appends it to matches if it
+// has yet to be found.
+func appendIfUnique(matches []*listenerRecord,
+	newListener *listenerRecord) []*listenerRecord {
+	// Search for the listener ID
+	found := false
+
+	for _, l := range matches {
+		found = found || (l.id == newListener.id)
+	}
+
+	if !found {
+		// Append the new listener to the slice if not found
+		return append(matches, newListener)
+	} else {
+		// Do not append the listener if it has already been matched
+		return matches
+	}
+}
+
+
 // Broadcast a message to the appropriate listenersMap
 func (lm *Switchboard) Speak(item Item) {
 	// Matching listenersMap include those that match all criteria perfectly,
@@ -105,7 +128,7 @@ func (lm *Switchboard) Speak(item Item) {
 
 			// To hear things on the switchboard on multiple goroutines, call
 			// Speak() on the switchboard from multiple goroutines
-			listener.l.Hear(item, len(matches) > 1)
+			go listener.l.Hear(item, len(matches) > 1, listener.i...)
 		}
 	} else {
 		jww.ERROR.Printf(
