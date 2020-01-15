@@ -16,15 +16,20 @@ const GatewayIdLen = 32
 // Gateway ID array
 type Gateway [GatewayIdLen]byte
 
+// Used as a temporary gateway id untill we come up with a better solution for generating gateway ID's
+func NewTmpGateway() *Gateway{
+	gateway := new(Gateway)
+	copy(gateway[:], "tmp")
+	return gateway
+}
+
 // NewGateway returns a new Gateway ID from a Node ID if the byte slice has the
 // correct length. Otherwise, it returns a Gateway ID that is all zeroes.
 func (n *Node) NewGateway() *Gateway {
 	gateway := new(Gateway)
-
 	if len(n) == GatewayIdLen {
 		copy(gateway[:], n[:])
 	}
-
 	return gateway
 }
 
