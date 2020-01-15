@@ -29,7 +29,7 @@ func (n *Node) NewGateway() *Gateway {
 }
 
 // Used as a temporary gateway id untill we come up with a better solution for generating gateway ID's
-func (n *Node) NewTmpGatewayId() string{
+func (n *Gateway) NewTmpGatewayId() string{
 	return "tmp"
 }
 
