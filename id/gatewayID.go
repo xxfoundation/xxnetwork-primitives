@@ -28,6 +28,11 @@ func (n *Node) NewGateway() *Gateway {
 	return gateway
 }
 
+// Used as a temporary gateway id untill we come up with a better solution for generating gateway ID's
+func (n *Node) NewTmpGatewayId() string{
+	return "tmp"
+}
+
 // Bytes returns a copy of a Gateway ID as a byte slice.
 func (g *Gateway) Bytes() []byte {
 	bytes := make([]byte, GatewayIdLen)
