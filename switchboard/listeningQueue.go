@@ -23,6 +23,6 @@ func (lm *Switchboard) ListenChannel(
 
 // Hear allows multiple threads to write to the buffer simultaneously through
 // the switchboard.
-func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool) {
+func (l ListeningQueue) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
 	l <- item
 }
