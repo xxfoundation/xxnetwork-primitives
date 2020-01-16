@@ -36,7 +36,7 @@ func (m *Message) GetMessageType() int32 {
 	return m.MessageType
 }
 
-func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
+func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
 	ml.mux.Lock()
 	defer ml.mux.Unlock()
 
@@ -46,6 +46,11 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool) {
 		ml.NumHeard++
 		ml.LastMessage = msg.Contents
 		ml.LastMessageType = msg.GetMessageType()
+	}
+
+	if len(i) > 0 {
+		hearChan := i[0].(chan struct{})
+		hearChan <- struct{}{}
 	}
 }
 
@@ -158,7 +163,7 @@ func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	return listeners, wildcardListener
 }
 
-func TestListenerMap_SpeakWildcard(t *testing.T) {
+func TestListener_SpeakWildcard(t *testing.T) {
 	// set up
 	listeners, wildcardListener := WildcardListenerSetup()
 
@@ -293,33 +298,43 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 }
 
 func TestListenerMap_Unregister(t *testing.T) {
-	listeners := NewSwitchboard()
-	listenerID := listeners.Register(specificUser, specificMessageType,
+	switchboard := NewSwitchboard()
+	listenerID := switchboard.Register(specificUser, specificMessageType,
 		&MockListener{})
-	listeners.Unregister(listenerID)
-	if len(listeners.listeners[*specificUser][specificMessageType]) != 0 {
-		t.Error("The listener was still in the map after we stopped" +
-			" listening on it")
+	switchboard.Unregister(listenerID)
+
+	records, ok := switchboard.listenersMap.GetListenerRecords(specificUser, specificMessageType)
+
+	if ok && len(records) != 0 {
+		t.Error("The listener was still in the map after we stopped listening on it")
 	}
 }
 
 // The following tests show correct behavior in certain type situations.
-// In all cases, the listeners are listening to all users, because these tests
+// In all cases, the listenersMap are listening to all users, because these tests
 // are about types.
 // This test demonstrates correct behavior when the crypto and message types
 // are both specified.
 func TestListenerMap_SpecificListener(t *testing.T) {
 	listeners := NewSwitchboard()
 	l := &MockListener{}
-	listeners.Register(id.ZeroID, 3, l)
+	hearChan := make(chan struct{}, 5)
+	listeners.Register(id.ZeroID, 3, l, hearChan)
 	// Should match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 0"),
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 3,
 	})
-	if l.NumHeard != 1 {
-		t.Error("Listener should have heard")
+	tmr := time.NewTimer(time.Second)
+
+	select {
+	case <-hearChan:
+		if l.NumHeard != 1 {
+			t.Error("Listener heard but didn't record")
+		}
+	case <-tmr.C:
+		t.Error("Listener did not hear")
 	}
 
 	l.NumHeard = 0
@@ -329,7 +344,13 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 		Sender:      id.NewUserFromUint(8, t),
 		MessageType: 0,
 	})
-	if l.NumHeard != 0 {
-		t.Error("Listener should not have heard")
+
+	select {
+	case <-hearChan:
+		t.Error("Listener heard but should not have")
+	case <-tmr.C:
+		if l.NumHeard != 0 {
+			t.Error("Listener should not have heard")
+		}
 	}
 }

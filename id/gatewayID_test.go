@@ -168,3 +168,13 @@ func TestGateway_String_Append(t *testing.T) {
 			id1.String()[len(id1.String())-8:], "-Gateway")
 	}
 }
+
+func TestNewTmpGateway(t *testing.T) {
+	tmp := NewTmpGateway()
+	t.Logf(tmp.String())
+	expected := "dG1wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=-Gateway"
+	if tmp.String() != expected{
+		t.Logf("failed creating a new tmp Gateway")
+		t.Fail()
+	}
+}
