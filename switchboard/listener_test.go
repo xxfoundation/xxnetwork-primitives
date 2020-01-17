@@ -163,7 +163,7 @@ func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	return listeners, wildcardListener
 }
 
-func TestListener_SpeakWildcard(t *testing.T) {
+func TestListenerMap_SpeakWildcard(t *testing.T) {
 	// set up
 	listeners, wildcardListener := WildcardListenerSetup()
 
@@ -298,20 +298,18 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 }
 
 func TestListenerMap_Unregister(t *testing.T) {
-	switchboard := NewSwitchboard()
-	listenerID := switchboard.Register(specificUser, specificMessageType,
+	listeners := NewSwitchboard()
+	listenerID := listeners.Register(specificUser, specificMessageType,
 		&MockListener{})
-	switchboard.Unregister(listenerID)
-
-	records, ok := switchboard.listenersMap.GetListenerRecords(specificUser, specificMessageType)
-
-	if ok && len(records) != 0 {
-		t.Error("The listener was still in the map after we stopped listening on it")
+	listeners.Unregister(listenerID)
+	if len(listeners.listeners[*specificUser][specificMessageType]) != 0 {
+		t.Error("The listener was still in the map after we stopped" +
+			" listening on it")
 	}
 }
 
 // The following tests show correct behavior in certain type situations.
-// In all cases, the listenersMap are listening to all users, because these tests
+// In all cases, the listeners are listening to all users, because these tests
 // are about types.
 // This test demonstrates correct behavior when the crypto and message types
 // are both specified.
