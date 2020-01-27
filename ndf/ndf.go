@@ -21,6 +21,7 @@ type NetworkDefinition struct {
 	Gateways     []Gateway
 	Nodes        []Node
 	Registration Registration
+	Notification Notification
 	UDB          UDB   `json:"Udb"`
 	E2E          Group `json:"E2e"`
 	CMIX         Group `json:"Cmix"`
@@ -41,6 +42,12 @@ type Node struct {
 
 // Registration is the structure for the registration object in the JSON file.
 type Registration struct {
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
+}
+
+// Notifications is the structure for the registration object in the JSON file.
+type Notification struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
