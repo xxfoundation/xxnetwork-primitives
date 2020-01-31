@@ -8,6 +8,7 @@ package id
 
 import (
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/binary"
 	"golang.org/x/crypto/blake2b"
 	"testing"
@@ -102,6 +103,12 @@ func (u *User) Bytes() []byte {
 	copy(bytes, u[:])
 
 	return bytes
+}
+
+// String() implements Stringer, and allows user IDs to be used as connection
+// IDs. Currently, it just base64 encodes the user ID
+func (u *User) String() string {
+	return base64.StdEncoding.EncodeToString(u.Bytes())
 }
 
 // Cmp determines the equality of two user IDs.
