@@ -4,10 +4,8 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
-// The following directive is necessary to make the package coherent:
+// Provides functions for writing a version information file
 
-// This program generates cmd/version_vars.go. It can be invoked by running
-// go generate
 package utils
 
 import (
