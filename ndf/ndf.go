@@ -92,7 +92,12 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 }
 
 // StripNdf returns a stripped down version of the ndf for clients
-func StripNdf(definition *NetworkDefinition) *NetworkDefinition {
+func StripNdf(ndfJson []byte) ([]byte, error) {
+	definition, _, err := DecodeNDF(string(ndfJson))
+	if err != nil {
+		return nil, err
+	}
+
 	// Strip down nodes slice of addresses and certs
 	var strippedNodes []Node
 	for _, node := range definition.Nodes {
@@ -114,7 +119,12 @@ func StripNdf(definition *NetworkDefinition) *NetworkDefinition {
 		CMIX:         definition.CMIX,
 	}
 
-	return strippedNdf
+	data, err := json.Marshal(strippedNdf)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // separate splits the JSON data from the signature. The NDF string is expected
