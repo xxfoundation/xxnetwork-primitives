@@ -19,7 +19,7 @@ import (
 )
 
 // Version file generation consumed by higher-level repos
-func GenerateVersionFile() {
+func GenerateVersionFile(version string) {
 	gitversion := GenerateGitVersion()
 	deps := ReadGoMod()
 
@@ -32,10 +32,12 @@ func GenerateVersionFile() {
 		Timestamp    time.Time
 		GITVER       string
 		DEPENDENCIES string
+		VERSION      string
 	}{
 		Timestamp:    time.Now(),
 		GITVER:       gitversion,
 		DEPENDENCIES: deps,
+		VERSION:      version,
 	})
 	if err != nil {
 		panic(err)
@@ -77,5 +79,5 @@ var packageTemplate = template.Must(template.New("").Parse(
 		"// {{ .Timestamp }}\n" +
 		"package cmd\n\n" +
 		"const GITVERSION = `{{ .GITVER }}`\n" +
-		"const SEMVER = \"1.0.0\"\n" +
+		"const SEMVER = \"{{ .VERSION }}\"\n" +
 		"const DEPENDENCIES = `{{ .DEPENDENCIES }}`\n"))
