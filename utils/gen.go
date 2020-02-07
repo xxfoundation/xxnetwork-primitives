@@ -11,7 +11,6 @@ package utils
 import (
 	"bufio"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -25,10 +24,11 @@ func GenerateVersionFile() {
 	deps := ReadGoMod()
 
 	f, err := os.Create("version_vars.go")
-	die(err)
-	defer f.Close()
+	if err != nil {
+		panic(err)
+	}
 
-	packageTemplate.Execute(f, struct {
+	err = packageTemplate.Execute(f, struct {
 		Timestamp    time.Time
 		GITVER       string
 		DEPENDENCIES string
@@ -37,6 +37,14 @@ func GenerateVersionFile() {
 		GITVER:       gitversion,
 		DEPENDENCIES: deps,
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = f.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Determine current Git version information
@@ -44,7 +52,7 @@ func GenerateGitVersion() string {
 	cmd := exec.Command("git", "show", "--oneline")
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(stdoutStderr)))
 	for scanner.Scan() {
@@ -55,15 +63,11 @@ func GenerateGitVersion() string {
 
 // Read in go modules file
 func ReadGoMod() string {
-	r, _ := ioutil.ReadFile("../go.mod")
-	return string(r)
-}
-
-// Exit the program
-func die(err error) {
+	r, err := ioutil.ReadFile("go.mod")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
+	return string(r)
 }
 
 // Template for version_vars.go
