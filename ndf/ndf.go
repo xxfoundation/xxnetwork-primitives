@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const NO_NDF = "Permissioning server does not have an ndf to give to client"
+
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go.
 type NetworkDefinition struct {
