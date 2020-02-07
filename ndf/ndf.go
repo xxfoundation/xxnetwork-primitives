@@ -89,6 +89,32 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	return networkDefinition, signatureBytes, nil
 }
 
+// StripNdf returns a stripped down version of the ndf for clients
+func StripNdf(definition *NetworkDefinition) *NetworkDefinition {
+	// Strip down nodes slice of addresses and certs
+	var strippedNodes []Node
+	for _, node := range definition.Nodes {
+		newNode := Node{
+			ID: node.ID,
+		}
+		strippedNodes = append(strippedNodes, newNode)
+	}
+
+	// Create a new Ndf with the stripped information
+	strippedNdf := &NetworkDefinition{
+		Timestamp:    definition.Timestamp,
+		Gateways:     definition.Gateways,
+		Nodes:        strippedNodes,
+		Registration: definition.Registration,
+		Notification: definition.Notification,
+		UDB:          definition.UDB,
+		E2E:          definition.E2E,
+		CMIX:         definition.CMIX,
+	}
+
+	return strippedNdf
+}
+
 // separate splits the JSON data from the signature. The NDF string is expected
 // to have the JSON data starting on line 1 and its signature on the last line.
 // Returns JSON data and signature as separate strings. If the signature is not
