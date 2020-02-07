@@ -17,7 +17,7 @@ const GatewayIdLen = 32
 type Gateway [GatewayIdLen]byte
 
 // Used as a temporary gateway id untill we come up with a better solution for generating gateway ID's
-func NewTmpGateway() *Gateway{
+func NewTmpGateway() *Gateway {
 	gateway := new(Gateway)
 	copy(gateway[:], "tmp")
 	return gateway
