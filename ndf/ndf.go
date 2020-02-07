@@ -9,6 +9,7 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"strings"
 	"time"
@@ -93,6 +94,12 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 
 // StripNdf returns a stripped down version of the ndf for clients
 func StripNdf(ndfJson []byte) ([]byte, error) {
+	// Error check
+	if ndfJson == nil {
+		return nil, errors.New("Cannot pass in an empty json!")
+	}
+
+	// Pull the ndf object out in order to strip
 	definition, _, err := DecodeNDF(string(ndfJson))
 	if err != nil {
 		return nil, err
@@ -119,6 +126,7 @@ func StripNdf(ndfJson []byte) ([]byte, error) {
 		CMIX:         definition.CMIX,
 	}
 
+	// Marshall ndf into json format to pass to client
 	data, err := json.Marshal(strippedNdf)
 	if err != nil {
 		return nil, err

@@ -331,3 +331,44 @@ func TestNetworkDefinition_Serialize(t *testing.T) {
 			"\n\treceived: %v\n\texpected: %v", ndfBytes, JsonBytes)
 	}
 }
+
+// Happy path
+func TestStripNdf(t *testing.T) {
+	newNdf, err := StripNdf([]byte(ExampleNDF))
+	if err != nil {
+		t.Errorf("Failed to strip: %+v", err)
+	}
+
+	if bytes.Equal(newNdf, JsonBytes) {
+		t.Errorf("Failed to strip ")
+	}
+
+	ndfObj, _, err := DecodeNDF(string(newNdf))
+	if err != nil {
+		t.Errorf("Failed to decode ndf for testing: %+v", err)
+	}
+
+	origNdf, _, _ := DecodeNDF(ExampleNDF)
+
+	for i, node := range ndfObj.Nodes {
+		// Check that the address and cert fields are empty
+		if node.Address != "" || node.TlsCertificate != "" {
+			t.Errorf("Failed to strip address and/or certificate from the %+v node! "+
+				"\n\t Address: %+v"+
+				"\n\t Certificate: %+v", i, node.Address, node.TlsCertificate)
+		}
+		// Check that it did not strip nodes of ID's
+		if !bytes.Equal(node.ID, origNdf.Nodes[i].ID) {
+			t.Errorf("Should not strip id of nodes!")
+		}
+	}
+}
+
+// Error path
+func TestStripNdf_Err(t *testing.T) {
+	_, err := StripNdf(nil)
+	if err != nil {
+		return
+	}
+	t.Errorf("Expected error case, should not pass nil json data to StripNdf")
+}
