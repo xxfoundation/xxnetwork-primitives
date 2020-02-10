@@ -173,7 +173,7 @@ func TestNewTmpGateway(t *testing.T) {
 	tmp := NewTmpGateway()
 	t.Logf(tmp.String())
 	expected := "dG1wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=-Gateway"
-	if tmp.String() != expected{
+	if tmp.String() != expected {
 		t.Logf("failed creating a new tmp Gateway")
 		t.Fail()
 	}
