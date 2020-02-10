@@ -4,6 +4,10 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package utils contains general utility functions used by our system.
+// They are generic and perform basic tasks. As of writing, it mostly contains
+// file IO functions to make our system be able file IO independent of platform.
+
 package utils
 
 import (
