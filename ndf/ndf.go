@@ -4,6 +4,11 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package ndf contains the structure for our network definition file. This object is used by
+// various users, including our cMix nodes and clients of the xx Messenger, among others.
+// It also includes functions to unmarshal an NDF from a JSON file, separate the signature
+// from the actual NDF content, and serialize the NDF structure into a byte slice
+
 package ndf
 
 import (
@@ -15,7 +20,14 @@ import (
 	"time"
 )
 
-const NO_NDF = "Permissioning server does not have an ndf to give to client"
+// This constant string is to be used by our users that request NDFs from permissioning.
+// Those that request include cMix nodes, gateways, notification bot and clients.
+// Permissioning builds and provides the ndf to those that request it. However, depending on
+// the status of the cMix network, it might not have the the ndf ready upon request.
+// Permissioning in this case tells the requester that it is not ready with an error message.
+// The requester checks if the error message contains this string, and thus knows it needs to ask
+// again.
+const NO_NDF = "Permissioning server does not have an ndf to give"
 
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go.

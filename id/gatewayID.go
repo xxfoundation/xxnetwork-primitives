@@ -4,6 +4,11 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package id contains identification structures for gateways, nodes and users.
+// The ID structures include structures for the ID of gateways, nodes, and users.
+// Each ID is a byte slice with a constant length. These structures each have functions
+// allowing IDs to be created, compared, copied, serialised, and be converted to strings.
+
 package id
 
 import (
