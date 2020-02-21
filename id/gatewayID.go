@@ -4,6 +4,11 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package id contains identification structures for gateways, nodes and users.
+// The ID structures include structures for the ID of gateways, nodes, and users.
+// Each ID is a byte slice with a constant length. These structures each have functions
+// allowing IDs to be created, compared, copied, serialised, and be converted to strings.
+
 package id
 
 import (
@@ -17,7 +22,7 @@ const GatewayIdLen = 32
 type Gateway [GatewayIdLen]byte
 
 // Used as a temporary gateway id untill we come up with a better solution for generating gateway ID's
-func NewTmpGateway() *Gateway{
+func NewTmpGateway() *Gateway {
 	gateway := new(Gateway)
 	copy(gateway[:], "tmp")
 	return gateway
