@@ -1,8 +1,15 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 Privategrity Corporation                                   /
+//                                                                             /
+// All rights reserved.                                                        /
+////////////////////////////////////////////////////////////////////////////////
+
 package state
 
 import "fmt"
 
-//this holds the state enum for the state of the server.  It will be used for
+//this holds the state enum for the state of the server. It is in primitives so
+//other repos such as registration/permissioning can access it
 
 // type which holds states so they have have an associated stringer
 type State uint8
