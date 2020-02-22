@@ -9,6 +9,7 @@ package ndf
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -371,4 +372,28 @@ func TestStripNdf_Err(t *testing.T) {
 		return
 	}
 	t.Errorf("Expected error case, should not pass nil json data to StripNdf")
+}
+
+func TestNetworkDefinition_Marshal(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	receivedData, err := jsonData.Marshal()
+
+	if err != nil {
+		t.Errorf("Failed to marshal ndf: %+v", err)
+	}
+
+	expected, _ := json.Marshal(jsonData)
+
+	if bytes.Compare(receivedData, expected) != 0 {
+		t.Errorf("Expected did not matched received data!\n"+
+			"Expect: %+v\n\t"+
+			"Received: %+v", expected, receivedData)
+	}
+
 }
