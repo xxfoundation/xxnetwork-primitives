@@ -4,7 +4,7 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
-package state
+package states
 
 import "fmt"
 
