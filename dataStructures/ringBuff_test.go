@@ -45,12 +45,12 @@ func TestRingBuff_GetById(t *testing.T) {
 
 func TestRingBuff_Push(t *testing.T) {
 	rb := setup()
-	oldFirst := rb.first
+	oldFirst := rb.head
 	rb.Push(&Tester{
 		Id: 6,
 	})
-	if rb.first != oldFirst+1 {
-		t.Error("Didn't increment first properly")
+	if rb.head != oldFirst+1 {
+		t.Error("Didn't increment head properly")
 	}
 	val := rb.Get().(*Tester)
 	if val.Id != 6 {
@@ -107,6 +107,6 @@ func TestRingBuff_UpsertById(t *testing.T) {
 func TestRingBuff_Len(t *testing.T) {
 	rb := setup()
 	if rb.Len() != 5 {
-		t.Errorf("Got wrong len")
+		t.Errorf("Got wrong count")
 	}
 }
