@@ -1,6 +1,9 @@
 package dataStructures
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 type Tester struct {
 	Id int
@@ -88,5 +91,22 @@ func TestRingBuff_UpsertById(t *testing.T) {
 	val, _ = rb.GetById(7)
 	if val.(*Tester).Id != 7 {
 		t.Errorf("Should have gotten id 7")
+	}
+
+	_, err = rb.GetById(20)
+	if err != nil && !strings.Contains(err.Error(), "is higher than most recent id") {
+		t.Error("Did not get proper error for id too high")
+	}
+
+	_, err = rb.GetById(0)
+	if err != nil && !strings.Contains(err.Error(), "is lower than oldest id") {
+		t.Error("Did not get proper error for id too high")
+	}
+}
+
+func TestRingBuff_Len(t *testing.T) {
+	rb := setup()
+	if rb.Len() != 5 {
+		t.Errorf("Got wrong len")
 	}
 }
