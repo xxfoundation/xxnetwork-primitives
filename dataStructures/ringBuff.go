@@ -40,7 +40,7 @@ func (rb *RingBuff) getIndex(i int) int {
 }
 
 // Initialize a new ring buffer with length n
-func New(n int, id idFunc) *RingBuff {
+func NewRingBuff(n int, id idFunc) *RingBuff {
 	rb := &RingBuff{
 		buff:  make([]interface{}, n),
 		count: n,
