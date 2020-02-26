@@ -41,18 +41,12 @@ func (rb *RingBuff) getIndex(i int) int {
 
 // Initialize a new ring buffer with length n
 func New(n int, id idFunc) *RingBuff {
-	wrappedId := func(val interface{}) int {
-		if val != nil {
-			return id(val)
-		}
-		return -1
-	}
 	rb := &RingBuff{
 		buff:  make([]interface{}, n),
 		len:   n,
 		first: -1,
 		last:  0,
-		id:    wrappedId,
+		id:    id,
 	}
 	return rb
 }
@@ -105,18 +99,18 @@ func (rb *RingBuff) Get() interface{} {
 	return rb.buff[mostRecentIndex]
 }
 
-func (rb *RingBuff) GetById(i int) (interface{}, error) {
+func (rb *RingBuff) GetById(id int) (interface{}, error) {
 	firstId := rb.id(rb.buff[rb.first])
-	if i < firstId {
-		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", i, firstId)
+	if id < firstId {
+		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, firstId)
 	}
 
 	lastId := rb.id(rb.Get())
-	if i > lastId {
-		return nil, errors.Errorf("requested id %d is higher than most recent id %d", i, lastId)
+	if id > lastId {
+		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, lastId)
 	}
 
-	index := rb.getIndex(i - firstId)
+	index := rb.getIndex(id - firstId)
 	return rb.buff[index], nil
 }
 
