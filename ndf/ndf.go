@@ -216,3 +216,13 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 
 	return b
 }
+
+// Marshal returns a json marshal of the ndf
+func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
+	ndfBytes, err := json.Marshal(ndf)
+	if err != nil {
+		return nil, err
+	}
+
+	return ndfBytes, nil
+}
