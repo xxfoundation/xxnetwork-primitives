@@ -128,6 +128,9 @@ func (rb *RingBuff) GetById(id int) (interface{}, error) {
 }
 
 func (rb *RingBuff) GetByIndex(i int) (interface{}, error) {
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
 	if math.Abs(float64(i)) > float64(rb.Len()) {
 		return nil, errors.Errorf("Could not get item at index %d: index out of bounds", i)
 	}
