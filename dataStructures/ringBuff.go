@@ -1,18 +1,37 @@
 package dataStructures
 
+/*
+ * The dataStructures package contains data structures for use in other repos
+ */
+
 import (
 	"github.com/pkg/errors"
+	"math"
 	"sync"
 )
 
+// These function types are passed into ringbuff, allowing us to make it semi-generic
 type idFunc func(interface{}) int
 type compFunc func(interface{}, interface{}) bool
 
+// A circular buffer with the ability to use IDs as position and locks built in
 type RingBuff struct {
 	buff              []interface{}
 	count, head, tail int
 	id                idFunc
-	lock              sync.Mutex
+	lock              sync.RWMutex
+}
+
+// Initialize a new ring buffer with length n
+func NewRingBuff(n int, id idFunc) *RingBuff {
+	rb := &RingBuff{
+		buff:  make([]interface{}, n),
+		count: n,
+		head:  -1,
+		tail:  0,
+		id:    id,
+	}
+	return rb
 }
 
 // next is a helper function for ringbuff
@@ -37,18 +56,6 @@ func (rb *RingBuff) getIndex(i int) int {
 		index = (rb.head + i) % rb.count
 	}
 	return index
-}
-
-// Initialize a new ring buffer with length n
-func NewRingBuff(n int, id idFunc) *RingBuff {
-	rb := &RingBuff{
-		buff:  make([]interface{}, n),
-		count: n,
-		head:  -1,
-		tail:  0,
-		id:    id,
-	}
-	return rb
 }
 
 // Push a round to the buffer
@@ -95,11 +102,17 @@ func (rb *RingBuff) UpsertById(val interface{}, comp compFunc) error {
 }
 
 func (rb *RingBuff) Get() interface{} {
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
 	mostRecentIndex := (rb.tail + rb.count - 1) % rb.count
 	return rb.buff[mostRecentIndex]
 }
 
 func (rb *RingBuff) GetById(id int) (interface{}, error) {
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
 	firstId := rb.id(rb.buff[rb.head])
 	if id < firstId {
 		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, firstId)
@@ -114,6 +127,16 @@ func (rb *RingBuff) GetById(id int) (interface{}, error) {
 	return rb.buff[index], nil
 }
 
+func (rb *RingBuff) GetByIndex(i int) (interface{}, error) {
+	if math.Abs(float64(i)) > float64(rb.Len()) {
+		return nil, errors.Errorf("Could not get item at index %d: index out of bounds", i)
+	}
+	return rb.buff[rb.getIndex(i)], nil
+}
+
 func (rb *RingBuff) Len() int {
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
 	return rb.count
 }
