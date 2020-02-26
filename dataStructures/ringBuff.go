@@ -41,14 +41,26 @@ func (rb *RingBuff) getIndex(i int) int {
 
 // Initialize a new ring buffer with length n
 func New(n int, id idFunc) *RingBuff {
+	wrappedId := func(val interface{}) int {
+		if val != nil {
+			return id(val)
+		}
+		return -1
+	}
 	rb := &RingBuff{
-		buff:  make([]interface{}, 0),
+		buff:  make([]interface{}, n),
 		len:   n,
 		first: -1,
 		last:  0,
-		id:    id,
+		id:    wrappedId,
 	}
 	return rb
+}
+
+// Push a round to the buffer
+func (rb *RingBuff) push(val interface{}) {
+	rb.buff[rb.last] = val
+	rb.next()
 }
 
 // Push a round to the buffer
@@ -56,28 +68,27 @@ func (rb *RingBuff) Push(val interface{}) {
 	rb.lock.Lock()
 	defer rb.lock.Unlock()
 
-	rb.buff[rb.last] = val
-	rb.next()
+	rb.push(val)
 }
 
 // push a round to a relative index in the buffer
-func (rb *RingBuff) UpsertById(val interface{}, id idFunc, comp compFunc) error {
+func (rb *RingBuff) UpsertById(val interface{}, comp compFunc) error {
 	rb.lock.Lock()
 	defer rb.lock.Unlock()
-	newId := id(val)
+	newId := rb.id(val)
 
-	if id(rb.buff[rb.first]) > newId {
+	if rb.id(rb.buff[rb.first]) > newId {
 		return errors.Errorf("Did not upsert value %+v; id is older than first tracked", val)
 	}
 
-	lastId := id(rb.Get())
+	lastId := rb.id(rb.Get())
 	if lastId+1 == newId {
-		rb.Push(val)
+		rb.push(val)
 	} else if (lastId + 1) < newId {
-		for i := lastId + 1; i <= newId; i++ {
-			rb.Push(nil)
+		for i := lastId + 1; i < newId; i++ {
+			rb.push(nil)
 		}
-		rb.Push(val)
+		rb.push(val)
 	} else if lastId+1 > newId {
 		i := rb.getIndex(newId - (lastId + 1))
 		if comp(rb.buff[i], val) {
@@ -105,7 +116,7 @@ func (rb *RingBuff) GetById(i int) (interface{}, error) {
 		return nil, errors.Errorf("requested id %d is higher than most recent id %d", i, lastId)
 	}
 
-	index := rb.getIndex(firstId - i)
+	index := rb.getIndex(i - firstId)
 	return rb.buff[index], nil
 }
 
