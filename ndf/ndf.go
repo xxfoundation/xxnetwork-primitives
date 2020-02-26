@@ -14,7 +14,6 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"strings"
 	"time"
@@ -104,22 +103,11 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	return networkDefinition, signatureBytes, nil
 }
 
-// StripNdf returns a stripped down version of the ndf for clients
-func StripNdf(ndfJson []byte) ([]byte, error) {
-	// Error check
-	if ndfJson == nil {
-		return nil, errors.New("Cannot pass in an empty json!")
-	}
-
-	// Pull the ndf object out in order to strip
-	definition, _, err := DecodeNDF(string(ndfJson))
-	if err != nil {
-		return nil, err
-	}
-
+// Returns a stripped down copy of the NDF object to be used by Clients
+func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 	// Strip down nodes slice of addresses and certs
 	var strippedNodes []Node
-	for _, node := range definition.Nodes {
+	for _, node := range ndf.Nodes {
 		newNode := Node{
 			ID: node.ID,
 		}
@@ -127,24 +115,16 @@ func StripNdf(ndfJson []byte) ([]byte, error) {
 	}
 
 	// Create a new Ndf with the stripped information
-	strippedNdf := &NetworkDefinition{
-		Timestamp:    definition.Timestamp,
-		Gateways:     definition.Gateways,
+	return &NetworkDefinition{
+		Timestamp:    ndf.Timestamp,
+		Gateways:     ndf.Gateways,
 		Nodes:        strippedNodes,
-		Registration: definition.Registration,
-		Notification: definition.Notification,
-		UDB:          definition.UDB,
-		E2E:          definition.E2E,
-		CMIX:         definition.CMIX,
+		Registration: ndf.Registration,
+		Notification: ndf.Notification,
+		UDB:          ndf.UDB,
+		E2E:          ndf.E2E,
+		CMIX:         ndf.CMIX,
 	}
-
-	// Marshall ndf into json format to pass to client
-	data, err := json.Marshal(strippedNdf)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }
 
 // separate splits the JSON data from the signature. The NDF string is expected
