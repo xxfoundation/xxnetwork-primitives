@@ -110,3 +110,24 @@ func TestRingBuff_Len(t *testing.T) {
 		t.Errorf("Got wrong count")
 	}
 }
+
+func TestRingBuff_GetByIndex(t *testing.T) {
+	rb := setup()
+	val, _ := rb.GetByIndex(0)
+	if val.(*Tester).Id != 1 {
+		t.Error("Didn't get correct ID")
+	}
+
+	rb.Push(&Tester{
+		Id: 6,
+	})
+	val, _ = rb.GetByIndex(0)
+	if val.(*Tester).Id != 2 {
+		t.Error("Didn't get correct ID after pushing")
+	}
+
+	_, err := rb.GetByIndex(25)
+	if err == nil {
+		t.Errorf("Should have received index out of bounds err")
+	}
+}
