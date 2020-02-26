@@ -38,7 +38,7 @@ func NewRingBuff(n int, id idFunc) *RingBuff {
 // it handles incrementing the head & tail markers
 func (rb *RingBuff) next() {
 	rb.tail = (rb.tail + 1) % rb.count
-	if rb.tail == rb.head {
+	if rb.tail-1 == rb.head {
 		rb.head = (rb.head + 1) % rb.count
 	}
 	if rb.head == -1 {
