@@ -103,7 +103,7 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	return networkDefinition, signatureBytes, nil
 }
 
-// StripNdf returns a stripped down version of the ndf for clients
+// Returns a stripped down copy of the NDF object to be used by Clients
 func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 	// Strip down nodes slice of addresses and certs
 	var strippedNodes []Node
