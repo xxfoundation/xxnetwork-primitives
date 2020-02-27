@@ -5,14 +5,17 @@ import (
 	"testing"
 )
 
+// Basic interface to use for testing
 type Tester struct {
 	Id int
 }
 
+// ID func for tester object
 func id(val interface{}) int {
 	return val.(*Tester).Id
 }
 
+// Setup func for tests
 func setup() *RingBuff {
 	rb := NewRingBuff(5, id)
 	for i := 1; i <= 5; i++ {
@@ -23,6 +26,7 @@ func setup() *RingBuff {
 	return rb
 }
 
+// Test the Get function on ringbuff
 func TestRingBuff_Get(t *testing.T) {
 	rb := setup()
 	val := rb.Get().(*Tester)
@@ -31,6 +35,7 @@ func TestRingBuff_Get(t *testing.T) {
 	}
 }
 
+// Test the GetById function of ringbuff
 func TestRingBuff_GetById(t *testing.T) {
 	rb := setup()
 	val, err := rb.GetById(3)
@@ -43,6 +48,7 @@ func TestRingBuff_GetById(t *testing.T) {
 	}
 }
 
+// Test the basic push function on RingBuff
 func TestRingBuff_Push(t *testing.T) {
 	rb := setup()
 	oldFirst := rb.head
@@ -58,6 +64,7 @@ func TestRingBuff_Push(t *testing.T) {
 	}
 }
 
+// Test ID upsert on ringbuff (bulk of cases)
 func TestRingBuff_UpsertById(t *testing.T) {
 	comp := func(old, new interface{}) bool {
 		if old != nil {
@@ -88,6 +95,13 @@ func TestRingBuff_UpsertById(t *testing.T) {
 		t.Errorf("Failed to upsert old ID: %+v", err)
 	}
 
+	err = rb.UpsertById(&Tester{
+		Id: 7,
+	}, comp)
+	if err == nil {
+		t.Errorf("Should have received error for failed comp function")
+	}
+
 	val, _ = rb.GetById(7)
 	if val.(*Tester).Id != 7 {
 		t.Errorf("Should have gotten id 7")
@@ -104,6 +118,31 @@ func TestRingBuff_UpsertById(t *testing.T) {
 	}
 }
 
+// Test upserting by id on ringbuff
+func TestRingBuff_UpsertById2(t *testing.T) {
+	comp := func(old, new interface{}) bool {
+		if old != nil {
+			return false
+		}
+		return true
+	}
+	rb := setup()
+	err := rb.UpsertById(&Tester{
+		Id: -5,
+	}, comp)
+	if err == nil {
+		t.Error("This should have errored: id was too low")
+	}
+	err = rb.UpsertById(&Tester{
+		Id: 6,
+	}, comp)
+	if err != nil {
+		t.Errorf("Should have inserted using first case: %+v", err)
+	}
+
+}
+
+// test the length function of ring buff
 func TestRingBuff_Len(t *testing.T) {
 	rb := setup()
 	if rb.Len() != 5 {
@@ -111,6 +150,7 @@ func TestRingBuff_Len(t *testing.T) {
 	}
 }
 
+// Test GetByIndex in ringbuff
 func TestRingBuff_GetByIndex(t *testing.T) {
 	rb := setup()
 	val, _ := rb.GetByIndex(0)
