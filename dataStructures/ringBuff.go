@@ -34,36 +34,6 @@ func NewRingBuff(n int, id idFunc) *RingBuff {
 	return rb
 }
 
-// next is a helper function for ringbuff
-// it handles incrementing the head & tail markers
-func (rb *RingBuff) next() {
-	rb.tail = (rb.tail + 1) % rb.count
-	if rb.tail-1 == rb.head {
-		rb.head = (rb.head + 1) % rb.count
-	}
-	if rb.head == -1 {
-		rb.head = 0
-	}
-}
-
-// getIndex is a helper function for ringbuff
-// it returns an index relative to the head/tail position of the buffer
-func (rb *RingBuff) getIndex(i int) int {
-	var index int
-	if i < 0 {
-		index = (rb.tail + rb.count + i) % rb.count
-	} else {
-		index = (rb.head + i) % rb.count
-	}
-	return index
-}
-
-// Push a round to the buffer
-func (rb *RingBuff) push(val interface{}) {
-	rb.buff[rb.tail] = val
-	rb.next()
-}
-
 // Push a round to the buffer
 func (rb *RingBuff) Push(val interface{}) {
 	rb.lock.Lock()
@@ -143,4 +113,34 @@ func (rb *RingBuff) Len() int {
 	defer rb.lock.RUnlock()
 
 	return rb.count
+}
+
+// next is a helper function for ringbuff
+// it handles incrementing the head & tail markers
+func (rb *RingBuff) next() {
+	rb.tail = (rb.tail + 1) % rb.count
+	if rb.tail-1 == rb.head {
+		rb.head = (rb.head + 1) % rb.count
+	}
+	if rb.head == -1 {
+		rb.head = 0
+	}
+}
+
+// getIndex is a helper function for ringbuff
+// it returns an index relative to the head/tail position of the buffer
+func (rb *RingBuff) getIndex(i int) int {
+	var index int
+	if i < 0 {
+		index = (rb.tail + rb.count + i) % rb.count
+	} else {
+		index = (rb.head + i) % rb.count
+	}
+	return index
+}
+
+// Push a round to the buffer
+func (rb *RingBuff) push(val interface{}) {
+	rb.buff[rb.tail] = val
+	rb.next()
 }
