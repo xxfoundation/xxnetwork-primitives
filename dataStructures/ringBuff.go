@@ -59,7 +59,7 @@ func (rb *RingBuff) UpsertById(val interface{}, comp compFunc) error {
 
 	// Make sure the id isn't too old
 	newId := rb.id(val)
-	if rb.id(rb.buff[rb.head]) > newId {
+	if rb.head != -1 && rb.id(rb.buff[rb.head]) > newId {
 		return errors.Errorf("Did not upsert value %+v; id is older than first tracked", val)
 	}
 
