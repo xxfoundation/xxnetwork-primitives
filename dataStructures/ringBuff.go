@@ -113,7 +113,7 @@ func (rb *RingBuff) GetById(id int) (interface{}, error) {
 		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, lastId)
 	}
 
-	index := rb.getIndex(id - firstId)
+	index := rb.getIndex(id - lastId - 1)
 	return rb.buff[index], nil
 }
 
