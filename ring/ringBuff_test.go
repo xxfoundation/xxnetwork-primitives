@@ -17,7 +17,7 @@ func id(val interface{}) int {
 
 // Setup func for tests
 func setup() *Buff {
-	rb := NewRingBuff(5, id)
+	rb := NewBuff(5, id)
 	for i := 1; i <= 5; i++ {
 		rb.Push(&Tester{
 			Id: i,
