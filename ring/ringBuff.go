@@ -46,30 +46,26 @@ func NewBuff(n int, id idFunc) *Buff {
 
 // Get the ID of the newest item in the buffer
 func (rb *Buff) GetNewestId() int {
-	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
-	if rb.buff[mostRecentIndex] == nil {
-		return -1
-	}
-	return rb.id(rb.Get())
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
+	return rb.getNewestId()
 }
 
 // Get the IDof the oldest item in the buffer
 func (rb *Buff) GetOldestId() int {
-	if rb.old == -1 {
-		return -1
-	}
-	return rb.id(rb.buff[rb.GetOldestIndex()])
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
+	return rb.getOldestId()
 }
 
 // Get the index of the oldest item in the buffer, not including nil values inserted by UpsertById
 func (rb *Buff) GetOldestIndex() int {
-	if rb.old == -1 {
-		return -1
-	}
-	var last = rb.old
-	for ; rb.buff[last] == nil; last = (last + 1) % rb.count {
-	}
-	return last
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
+	return rb.getOldestIndex()
 }
 
 // Push a round to the buffer
@@ -130,7 +126,7 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 	defer rb.lock.RUnlock()
 
 	// Check it's not before our first known id
-	firstId := rb.id(rb.buff[rb.GetOldestIndex()])
+	firstId := rb.id(rb.buff[rb.getOldestIndex()])
 	if id < firstId {
 		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, firstId)
 	}
@@ -154,6 +150,35 @@ func (rb *Buff) GetByIndex(i int) (interface{}, error) {
 		return nil, errors.Errorf("Could not get item at index %d: index out of bounds", i)
 	}
 	return rb.buff[rb.getIndex(i)], nil
+}
+
+//retrieve all entries newer than the passed one
+func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
+	rb.lock.RLock()
+	defer rb.lock.RUnlock()
+
+	new := rb.getNewestId()
+	old := rb.getOldestId()
+
+	if id < old {
+		id = old - 1
+	}
+
+	if id > new {
+		return nil, errors.Errorf("requested ID %d is higher than the"+
+			" newest id %d", id, new)
+	}
+
+	numNewer := new - id
+	list := make([]interface{}, numNewer)
+
+	for i := 0; i < numNewer; i++ {
+		//error is suppressed because it only occurs when out of bounds,
+		//but bounds are already assured in this function
+		list[i], _ = rb.GetById(id + i + 1)
+	}
+
+	return list, nil
 }
 
 // Return length of the structure
@@ -192,4 +217,32 @@ func (rb *Buff) getIndex(i int) int {
 func (rb *Buff) push(val interface{}) {
 	rb.buff[rb.new] = val
 	rb.next()
+}
+
+// Get the ID of the newest item in the buffer
+func (rb *Buff) getNewestId() int {
+	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
+	if rb.buff[mostRecentIndex] == nil {
+		return -1
+	}
+	return rb.id(rb.Get())
+}
+
+// Get the IDof the oldest item in the buffer
+func (rb *Buff) getOldestId() int {
+	if rb.old == -1 {
+		return -1
+	}
+	return rb.id(rb.buff[rb.getOldestIndex()])
+}
+
+// Get the index of the oldest item in the buffer, not including nil values inserted by UpsertById
+func (rb *Buff) getOldestIndex() int {
+	if rb.old == -1 {
+		return -1
+	}
+	var last = rb.old
+	for ; rb.buff[last] == nil; last = (last + 1) % rb.count {
+	}
+	return last
 }
