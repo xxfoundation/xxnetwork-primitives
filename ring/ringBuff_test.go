@@ -14,6 +14,16 @@ type Tester struct {
 func id(val interface{}) int {
 	return val.(*Tester).Id
 }
+func comp(old, new interface{}) bool {
+	if old != nil {
+		return false
+	}
+	return true
+}
+
+func getTester(id int) *Tester {
+	return &Tester{Id: id}
+}
 
 // Setup func for tests
 func setup() *Buff {
@@ -26,8 +36,59 @@ func setup() *Buff {
 	return rb
 }
 
+func TestBuff_GetNewestId(t *testing.T) {
+	rb := NewBuff(5, id)
+	id := rb.GetNewestId()
+	if id != -1 {
+		t.Error("Should have returned -1 for empty buff")
+	}
+
+	rb = setup()
+	_ = rb.UpsertById(getTester(7), comp)
+	id = rb.GetNewestId()
+	if id != 7 {
+		t.Error("Should have returned last pushed id")
+	}
+}
+
+func TestBuff_GetOldestId(t *testing.T) {
+	rb := NewBuff(5, id)
+	id := rb.GetOldestId()
+	if id != -1 {
+		t.Error("Should have returned -1 for empty buff")
+	}
+
+	rb = setup()
+	rb.Push(getTester(6))
+	id = rb.GetOldestId()
+	if id != 2 {
+		t.Errorf("Should have returned 2, instead got: %d", id)
+	}
+
+	_ = rb.UpsertById(getTester(22), comp)
+	id = rb.GetOldestId()
+	if id != 22 {
+		t.Errorf("Should have returned 22, instead got %d", id)
+	}
+}
+
+func TestBuff_GetOldestIndex(t *testing.T) {
+	rb := NewBuff(5, id)
+	i := rb.GetOldestIndex()
+	if i != -1 {
+		t.Error("Should have returned -1 for empty buff")
+	}
+
+	rb = setup()
+	rb.Push(getTester(6))
+	i = rb.GetOldestIndex()
+	if i != 1 {
+		t.Errorf("Should have returned 1, instead got: %d", i)
+	}
+}
+
 // Test the Get function on ringbuff
-func TestRingBuff_Get(t *testing.T) {
+func TestBuff_Get(t *testing.T) {
 	rb := setup()
 	val := rb.Get().(*Tester)
 	if val.Id != 5 {
@@ -36,7 +97,7 @@ func TestRingBuff_Get(t *testing.T) {
 }
 
 // Test the GetById function of ringbuff
-func TestRingBuff_GetById(t *testing.T) {
+func TestBuff_GetById(t *testing.T) {
 	rb := setup()
 	val, err := rb.GetById(3)
 	if err != nil {
@@ -49,14 +110,14 @@ func TestRingBuff_GetById(t *testing.T) {
 }
 
 // Test the basic push function on RingBuff
-func TestRingBuff_Push(t *testing.T) {
+func TestBuff_Push(t *testing.T) {
 	rb := setup()
-	oldFirst := rb.head
+	oldFirst := rb.old
 	rb.Push(&Tester{
 		Id: 6,
 	})
-	if rb.head != oldFirst+1 {
-		t.Error("Didn't increment head properly")
+	if rb.old != oldFirst+1 {
+		t.Error("Didn't increment old properly")
 	}
 	val := rb.Get().(*Tester)
 	if val.Id != 6 {
@@ -65,13 +126,7 @@ func TestRingBuff_Push(t *testing.T) {
 }
 
 // Test ID upsert on ringbuff (bulk of cases)
-func TestRingBuff_UpsertById(t *testing.T) {
-	comp := func(old, new interface{}) bool {
-		if old != nil {
-			return false
-		}
-		return true
-	}
+func TestBuff_UpsertById(t *testing.T) {
 	rb := setup()
 	err := rb.UpsertById(&Tester{
 		Id: 8,
@@ -119,7 +174,7 @@ func TestRingBuff_UpsertById(t *testing.T) {
 }
 
 // Test upserting by id on ringbuff
-func TestRingBuff_UpsertById2(t *testing.T) {
+func TestBuff_UpsertById2(t *testing.T) {
 	comp := func(old, new interface{}) bool {
 		if old != nil {
 			return false
@@ -143,7 +198,7 @@ func TestRingBuff_UpsertById2(t *testing.T) {
 }
 
 // test the length function of ring buff
-func TestRingBuff_Len(t *testing.T) {
+func TestBuff_Len(t *testing.T) {
 	rb := setup()
 	if rb.Len() != 5 {
 		t.Errorf("Got wrong count")
@@ -151,7 +206,7 @@ func TestRingBuff_Len(t *testing.T) {
 }
 
 // Test GetByIndex in ringbuff
-func TestRingBuff_GetByIndex(t *testing.T) {
+func TestBuff_GetByIndex(t *testing.T) {
 	rb := setup()
 	val, _ := rb.GetByIndex(0)
 	if val.(*Tester).Id != 1 {
