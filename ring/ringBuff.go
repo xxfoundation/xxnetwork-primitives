@@ -33,7 +33,7 @@ type Buff struct {
 }
 
 // Initialize a new ring buffer with length n
-func NewRingBuff(n int, id idFunc) *Buff {
+func NewBuff(n int, id idFunc) *Buff {
 	rb := &Buff{
 		buff:  make([]interface{}, n),
 		count: n,
