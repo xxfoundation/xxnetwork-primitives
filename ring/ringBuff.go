@@ -26,10 +26,10 @@ type compFunc func(interface{}, interface{}) bool
 
 // A circular buffer with the ability to use IDs as position and locks built in
 type Buff struct {
-	buff              []interface{}
-	count, head, tail int
-	id                idFunc
-	lock              sync.RWMutex
+	buff            []interface{}
+	count, old, new int
+	id              idFunc
+	lock            sync.RWMutex
 }
 
 // Initialize a new ring buffer with length n
@@ -37,11 +37,39 @@ func NewBuff(n int, id idFunc) *Buff {
 	rb := &Buff{
 		buff:  make([]interface{}, n),
 		count: n,
-		head:  -1,
-		tail:  0,
+		old:   -1,
+		new:   0,
 		id:    id,
 	}
 	return rb
+}
+
+// Get the ID of the newest item in the buffer
+func (rb *Buff) GetNewestId() int {
+	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
+	if rb.buff[mostRecentIndex] == nil {
+		return -1
+	}
+	return rb.id(rb.Get())
+}
+
+// Get the IDof the oldest item in the buffer
+func (rb *Buff) GetOldestId() int {
+	if rb.old == -1 {
+		return -1
+	}
+	return rb.id(rb.buff[rb.GetOldestIndex()])
+}
+
+// Get the index of the oldest item in the buffer, not including nil values inserted by UpsertById
+func (rb *Buff) GetOldestIndex() int {
+	if rb.old == -1 {
+		return -1
+	}
+	var last = rb.old
+	for ; rb.buff[last] == nil; last = (last + 1) % rb.count {
+	}
+	return last
 }
 
 // Push a round to the buffer
@@ -59,25 +87,25 @@ func (rb *Buff) UpsertById(val interface{}, comp compFunc) error {
 
 	// Make sure the id isn't too old
 	newId := rb.id(val)
-	if rb.head != -1 && rb.id(rb.buff[rb.head]) > newId {
+	if rb.old != -1 && rb.id(rb.buff[rb.old]) > newId {
 		return errors.Errorf("Did not upsert value %+v; id is older than first tracked", val)
 	}
 
 	// Get most recent ID so we can figure out where to put this
-	mostRecentIndex := (rb.tail + rb.count - 1) % rb.count
-	lastId := rb.id(rb.buff[mostRecentIndex])
-	if lastId+1 == newId {
+	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
+	mostRecentId := rb.id(rb.buff[mostRecentIndex])
+	if mostRecentId+1 == newId {
 		// last id is the previous one; we can just push
 		rb.push(val)
-	} else if (lastId + 1) < newId {
+	} else if (mostRecentId + 1) < newId {
 		// there are id's between the last and the current; increment using dummy entries
-		for i := lastId + 1; i < newId; i++ {
+		for i := mostRecentId + 1; i < newId; i++ {
 			rb.push(nil)
 		}
 		rb.push(val)
-	} else if lastId+1 > newId {
+	} else if mostRecentId+1 > newId {
 		// this is an old ID, check the comp function and insert if true
-		i := rb.getIndex(newId - (lastId + 1))
+		i := rb.getIndex(newId - (mostRecentId + 1))
 		if comp(rb.buff[i], val) {
 			rb.buff[i] = val
 		} else {
@@ -92,7 +120,7 @@ func (rb *Buff) Get() interface{} {
 	rb.lock.RLock()
 	defer rb.lock.RUnlock()
 
-	mostRecentIndex := (rb.tail + rb.count - 1) % rb.count
+	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
 	return rb.buff[mostRecentIndex]
 }
 
@@ -102,7 +130,7 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 	defer rb.lock.RUnlock()
 
 	// Check it's not before our first known id
-	firstId := rb.id(rb.buff[rb.head])
+	firstId := rb.id(rb.buff[rb.GetOldestIndex()])
 	if id < firstId {
 		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, firstId)
 	}
@@ -137,31 +165,31 @@ func (rb *Buff) Len() int {
 }
 
 // next is a helper function for ringbuff
-// it handles incrementing the head & tail markers
+// it handles incrementing the old & new markers
 func (rb *Buff) next() {
-	rb.tail = (rb.tail + 1) % rb.count
-	if rb.tail-1 == rb.head {
-		rb.head = (rb.head + 1) % rb.count
+	rb.new = (rb.new + 1) % rb.count
+	if rb.new-1 == rb.old {
+		rb.old = (rb.old + 1) % rb.count
 	}
-	if rb.head == -1 {
-		rb.head = 0
+	if rb.old == -1 {
+		rb.old = 0
 	}
 }
 
 // getIndex is a helper function for ringbuff
-// it returns an index relative to the head/tail position of the buffer
+// it returns an index relative to the old/new position of the buffer
 func (rb *Buff) getIndex(i int) int {
 	var index int
 	if i < 0 {
-		index = (rb.tail + rb.count + i) % rb.count
+		index = (rb.new + rb.count + i) % rb.count
 	} else {
-		index = (rb.head + i) % rb.count
+		index = (rb.old + i) % rb.count
 	}
 	return index
 }
 
 // Push a round to the buffer
 func (rb *Buff) push(val interface{}) {
-	rb.buff[rb.tail] = val
+	rb.buff[rb.new] = val
 	rb.next()
 }
