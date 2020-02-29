@@ -226,3 +226,43 @@ func TestBuff_GetByIndex(t *testing.T) {
 		t.Errorf("Should have received index out of bounds err")
 	}
 }
+
+// Test the GetById function of ringbuff
+func TestBuff_GetNewerById(t *testing.T) {
+	rb := setup()
+
+	list, err := rb.GetNewerById(3)
+	if err != nil {
+		t.Error("Failed to get newer than id 3")
+	}
+
+	if len(list) != 2 {
+		t.Errorf("list has wrong number of entrees: %s", list)
+	}
+
+	if list[0].(*Tester).Id != 4 {
+		t.Error("list has wrong number first element")
+	}
+	if list[1].(*Tester).Id != 5 {
+		t.Error("list has wrong number second element")
+	}
+
+	//test you get all when the id is less than the oldest id
+	list, err = rb.GetNewerById(-1)
+	if len(list) != 5 {
+		t.Errorf("list has wrong number of entrees: %s", list)
+	}
+
+	//test you get an error when you ask for something newer than the newest
+	list, err = rb.GetNewerById(42)
+	if list != nil {
+		t.Errorf("list should be nil")
+	}
+
+	if err == nil {
+		t.Errorf("error should have been returned")
+	} else if !strings.Contains(err.Error(), "is higher than the newest id") {
+		t.Errorf("wrong error returned: %s", err.Error())
+	}
+
+}
