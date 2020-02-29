@@ -4,7 +4,7 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
-package dataStructures
+package ring
 
 /*
  * The RingBuffer data structure is used to store information on rounds and updates
@@ -25,7 +25,7 @@ type idFunc func(interface{}) int
 type compFunc func(interface{}, interface{}) bool
 
 // A circular buffer with the ability to use IDs as position and locks built in
-type RingBuff struct {
+type Buff struct {
 	buff              []interface{}
 	count, head, tail int
 	id                idFunc
@@ -33,8 +33,8 @@ type RingBuff struct {
 }
 
 // Initialize a new ring buffer with length n
-func NewRingBuff(n int, id idFunc) *RingBuff {
-	rb := &RingBuff{
+func NewRingBuff(n int, id idFunc) *Buff {
+	rb := &Buff{
 		buff:  make([]interface{}, n),
 		count: n,
 		head:  -1,
@@ -45,7 +45,7 @@ func NewRingBuff(n int, id idFunc) *RingBuff {
 }
 
 // Push a round to the buffer
-func (rb *RingBuff) Push(val interface{}) {
+func (rb *Buff) Push(val interface{}) {
 	rb.lock.Lock()
 	defer rb.lock.Unlock()
 
@@ -53,7 +53,7 @@ func (rb *RingBuff) Push(val interface{}) {
 }
 
 // push a round to a relative index in the buffer
-func (rb *RingBuff) UpsertById(val interface{}, comp compFunc) error {
+func (rb *Buff) UpsertById(val interface{}, comp compFunc) error {
 	rb.lock.Lock()
 	defer rb.lock.Unlock()
 
@@ -88,7 +88,7 @@ func (rb *RingBuff) UpsertById(val interface{}, comp compFunc) error {
 }
 
 // Retreive the most recent entry
-func (rb *RingBuff) Get() interface{} {
+func (rb *Buff) Get() interface{} {
 	rb.lock.RLock()
 	defer rb.lock.RUnlock()
 
@@ -97,7 +97,7 @@ func (rb *RingBuff) Get() interface{} {
 }
 
 // Retrieve an entry with the given ID
-func (rb *RingBuff) GetById(id int) (interface{}, error) {
+func (rb *Buff) GetById(id int) (interface{}, error) {
 	rb.lock.RLock()
 	defer rb.lock.RUnlock()
 
@@ -118,7 +118,7 @@ func (rb *RingBuff) GetById(id int) (interface{}, error) {
 }
 
 // Retrieve an entry at the given index
-func (rb *RingBuff) GetByIndex(i int) (interface{}, error) {
+func (rb *Buff) GetByIndex(i int) (interface{}, error) {
 	rb.lock.RLock()
 	defer rb.lock.RUnlock()
 
@@ -129,7 +129,7 @@ func (rb *RingBuff) GetByIndex(i int) (interface{}, error) {
 }
 
 // Return length of the structure
-func (rb *RingBuff) Len() int {
+func (rb *Buff) Len() int {
 	rb.lock.RLock()
 	defer rb.lock.RUnlock()
 
@@ -138,7 +138,7 @@ func (rb *RingBuff) Len() int {
 
 // next is a helper function for ringbuff
 // it handles incrementing the head & tail markers
-func (rb *RingBuff) next() {
+func (rb *Buff) next() {
 	rb.tail = (rb.tail + 1) % rb.count
 	if rb.tail-1 == rb.head {
 		rb.head = (rb.head + 1) % rb.count
@@ -150,7 +150,7 @@ func (rb *RingBuff) next() {
 
 // getIndex is a helper function for ringbuff
 // it returns an index relative to the head/tail position of the buffer
-func (rb *RingBuff) getIndex(i int) int {
+func (rb *Buff) getIndex(i int) int {
 	var index int
 	if i < 0 {
 		index = (rb.tail + rb.count + i) % rb.count
@@ -161,7 +161,7 @@ func (rb *RingBuff) getIndex(i int) int {
 }
 
 // Push a round to the buffer
-func (rb *RingBuff) push(val interface{}) {
+func (rb *Buff) push(val interface{}) {
 	rb.buff[rb.tail] = val
 	rb.next()
 }
