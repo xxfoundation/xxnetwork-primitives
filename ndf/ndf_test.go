@@ -9,6 +9,7 @@ package ndf
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -250,7 +251,7 @@ func TestDecodeNDF(t *testing.T) {
 
 // Tests that DecodeNDF() returns an error when Unmarshal() returns an error.
 func TestDecodeNDF_ErrUnmarshal(t *testing.T) {
-	jsonData, signature, err := DecodeNDF("test" + ExampleJSON + "\n" + ExampleSignature)
+	jsonData, signature, err := DecodeNDF("test" + ExampleNDF)
 
 	if jsonData != nil {
 		t.Errorf("DecodeNDF() did not corectly return nil NetworkDefinition on error"+
@@ -334,23 +335,18 @@ func TestNetworkDefinition_Serialize(t *testing.T) {
 
 // Happy path
 func TestStripNdf(t *testing.T) {
-	newNdf, err := StripNdf([]byte(ExampleNDF))
-	if err != nil {
-		t.Errorf("Failed to strip: %+v", err)
-	}
-
-	if bytes.Equal(newNdf, JsonBytes) {
-		t.Errorf("Failed to strip ")
-	}
-
-	ndfObj, _, err := DecodeNDF(string(newNdf))
+	ndf, _, err := DecodeNDF(ExampleNDF)
 	if err != nil {
 		t.Errorf("Failed to decode ndf for testing: %+v", err)
 	}
 
-	origNdf, _, _ := DecodeNDF(ExampleNDF)
+	newNdf := ndf.StripNdf()
 
-	for i, node := range ndfObj.Nodes {
+	if bytes.Equal(newNdf.Serialize(), JsonBytes) {
+		t.Errorf("Failed to strip ")
+	}
+
+	for i, node := range newNdf.Nodes {
 		// Check that the address and cert fields are empty
 		if node.Address != "" || node.TlsCertificate != "" {
 			t.Errorf("Failed to strip address and/or certificate from the %+v node! "+
@@ -358,17 +354,32 @@ func TestStripNdf(t *testing.T) {
 				"\n\t Certificate: %+v", i, node.Address, node.TlsCertificate)
 		}
 		// Check that it did not strip nodes of ID's
-		if !bytes.Equal(node.ID, origNdf.Nodes[i].ID) {
+		if !bytes.Equal(node.ID, ndf.Nodes[i].ID) {
 			t.Errorf("Should not strip id of nodes!")
 		}
 	}
 }
 
-// Error path
-func TestStripNdf_Err(t *testing.T) {
-	_, err := StripNdf(nil)
+func TestNetworkDefinition_Marshal(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
 	if err != nil {
-		return
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
 	}
-	t.Errorf("Expected error case, should not pass nil json data to StripNdf")
+
+	receivedData, err := jsonData.Marshal()
+
+	if err != nil {
+		t.Errorf("Failed to marshal ndf: %+v", err)
+	}
+
+	expected, _ := json.Marshal(jsonData)
+
+	if bytes.Compare(receivedData, expected) != 0 {
+		t.Errorf("Expected did not matched received data!\n"+
+			"Expect: %+v\n\t"+
+			"Received: %+v", expected, receivedData)
+	}
+
 }
