@@ -7,11 +7,11 @@ import "fmt"
 // access it
 
 // type which holds activities so they have have an associated stringer
-type State uint32
+type Round uint32
 
 // List of Activities server can be in
 const (
-	PRECOMPUTING = State(iota)
+	PRECOMPUTING = Round(iota)
 	STANDBY
 	REALTIME
 	COMPLETED
@@ -21,7 +21,7 @@ const (
 const NUM_STATES = FAILED + 1
 
 // Stringer to get the name of the activity, primarily for for error prints
-func (s State) String() string {
+func (s Round) String() string {
 	switch s {
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
