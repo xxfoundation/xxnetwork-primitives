@@ -1,49 +1,38 @@
-////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 Privategrity Corporation                                   /
-//                                                                             /
-// All rights reserved.                                                        /
-////////////////////////////////////////////////////////////////////////////////
-
 package states
 
 import "fmt"
 
-//this holds the state enum for the state of the server. It is in primitives so
-//other repos such as registration/permissioning can access it
+// this holds the enum for the states of a round. It is in primitives so
+// other repos such as registration/permissioning, gateway, and client can
+// access it
 
-// type which holds states so they have have an associated stringer
-type State uint8
+// type which holds activities so they have have an associated stringer
+type State uint32
 
-// List of states server can be in
+// List of Activities server can be in
 const (
-	NOT_STARTED = State(iota)
-	WAITING
-	PRECOMPUTING
+	PRECOMPUTING = State(iota)
 	STANDBY
 	REALTIME
-	ERROR
-	CRASH
+	COMPLETED
+	FAILED
 )
 
-const NUM_STATES = CRASH + 1
+const NUM_STATES = FAILED + 1
 
-// Stringer to get the name of the state, primarily for for error prints
+// Stringer to get the name of the activity, primarily for for error prints
 func (s State) String() string {
 	switch s {
-	case NOT_STARTED:
-		return "NOT_STARTED"
-	case WAITING:
-		return "WAITING"
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
 	case STANDBY:
 		return "STANDBY"
 	case REALTIME:
 		return "REALTIME"
-	case ERROR:
-		return "ERROR"
-	case CRASH:
-		return "CRASH"
+	case COMPLETED:
+		return "COMPLETED"
+	case FAILED:
+		return "FAILED"
 	default:
 		return fmt.Sprintf("UNKNOWN STATE: %d", s)
 	}
