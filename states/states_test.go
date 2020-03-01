@@ -11,7 +11,7 @@ func TestActivity_String(t *testing.T) {
 	//check if states give the correct return
 	for st := PRECOMPUTING; st <= NUM_STATES; st++ {
 		if st.String() != expectedStateStringer[st] {
-			t.Errorf("State %d did not string correctly: expected: %s,"+
+			t.Errorf("Round %d did not string correctly: expected: %s,"+
 				"recieved: %s", uint8(st), expectedStateStringer[st], st.String())
 		}
 	}
