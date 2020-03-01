@@ -21,6 +21,7 @@ const (
 	PRECOMPUTING
 	STANDBY
 	REALTIME
+	COMPLETED
 	ERROR
 	CRASH
 )
@@ -40,11 +41,13 @@ func (a Activity) String() string {
 		return "STANDBY"
 	case REALTIME:
 		return "REALTIME"
+	case COMPLETED:
+		return "COMPLETED"
 	case ERROR:
 		return "ERROR"
 	case CRASH:
 		return "CRASH"
 	default:
-		return fmt.Sprintf("UNKNOWN STATE: %d", s)
+		return fmt.Sprintf("UNKNOWN STATE: %d", a)
 	}
 }
