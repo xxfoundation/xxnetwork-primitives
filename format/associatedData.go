@@ -4,6 +4,30 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package format contains the message payload format. The structure can
+// seen from this diagram. The entire message is 4096 bits with two payloads each 2048 bits.
+// Underneath these payloads is the contents of the message and the associated data,
+// which includes all necessary metadata for the message.
+// The message structure is unique in that all the data is contained in a master byte
+// slice with all sub structures pointing to different ranges within the master slice.
+// This enables the message structure to always be quickly serialized.
+
+/*                               Message Structure (not to scale)
++----------------------------------------------------------------------------------------+
+|                                         Message                                        |
+|                                        4096 bits                                       |
++----------------------------------------------------------------------------------------+
+|                  payloadA                  |                 payloadB                  |
+|                 2048 bits                  |                2048 bits                  |
++------------------------------------+-------+---------------------------------+---------+
+|              Contents              |             AssociatedData              | grpByte |
+|              3192 bits             |                896 bits                 | 8 bits  |
++------------------------------------+-----------------------------------------+         |
+|     padding     |       data       | recipientID | keyFP | timestamp |  mac  |         |
+|   88–3192 bits  |    0–3104 bits   |   256 bits  | 256 b |  128 bits | 256 b |         |
++-----------------+------------------+-------------+-------+-----------+-------+---------+
+*/
+
 package format
 
 import (
