@@ -4,6 +4,11 @@
 // All rights reserved.                                                        /
 ////////////////////////////////////////////////////////////////////////////////
 
+// Package ndf contains the structure for our network definition file. This object is used by
+// various users, including our cMix nodes and clients of the xx Messenger, among others.
+// It also includes functions to unmarshal an NDF from a JSON file, separate the signature
+// from the actual NDF content, and serialize the NDF structure into a byte slice
+
 package ndf
 
 import (
@@ -14,6 +19,15 @@ import (
 	"time"
 )
 
+// This constant string is to be used by our users that request NDFs from permissioning.
+// Those that request include cMix nodes, gateways, notification bot and clients.
+// Permissioning builds and provides the ndf to those that request it. However, depending on
+// the status of the cMix network, it might not have the the ndf ready upon request.
+// Permissioning in this case tells the requester that it is not ready with an error message.
+// The requester checks if the error message contains this string, and thus knows it needs to ask
+// again.
+const NO_NDF = "Permissioning server does not have an ndf to give"
+
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go.
 type NetworkDefinition struct {
@@ -21,6 +35,7 @@ type NetworkDefinition struct {
 	Gateways     []Gateway
 	Nodes        []Node
 	Registration Registration
+	Notification Notification
 	UDB          UDB   `json:"Udb"`
 	E2E          Group `json:"E2e"`
 	CMIX         Group `json:"Cmix"`
@@ -41,6 +56,12 @@ type Node struct {
 
 // Registration is the structure for the registration object in the JSON file.
 type Registration struct {
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
+}
+
+// Notifications is the structure for the registration object in the JSON file.
+type Notification struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -80,6 +101,30 @@ func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
 	}
 
 	return networkDefinition, signatureBytes, nil
+}
+
+// Returns a stripped down copy of the NDF object to be used by Clients
+func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
+	// Strip down nodes slice of addresses and certs
+	var strippedNodes []Node
+	for _, node := range ndf.Nodes {
+		newNode := Node{
+			ID: node.ID,
+		}
+		strippedNodes = append(strippedNodes, newNode)
+	}
+
+	// Create a new Ndf with the stripped information
+	return &NetworkDefinition{
+		Timestamp:    ndf.Timestamp,
+		Gateways:     ndf.Gateways,
+		Nodes:        strippedNodes,
+		Registration: ndf.Registration,
+		Notification: ndf.Notification,
+		UDB:          ndf.UDB,
+		E2E:          ndf.E2E,
+		CMIX:         ndf.CMIX,
+	}
 }
 
 // separate splits the JSON data from the signature. The NDF string is expected
@@ -150,4 +195,14 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
 
 	return b
+}
+
+// Marshal returns a json marshal of the ndf
+func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
+	ndfBytes, err := json.Marshal(ndf)
+	if err != nil {
+		return nil, err
+	}
+
+	return ndfBytes, nil
 }
