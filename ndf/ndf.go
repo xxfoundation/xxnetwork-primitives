@@ -214,7 +214,7 @@ func (n *Node) GetNodeId() *id.Node {
 
 }
 
-// GetNodeId formats the gateway id into the id format specified in the id package of this repo
+// GetGatewayId formats the gateway id into the id format specified in the id package of this repo
 func (n *Node) GetGatewayId() *id.Gateway {
 	return id.NewNodeFromBytes(n.ID).NewGateway()
 }
