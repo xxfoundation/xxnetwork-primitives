@@ -12,9 +12,12 @@
 package ndf
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/primitives/id"
 	"strings"
 	"time"
 )
@@ -205,4 +208,27 @@ func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
 	}
 
 	return ndfBytes, nil
+}
+
+// GetNodeId
+func (ndf *NetworkDefinition) GetNodeId(ourId []byte) (*id.Node, error) {
+	for _, node := range ndf.Nodes {
+		if bytes.Equal(node.ID, ourId) {
+			ourNodeId := id.NewNodeFromBytes(ourId)
+			return ourNodeId, nil
+		}
+	}
+	return nil, errors.New("Unable to find node of given id!")
+}
+
+// GetGatewayId
+func (ndf *NetworkDefinition) GetGatewayId(ourId []byte) (*id.Gateway, error) {
+	for _, node := range ndf.Nodes {
+		if bytes.Equal(node.ID, ourId) {
+			ourGatewayId := id.NewNodeFromBytes(ourId)
+			return ourGatewayId.NewGateway(), nil
+		}
+	}
+	return nil, errors.New("Unable to find gateway of given id!")
+
 }
