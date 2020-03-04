@@ -383,3 +383,94 @@ func TestNetworkDefinition_Marshal(t *testing.T) {
 	}
 
 }
+
+// Happy path: this finds an id in the hardcoded/global ExampleNDF
+func TestGetNodeId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// Expected id, pulled from the global ExampleNDF
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	// Fetch the id
+	receivedNodeId, err := jsonData.GetNodeId(expectedId)
+
+	// Check if their are errors
+	if err != nil {
+		t.Errorf("Was unable to find node when it existed!")
+	}
+
+	// Check the node id's correctness
+	if !bytes.Equal(receivedNodeId.Bytes(), expectedId) {
+		t.Errorf("Did not find the correct node!\n"+
+			"\n"+
+			"Expect: %+v\n\t"+
+			"Received: %+v", expectedId, receivedNodeId.Bytes())
+	}
+
+}
+
+// Error path: look for an id that does not exist
+func TestGetNodeId_Error_UnknownId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// A dummy id that does not exist
+	expectedId := []byte("I should fail badly")
+
+	_, err = jsonData.GetNodeId(expectedId)
+	if err != nil {
+		return
+	}
+	t.Errorf("Expected error path: Should not be able to find an id that doesn't exist!")
+}
+
+func TestGetGatewayId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// Expected id, pulled from the global ExampleNDF
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	// Fetch the id
+	receivedGatewayId, err := jsonData.GetGatewayId(expectedId)
+
+	// Check the gateway id's correctness
+	if !bytes.Equal(receivedGatewayId.Bytes(), expectedId) {
+		t.Errorf("Gateway did not return expected value!\n"+
+			"\n"+
+			"Expect: %+v\n\t"+
+			"Received: %+v", expectedId, receivedGatewayId.Bytes())
+	}
+}
+
+// Error path: look for an id that does not exist
+func TestGetGatewayId_Error_UnknownId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// A dummy id that does not exist
+	expectedId := []byte("I should fail badly")
+
+	_, err = jsonData.GetGatewayId(expectedId)
+	if err != nil {
+		return
+	}
+	t.Errorf("Expected error path: Should not be able to find an id that doesn't exist!")
+}
