@@ -82,7 +82,12 @@ type Group struct {
 }
 
 func (g *Group) String() string {
-	return fmt.Sprintf("Prime: %s SmallPrime: %s Generator: %s", g.Prime, g.SmallPrime, g.Generator)
+	data, err := json.Marshal(g)
+	if err != nil {
+		fmt.Printf("Unable to marshal group: %+v", err)
+	}
+
+	return string(data)
 }
 
 // DecodeNDF decodes the given JSON string into the NetworkDefinition structure
