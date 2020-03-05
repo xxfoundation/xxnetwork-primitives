@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -367,7 +368,7 @@ func TestNetworkDefinition_Marshal(t *testing.T) {
 			"\n\treceived: %#v\n\texpected: %#v",
 			err, nil)
 	}
-
+	fmt.Printf("our ndf: %+v\n\n", jsonData)
 	receivedData, err := jsonData.Marshal()
 
 	if err != nil {
@@ -375,7 +376,7 @@ func TestNetworkDefinition_Marshal(t *testing.T) {
 	}
 
 	expected, _ := json.Marshal(jsonData)
-
+	fmt.Printf("out json: %+v", string(expected))
 	if bytes.Compare(receivedData, expected) != 0 {
 		t.Errorf("Expected did not matched received data!\n"+
 			"Expect: %+v\n\t"+
