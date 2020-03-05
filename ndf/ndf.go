@@ -14,6 +14,7 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/primitives/id"
 	"strings"
@@ -78,6 +79,10 @@ type Group struct {
 	Prime      string
 	SmallPrime string `json:"Small_prime"`
 	Generator  string
+}
+
+func (g *Group) String() string {
+	return fmt.Sprintf("Prime: %s SmallPrime: %s Generator: %s", g.Prime, g.SmallPrime, g.Generator)
 }
 
 // DecodeNDF decodes the given JSON string into the NetworkDefinition structure
