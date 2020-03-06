@@ -6,7 +6,10 @@
 
 package current
 
-import "testing"
+import (
+	"gitlab.com/elixxir/primitives/states"
+	"testing"
+)
 
 //tests the test stringer is correct
 func TestActivity_String(t *testing.T) {
@@ -21,5 +24,80 @@ func TestActivity_String(t *testing.T) {
 			t.Errorf("Activity %d did not string correctly: expected: %s,"+
 				"recieved: %s", uint8(st), expectedActivityStringer[st], st.String())
 		}
+	}
+}
+
+// Test proper happy path conversions
+func TestActivity_Convert(t *testing.T) {
+	activity := NOT_STARTED
+	state, err := activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.PRECOMPUTING {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.PRECOMPUTING, state)
+	}
+	activity = WAITING
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.PRECOMPUTING {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.PRECOMPUTING, state)
+	}
+	activity = PRECOMPUTING
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.PRECOMPUTING {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.PRECOMPUTING, state)
+	}
+	activity = STANDBY
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.STANDBY {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.STANDBY, state)
+	}
+	activity = REALTIME
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.REALTIME {
+		t.Errorf("Expected %+v, got %+v", states.REALTIME, state)
+	}
+	activity = COMPLETED
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.COMPLETED {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.COMPLETED, state)
+	}
+	activity = ERROR
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.FAILED {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.FAILED, state)
+	}
+	activity = CRASH
+	state, err = activity.Convert()
+	if err != nil {
+		t.Errorf("Invalid conversion: %+v", err)
+	}
+	if state != states.FAILED {
+		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
+			activity, states.FAILED, state)
 	}
 }
