@@ -57,7 +57,7 @@ func (a Activity) String() string {
 }
 
 // Converts an Activity to a valid Round state, or returns an error if invalid
-func (a Activity) Convert() (states.Round, error) {
+func (a Activity) ConvertToRoundState() (states.Round, error) {
 	if a <= PRECOMPUTING {
 		return states.PRECOMPUTING, nil
 	} else if a == STANDBY {

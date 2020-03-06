@@ -28,9 +28,9 @@ func TestActivity_String(t *testing.T) {
 }
 
 // Test proper happy path conversions
-func TestActivity_Convert(t *testing.T) {
+func TestActivity_ConvertToRoundState(t *testing.T) {
 	activity := NOT_STARTED
-	state, err := activity.Convert()
+	state, err := activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -39,7 +39,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.PRECOMPUTING, state)
 	}
 	activity = WAITING
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -48,7 +48,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.PRECOMPUTING, state)
 	}
 	activity = PRECOMPUTING
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -57,7 +57,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.PRECOMPUTING, state)
 	}
 	activity = STANDBY
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -66,7 +66,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.STANDBY, state)
 	}
 	activity = REALTIME
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -74,7 +74,7 @@ func TestActivity_Convert(t *testing.T) {
 		t.Errorf("Expected %+v, got %+v", states.REALTIME, state)
 	}
 	activity = COMPLETED
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -83,7 +83,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.COMPLETED, state)
 	}
 	activity = ERROR
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
@@ -92,7 +92,7 @@ func TestActivity_Convert(t *testing.T) {
 			activity, states.FAILED, state)
 	}
 	activity = CRASH
-	state, err = activity.Convert()
+	state, err = activity.ConvertToRoundState()
 	if err == nil {
 		t.Errorf("Expected error when converting %+v", activity)
 	}
