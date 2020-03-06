@@ -14,7 +14,7 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/elixxir/primitives/id"
 	"strings"
@@ -81,13 +81,13 @@ type Group struct {
 	Generator  string
 }
 
-func (g *Group) String() string {
+func (g *Group) String() (string, error) {
 	data, err := json.Marshal(g)
 	if err != nil {
-		fmt.Printf("Unable to marshal group: %+v", err)
+		return "", errors.Errorf("Unable to marshal group: %+v", err)
 	}
 
-	return string(data)
+	return string(data), nil
 }
 
 // DecodeNDF decodes the given JSON string into the NetworkDefinition structure
