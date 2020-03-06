@@ -66,10 +66,11 @@ func (a Activity) Convert() (states.Round, error) {
 		return states.REALTIME, nil
 	} else if a == COMPLETED {
 		return states.COMPLETED, nil
-	} else if a > COMPLETED {
+	} else if a == ERROR {
 		return states.FAILED, nil
 	} else {
-		return states.Round(0), errors.Errorf(
+		// Unsupported conversion. Return an arbitrary round and error
+		return states.Round(99), errors.Errorf(
 			"unable to convert activity %+v to valid state", a)
 	}
 }

@@ -93,11 +93,7 @@ func TestActivity_Convert(t *testing.T) {
 	}
 	activity = CRASH
 	state, err = activity.Convert()
-	if err != nil {
-		t.Errorf("Invalid conversion: %+v", err)
-	}
-	if state != states.FAILED {
-		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
-			activity, states.FAILED, state)
+	if err == nil {
+		t.Errorf("Expected error when converting %+v", activity)
 	}
 }
