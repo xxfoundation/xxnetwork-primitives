@@ -58,17 +58,20 @@ func (a Activity) String() string {
 
 // Converts an Activity to a valid Round state, or returns an error if invalid
 func (a Activity) ConvertToRoundState() (states.Round, error) {
-	if a <= PRECOMPUTING {
+	switch a {
+	case WAITING:
+		return states.WAITING, nil
+	case PRECOMPUTING:
 		return states.PRECOMPUTING, nil
-	} else if a == STANDBY {
+	case STANDBY:
 		return states.STANDBY, nil
-	} else if a == REALTIME {
+	case REALTIME:
 		return states.REALTIME, nil
-	} else if a == COMPLETED {
+	case COMPLETED:
 		return states.COMPLETED, nil
-	} else if a == ERROR {
+	case ERROR:
 		return states.FAILED, nil
-	} else {
+	default:
 		// Unsupported conversion. Return an arbitrary round and error
 		return states.Round(99), errors.Errorf(
 			"unable to convert activity %+v to valid state", a)
