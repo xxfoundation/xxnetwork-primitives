@@ -31,21 +31,17 @@ func TestActivity_String(t *testing.T) {
 func TestActivity_ConvertToRoundState(t *testing.T) {
 	activity := NOT_STARTED
 	state, err := activity.ConvertToRoundState()
-	if err != nil {
-		t.Errorf("Invalid conversion: %+v", err)
-	}
-	if state != states.PRECOMPUTING {
-		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
-			activity, states.PRECOMPUTING, state)
+	if err == nil {
+		t.Errorf("Expected error when converting %+v", activity)
 	}
 	activity = WAITING
 	state, err = activity.ConvertToRoundState()
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
-	if state != states.PRECOMPUTING {
+	if state != states.WAITING {
 		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
-			activity, states.PRECOMPUTING, state)
+			activity, states.WAITING, state)
 	}
 	activity = PRECOMPUTING
 	state, err = activity.ConvertToRoundState()
