@@ -9,6 +9,7 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"testing"
 )
@@ -48,6 +49,25 @@ func NewNodeFromUInt(u uint64, t *testing.T) *Node {
 	node := new(Node)
 	binary.BigEndian.PutUint64(node[:], u)
 	return node
+}
+
+// NewNodeFromString takes a nodeId formatted as a string, decodes it and
+//  formats it into a node object
+func NewNodeFromString(nodeId string) (*Node, error) {
+	node := new(Node)
+
+	nodeIdBytes := []byte(nodeId)
+
+	// Decode id's string
+	dst := make([]byte, NodeIdLen)
+	_, err := base64.StdEncoding.Decode(dst, nodeIdBytes)
+	if err != nil {
+		return nil, errors.Errorf("Failed to decode id: %+v", err)
+	}
+
+	// Place value into node and return
+	copy(node[:], dst)
+	return node, nil
 }
 
 // Bytes returns a copy of a Node ID as a byte slice.
