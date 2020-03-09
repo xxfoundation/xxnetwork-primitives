@@ -38,7 +38,7 @@ func (a Activity) String() string {
 	case NOT_STARTED:
 		return "NOT_STARTED"
 	case WAITING:
-		return "WAITING"
+		return "PENDING"
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
 	case STANDBY:
@@ -60,7 +60,7 @@ func (a Activity) String() string {
 func (a Activity) ConvertToRoundState() (states.Round, error) {
 	switch a {
 	case WAITING:
-		return states.WAITING, nil
+		return states.PENDING, nil
 	case PRECOMPUTING:
 		return states.PRECOMPUTING, nil
 	case STANDBY:

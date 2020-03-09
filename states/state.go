@@ -11,7 +11,7 @@ type Round uint32
 
 // List of Activities server can be in
 const (
-	WAITING = Round(iota)
+	PENDING = Round(iota)
 	PRECOMPUTING
 	STANDBY
 	REALTIME
@@ -24,8 +24,8 @@ const NUM_STATES = FAILED + 1
 // Stringer to get the name of the activity, primarily for for error prints
 func (s Round) String() string {
 	switch s {
-	case WAITING:
-		return "WAITING"
+	case PENDING:
+		return "PENDING"
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
 	case STANDBY:

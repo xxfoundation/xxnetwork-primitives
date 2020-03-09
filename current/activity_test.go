@@ -15,7 +15,7 @@ import (
 func TestActivity_String(t *testing.T) {
 	//define some activities to check
 	expectedActivityStringer := []string{"NOT_STARTED",
-		"WAITING", "PRECOMPUTING", "STANDBY", "REALTIME", "COMPLETED", "ERROR", "CRASH",
+		"PENDING", "PRECOMPUTING", "STANDBY", "REALTIME", "COMPLETED", "ERROR", "CRASH",
 		"UNKNOWN STATE: 8"}
 
 	//check if states give the correct return
@@ -39,9 +39,9 @@ func TestActivity_ConvertToRoundState(t *testing.T) {
 	if err != nil {
 		t.Errorf("Invalid conversion: %+v", err)
 	}
-	if state != states.WAITING {
+	if state != states.PENDING {
 		t.Errorf("Attempted to convert %+v. Expected %+v, got %+v",
-			activity, states.WAITING, state)
+			activity, states.PENDING, state)
 	}
 	activity = PRECOMPUTING
 	state, err = activity.ConvertToRoundState()
