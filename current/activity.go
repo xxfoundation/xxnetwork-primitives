@@ -6,7 +6,11 @@
 
 package current
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/pkg/errors"
+	"gitlab.com/elixxir/primitives/states"
+)
 
 //this holds the enum for the activity of the server. It is in primitives so
 //other repos such as registration/permissioning can access it
@@ -34,7 +38,7 @@ func (a Activity) String() string {
 	case NOT_STARTED:
 		return "NOT_STARTED"
 	case WAITING:
-		return "WAITING"
+		return "PENDING"
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
 	case STANDBY:
@@ -49,5 +53,27 @@ func (a Activity) String() string {
 		return "CRASH"
 	default:
 		return fmt.Sprintf("UNKNOWN STATE: %d", a)
+	}
+}
+
+// Converts an Activity to a valid Round state, or returns an error if invalid
+func (a Activity) ConvertToRoundState() (states.Round, error) {
+	switch a {
+	case WAITING:
+		return states.PENDING, nil
+	case PRECOMPUTING:
+		return states.PRECOMPUTING, nil
+	case STANDBY:
+		return states.STANDBY, nil
+	case REALTIME:
+		return states.REALTIME, nil
+	case COMPLETED:
+		return states.COMPLETED, nil
+	case ERROR:
+		return states.FAILED, nil
+	default:
+		// Unsupported conversion. Return an arbitrary round and error
+		return states.Round(99), errors.Errorf(
+			"unable to convert activity %+v to valid state", a)
 	}
 }
