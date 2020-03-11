@@ -29,7 +29,7 @@ type Buff struct {
 	buff            []interface{}
 	count, old, new int
 	id              idFunc
-	lock            sync.RWMutex
+	sync.RWMutex
 }
 
 // Initialize a new ring buffer with length n
@@ -46,40 +46,40 @@ func NewBuff(n int, id idFunc) *Buff {
 
 // Get the ID of the newest item in the buffer
 func (rb *Buff) GetNewestId() int {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	return rb.getNewestId()
 }
 
 // Get the IDof the oldest item in the buffer
 func (rb *Buff) GetOldestId() int {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	return rb.getOldestId()
 }
 
 // Get the index of the oldest item in the buffer, not including nil values inserted by UpsertById
 func (rb *Buff) GetOldestIndex() int {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	return rb.getOldestIndex()
 }
 
 // Push a round to the buffer
 func (rb *Buff) Push(val interface{}) {
-	rb.lock.Lock()
-	defer rb.lock.Unlock()
+	rb.Lock()
+	defer rb.Unlock()
 
 	rb.push(val)
 }
 
 // push a round to a relative index in the buffer
 func (rb *Buff) UpsertById(val interface{}, comp compFunc) error {
-	rb.lock.Lock()
-	defer rb.lock.Unlock()
+	rb.Lock()
+	defer rb.Unlock()
 
 	// Make sure the id isn't too old
 	newId := rb.id(val)
@@ -113,8 +113,8 @@ func (rb *Buff) UpsertById(val interface{}, comp compFunc) error {
 
 // Retreive the most recent entry
 func (rb *Buff) Get() interface{} {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	mostRecentIndex := (rb.new + rb.count - 1) % rb.count
 	return rb.buff[mostRecentIndex]
@@ -122,8 +122,8 @@ func (rb *Buff) Get() interface{} {
 
 // Retrieve an entry with the given ID
 func (rb *Buff) GetById(id int) (interface{}, error) {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	// Check it's not before our first known id
 	firstId := rb.id(rb.buff[rb.getOldestIndex()])
@@ -143,8 +143,8 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 
 // Retrieve an entry at the given index
 func (rb *Buff) GetByIndex(i int) (interface{}, error) {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	if math.Abs(float64(i)) > float64(rb.Len()) { // FIXME: this shouldn't be float but we don't have a package where it's not float
 		return nil, errors.Errorf("Could not get item at index %d: index out of bounds", i)
@@ -154,8 +154,8 @@ func (rb *Buff) GetByIndex(i int) (interface{}, error) {
 
 //retrieve all entries newer than the passed one
 func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	new := rb.getNewestId()
 	old := rb.getOldestId()
@@ -183,8 +183,8 @@ func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
 
 // Return length of the structure
 func (rb *Buff) Len() int {
-	rb.lock.RLock()
-	defer rb.lock.RUnlock()
+	rb.RLock()
+	defer rb.RUnlock()
 
 	return rb.count
 }
