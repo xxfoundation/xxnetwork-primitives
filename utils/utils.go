@@ -107,3 +107,47 @@ func ReadFile(path string) ([]byte, error) {
 	// Read the file and return the contents
 	return ioutil.ReadFile(path)
 }
+
+// Exist checks if a file or directory exists at the specified path.
+func Exists(path string) bool {
+	// Check if a file or directory exists at the path
+	_, exists := exists(path)
+
+	return exists
+}
+
+// FileExists checks if the file at the path exists. It returns false if the
+// file does not exist or if it is a directory.
+func FileExists(path string) bool {
+	// Get file description information and if the file exists
+	info, exists := exists(path)
+
+	// Check if the file is a directory
+	return exists && !info.IsDir()
+}
+
+// DirExists checks if the directory at the path exists. It returns false if the
+// directory does not exist or if it is a file.
+func DirExists(path string) bool {
+	// Get file description information and if the directory exists
+	info, exists := exists(path)
+
+	// Check if the file is a directory
+	return exists && info.IsDir()
+}
+
+// exist checks if a file or directory exists at the specified path and also
+// returns the file's FileInfo.
+func exists(path string) (os.FileInfo, bool) {
+	// Expand '~' to user's home directory and clean the path
+	path, err := ExpandPath(path)
+	if err != nil {
+		return nil, false
+	}
+
+	// Get file description information and path errors
+	info, err := os.Stat(path)
+
+	// Check if a file or directory exists at the path
+	return info, !os.IsNotExist(err)
+}
