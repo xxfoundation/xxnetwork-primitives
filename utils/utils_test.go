@@ -318,7 +318,7 @@ func TestFileExists_DirError(t *testing.T) {
 	}
 
 	// Remove the file after testing
-	//_ = os.RemoveAll(path)
+	_ = os.RemoveAll(path)
 }
 
 // Tests that FileExists() returns false when a file does not exist.
