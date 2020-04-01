@@ -14,6 +14,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -230,5 +231,202 @@ func TestReadFile_PathError(t *testing.T) {
 		t.Errorf("ReadFile() did not produce error when expected:"+
 			"\n\texpected: %v\n\treceived: %v",
 			errors.New("cannot expand user-specific home dir"), err)
+	}
+}
+
+// Tests that TestExist() correctly finds a file that exists.
+func TestExist(t *testing.T) {
+	path := "test.txt"
+	data := []byte("Test string.")
+	err := WriteFile(path, data, FilePerms, FilePerms)
+
+	if err != nil {
+		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := Exists(path)
+	if !exists {
+		t.Errorf("Exists() did not find a file that should exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that TestExist() correctly finds a directory that exists.
+func TestExist_Dir(t *testing.T) {
+	path := "a/"
+	err := MakeDirs(path+"d", FilePerms)
+
+	if err != nil {
+		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := Exists(path)
+	if !exists {
+		t.Errorf("Exists() did not find a directory that should exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that TestExist() returns false when a file does not exist.
+func TestExist_NoFileError(t *testing.T) {
+	path := "test.txt"
+
+	exists := Exists(path)
+	if exists {
+		t.Errorf("Exists() found a file when one does not exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that FileExists() correctly finds a file that exists.
+func TestFileExists(t *testing.T) {
+	path := "test.txt"
+	data := []byte("Test string.")
+	err := WriteFile(path, data, FilePerms, FilePerms)
+
+	if err != nil {
+		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := FileExists(path)
+	if !exists {
+		t.Errorf("FileExists() did not find a file that should exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that FileExists() false when the file is a directory.
+func TestFileExists_DirError(t *testing.T) {
+	path := "a/d"
+	err := MakeDirs(path, FilePerms)
+
+	if err != nil {
+		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := FileExists(path)
+	if exists {
+		t.Errorf("FileExists() found a directory when it was looking for a file")
+	}
+
+	// Remove the file after testing
+	//_ = os.RemoveAll(path)
+}
+
+// Tests that FileExists() returns false when a file does not exist.
+func TestFileExists_NoFileError(t *testing.T) {
+	path := "test.txt"
+
+	exists := FileExists(path)
+	if exists {
+		t.Errorf("FileExists() found a file when one does not exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that DirExists() correctly finds a directory that exists.
+func TestDirExists(t *testing.T) {
+	path := "a/"
+	err := MakeDirs(path+"d", FilePerms)
+
+	if err != nil {
+		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := DirExists(path)
+	if !exists {
+		t.Errorf("DirExists() did not find a directory that should exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that DirExists() false when the file is a directory.
+func TestDirExists_FileError(t *testing.T) {
+	path := "test.txt"
+	data := []byte("Test string.")
+	err := WriteFile(path, data, FilePerms, FilePerms)
+
+	if err != nil {
+		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+	}
+
+	exists := DirExists(path)
+	if exists {
+		t.Errorf("DirExists() found a file when it was looking for a directory")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that DirExists() returns false when a file does not exist.
+func TestDirExists_NoDirError(t *testing.T) {
+	path := "a/b/c/"
+
+	exists := FileExists(path)
+	if exists {
+		t.Errorf("DirExists() found a directroy when one does not exist")
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that Test_exist() correctly finds a file that exists and returns the
+// correct FileInfo.
+func Test_exist(t *testing.T) {
+	path := "test.txt"
+	data := []byte("Test string.")
+	err := WriteFile(path, data, FilePerms, FilePerms)
+
+	if err != nil {
+		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+	}
+
+	info, exists := exists(path)
+	expectedInfo, err := os.Stat(path)
+
+	if !exists && err != nil {
+		t.Errorf("exists() did not find a file that should exist:"+
+			"\n\t%v", err)
+	} else if !exists {
+		t.Errorf("exists() did not find a file that should exist")
+	}
+
+	if !reflect.DeepEqual(info, expectedInfo) {
+		t.Errorf("exists() did not return the expected FileInfo."+
+			"\n\texpected: %v\n\treceived: %v", expectedInfo, info)
+	}
+
+	// Remove the file after testing
+	_ = os.RemoveAll(path)
+}
+
+// Tests that Test_exist() returns false when a file does not exist. and returns
+// a nil FileInfo.
+func Test_exist_NoFileError(t *testing.T) {
+	path := "test.txt"
+
+	info, exists := exists(path)
+
+	if exists {
+		t.Errorf("exists() found a file when one does not exist")
+	}
+
+	if info != nil {
+		t.Errorf("exists() unexpectedly returned a non-nil FileInfo."+
+			"\n\texpected: %v\n\treceived: %v", nil, info)
 	}
 }
