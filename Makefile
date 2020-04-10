@@ -16,6 +16,6 @@ update_release:
 
 update_master:
 
-master: update update_master build
+master: update_master update build
 
-release: update update_release build
+release: update_release update build
