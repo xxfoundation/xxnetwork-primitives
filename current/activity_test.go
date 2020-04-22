@@ -15,7 +15,7 @@ import (
 func TestActivity_String(t *testing.T) {
 	//define some activities to check
 	expectedActivityStringer := []string{"NOT_STARTED",
-		"PENDING", "PRECOMPUTING", "STANDBY", "REALTIME", "COMPLETED", "ERROR", "CRASH",
+		"WAITING", "PRECOMPUTING", "STANDBY", "REALTIME", "COMPLETED", "ERROR", "CRASH",
 		"UNKNOWN STATE: 8"}
 
 	//check if states give the correct return
