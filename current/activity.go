@@ -38,7 +38,7 @@ func (a Activity) String() string {
 	case NOT_STARTED:
 		return "NOT_STARTED"
 	case WAITING:
-		return "PENDING"
+		return "WAITING"
 	case PRECOMPUTING:
 		return "PRECOMPUTING"
 	case STANDBY:
