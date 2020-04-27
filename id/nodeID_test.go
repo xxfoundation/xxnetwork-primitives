@@ -20,6 +20,44 @@ func TestNewNodeFromBytes(t *testing.T) {
 	}
 }
 
+// Happy path: Tests that providing a constructed id (when converted to a string) passed into
+// NewNodeFromString creates the same constructed id as above
+func TestNewNodeFromString(t *testing.T) {
+	// construct id
+	idBytes := make([]byte, NodeIdLen)
+	rand.Read(idBytes)
+	expectedId := NewNodeFromBytes(idBytes)
+
+	// Convert id to string
+	ourNodeString := expectedId.String()
+
+	// Pass id's string into NewNodeFromString
+	receivedId, err := NewNodeFromString(ourNodeString)
+	if err != nil {
+		t.Errorf("Failed to convert string: %+v", err)
+	}
+
+	// Compare the original node to the node constructed by NewNodeFromString
+	if !bytes.Equal(receivedId.Bytes(), expectedId.Bytes()) {
+		t.Errorf("Id created did not match expected id!"+
+			"\n\treceived: %v\n\texpected: %v", receivedId.Bytes(), expectedId.Bytes())
+	}
+}
+
+// Error path: Pass in a non base64 encoded string into NewNodeFromString
+func TestNewNodeFromString_Error(t *testing.T) {
+	// Create a bad (non base64 encoded) string
+	badString := "badString"
+
+	// Pass bad string into NewNodeFromString
+	_, err := NewNodeFromString(badString)
+	if err != nil {
+		return
+	}
+
+	t.Errorf("Expected error case! Should not be able to decode a non base64 string!")
+}
+
 // Tests that providing invalid input (wrong length) to NewNodeFromBytes()
 // returns an array of all zeros.
 func TestNewNodeFromBytes_Error(t *testing.T) {
