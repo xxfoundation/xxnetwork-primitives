@@ -14,7 +14,9 @@ package ndf
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/primitives/id"
 	"strings"
 	"time"
 )
@@ -77,6 +79,15 @@ type Group struct {
 	Prime      string
 	SmallPrime string `json:"Small_prime"`
 	Generator  string
+}
+
+func (g *Group) String() (string, error) {
+	data, err := json.Marshal(g)
+	if err != nil {
+		return "", errors.Errorf("Unable to marshal group: %+v", err)
+	}
+
+	return string(data), nil
 }
 
 // DecodeNDF decodes the given JSON string into the NetworkDefinition structure
@@ -205,4 +216,15 @@ func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
 	}
 
 	return ndfBytes, nil
+}
+
+// GetNodeId formats the node id into the id format specified in the id package of this repo
+func (n *Node) GetNodeId() *id.Node {
+	return id.NewNodeFromBytes(n.ID)
+
+}
+
+// GetGatewayId formats the gateway id into the id format specified in the id package of this repo
+func (n *Node) GetGatewayId() *id.Gateway {
+	return id.NewNodeFromBytes(n.ID).NewGateway()
 }

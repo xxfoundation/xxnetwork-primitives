@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -367,7 +368,7 @@ func TestNetworkDefinition_Marshal(t *testing.T) {
 			"\n\treceived: %#v\n\texpected: %#v",
 			err, nil)
 	}
-
+	fmt.Printf("our ndf: %+v\n\n", jsonData)
 	receivedData, err := jsonData.Marshal()
 
 	if err != nil {
@@ -375,11 +376,52 @@ func TestNetworkDefinition_Marshal(t *testing.T) {
 	}
 
 	expected, _ := json.Marshal(jsonData)
-
+	fmt.Printf("out json: %+v", string(expected))
 	if bytes.Compare(receivedData, expected) != 0 {
 		t.Errorf("Expected did not matched received data!\n"+
 			"Expect: %+v\n\t"+
 			"Received: %+v", expected, receivedData)
+	}
+
+}
+
+// Happy path: this finds an id in the hardcoded/global ExampleNDF
+func TestGetNodeId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// Expected id, pulled from the global ExampleNDF
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	// Fetch the id
+	receivedNodeId := jsonData.Nodes[0].GetNodeId()
+
+	if !bytes.Equal(receivedNodeId.Bytes(), expectedId) {
+		t.Errorf("Failed to get correct id!")
+	}
+}
+
+// Happy path
+func TestNode_GetGatewayId(t *testing.T) {
+	jsonData, _, err := DecodeNDF(ExampleNDF)
+	if err != nil {
+		t.Errorf("DecodeNDF() unexpectedly produced an error"+
+			"\n\treceived: %#v\n\texpected: %#v",
+			err, nil)
+	}
+
+	// Expected id, pulled from the global ExampleNDF
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+	// Fetch the id
+	receivedGatewayId := jsonData.Nodes[0].GetGatewayId()
+
+	if !bytes.Equal(receivedGatewayId.Bytes(), expectedId) {
+		t.Errorf("Failed to get correct id!")
 	}
 
 }
