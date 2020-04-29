@@ -22,11 +22,11 @@ func TestListeningQueue_Hear(t *testing.T) {
 	wg.Add(numThreads * numItems)
 
 	s := NewSwitchboard()
-	_, queue := s.ListenChannel(0, id.ZeroID, 12)
+	_, queue := s.ListenChannel(0, &id.ZeroUser, 12)
 
 	var items []Item
 
-	user := id.NewUserFromUints(&[4]uint64{0, 0, 0, 3})
+	user := id.NewIdFromUInts([4]uint64{0, 0, 0, 3}, id.User, t)
 	// Hopefully this would be enough to cause a race condition
 	for j := 0; j < numThreads; j++ {
 		go func() {

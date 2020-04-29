@@ -45,6 +45,7 @@ type NetworkDefinition struct {
 
 // Gateway is the structure for the gateways object in the JSON file.
 type Gateway struct {
+	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -218,13 +219,24 @@ func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
 	return ndfBytes, nil
 }
 
-// GetNodeId formats the node id into the id format specified in the id package of this repo
-func (n *Node) GetNodeId() *id.Node {
-	return id.NewNodeFromBytes(n.ID)
+// GetNodeId marshals the node id into the ID type. Returns an error if Marshal
+// fails.
+func (n *Node) GetNodeId() (*id.ID, error) {
+	newID, err := id.Unmarshal(n.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newID, nil
 
 }
 
 // GetGatewayId formats the gateway id into the id format specified in the id package of this repo
-func (n *Node) GetGatewayId() *id.Gateway {
-	return id.NewNodeFromBytes(n.ID).NewGateway()
+func (n *Node) GetGatewayId() (*id.ID, error) {
+	newID, err := id.Unmarshal(n.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newID, nil
 }

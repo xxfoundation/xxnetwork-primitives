@@ -135,12 +135,22 @@ func (a *AssociatedData) SetRecipientID(newRecipientID []byte) {
 }
 
 // GetRecipient returns the recipientID as a user ID.
-func (a *AssociatedData) GetRecipient() *id.User {
-	return id.NewUserFromBytes(a.recipientID)
+func (a *AssociatedData) GetRecipient() (*id.ID, error) {
+	tempBytes := make([]byte, id.ArrIDLen)
+	copy(tempBytes, a.recipientID)
+
+	newID, err := id.Unmarshal(tempBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	newID.SetType(id.User)
+
+	return newID, nil
 }
 
 // SetRecipient sets the value of recipientID from a user ID.
-func (a *AssociatedData) SetRecipient(newRecipientID *id.User) {
+func (a *AssociatedData) SetRecipient(newRecipientID *id.ID) {
 	copy(a.recipientID, newRecipientID.Bytes())
 }
 

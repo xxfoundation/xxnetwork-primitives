@@ -415,13 +415,20 @@ func TestAssociatedData_GetRecipient(t *testing.T) {
 	// Create new AssociatedData
 	ad := NewAssociatedData(randSlice)
 
-	userID := id.NewUserFromBytes(randSlice[recipientIDStart:recipientIDEnd])
+	userID := id.NewIdFromBytes(randSlice[recipientIDStart:recipientIDEnd], t)
 
-	if !reflect.DeepEqual(ad.GetRecipient(), userID) {
+	userID[id.ArrIDLen-1] = byte(id.User)
+
+	recipientID, err := ad.GetRecipient()
+	if err != nil {
+		t.Errorf("GetRecipient() produced an error:\n%v", err)
+	}
+
+	if !reflect.DeepEqual(recipientID, userID) {
 		t.Errorf("GetRecipient() did not return the correct data from "+
 			"AssociatedData's recipientID as a *id.User"+
 			"\n\treceived: %v\n\texpected: %v",
-			ad.GetRecipientID(), userID)
+			recipientID, userID)
 	}
 }
 
@@ -430,21 +437,27 @@ func TestAssociatedData_GetRecipient(t *testing.T) {
 func TestAssociatedData_SetRecipient(t *testing.T) {
 	// Generate random byte slice
 	rand.Seed(42)
-	randSlice := make([]byte, RecipientIDLen)
+	randSlice := make([]byte, id.ArrIDLen)
 	rand.Read(randSlice)
 
 	// Create new AssociatedData
 	ad := NewAssociatedData(make([]byte, AssociatedDataLen))
 
 	// Set AssociatedData's recipient
-	userID := id.NewUserFromBytes(randSlice)
+	userID := id.NewIdFromBytes(randSlice, t)
+	userID.SetType(id.User)
 	ad.SetRecipient(userID)
 
-	if !reflect.DeepEqual(ad.GetRecipient(), userID) {
+	recipientID, err := ad.GetRecipient()
+	if err != nil {
+		t.Errorf("GetRecipient() produced an error:\n%v", err)
+	}
+
+	if !reflect.DeepEqual(recipientID, userID) {
 		t.Errorf("SetRecipient() did not properly set AssociatedData's "+
 			"recipientID from a *id.User"+
 			"\n\treceived: %v\n\texpected: %v",
-			ad.GetRecipient(), userID)
+			recipientID, userID)
 	}
 }
 

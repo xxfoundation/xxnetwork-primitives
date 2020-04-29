@@ -11,39 +11,42 @@ import (
 	"testing"
 )
 
-func TestNewIdListFromStrings(t *testing.T) {
-	// Topology list will contain the list of strings to be passed to NewNodeListFromStrings
-	var topologyList []string
-	// ExpectedNodes will contain the constructed nodes, to be compared one-by-one to
-	// the output of NewNodeListFromStrings
-	var expectedNodes []*Node
+func TestNewIDListFromBytes(t *testing.T) {
+	// Topology list will contain the list of strings to be passed to
+	// NewIDListFromBytes
+	var topologyList [][]byte
+
+	// ExpectedNodes will contain the constructed nodes, to be compared
+	// one-by-one to the output of NewIDListFromBytes
+	var expectedNodes []*ID
 
 	// Construct a topology list
 	for i := 0; i < 10; i++ {
 		// construct an id
-		idBytes := make([]byte, NodeIdLen)
-		rand.Read(idBytes)
-		expectedId := NewNodeFromBytes(idBytes)
+		idBytes := newRandomBytes(ArrIDLen, t)
+		expectedId := NewIdFromBytes(idBytes, t)
 
 		// Append to the slices
 		expectedNodes = append(expectedNodes, expectedId)
-		topologyList = append(topologyList, expectedId.String())
+		topologyList = append(topologyList, expectedId.Bytes())
 	}
 
-	// Pass topologyList into NewNodeListFromStrings
-	receivedNodes, err := NewNodeListFromStrings(topologyList)
+	// Pass topologyList into NewIDListFromBytes
+	receivedNodes, err := NewIDListFromBytes(topologyList)
 	if err != nil {
 		t.Errorf("Failed to create node list: %+v", err)
 	}
 
-	// Iterate through the list, comparing receivedNodes to expectedNodes every iteration
+	// Iterate through the list, comparing receivedNodes to expectedNodes every
+	// iteration
 	for index, receivedNode := range receivedNodes {
 		expectedNode := expectedNodes[index]
 
 		// Check the outputted list to the expected values
 		if !bytes.Equal(receivedNode.Bytes(), expectedNode.Bytes()) {
 			t.Errorf("Node of index %d was not converted correctly. "+
-				"\n\treceived: %v\n\texpected: %v", index, receivedNode.Bytes(), expectedNode.Bytes())
+				"\n\treceived: %v\n\texpected: %v", index, receivedNode.Bytes(),
+				expectedNode.Bytes())
 		}
 
 	}
@@ -51,33 +54,35 @@ func TestNewIdListFromStrings(t *testing.T) {
 }
 
 // Error path: construct a list with a bad topology
-func TestNewIdListFromStrings_Error(t *testing.T) {
-	// Topology list will contain the list of strings to be passed to NewNodeListFromStrings
-	var topologyList []string
-	// ExpectedNodes will contain the constructed nodes, to be compared one-by-one to
-	// the output of NewNodeListFromStrings
-	var expectedNodes []*Node
+func TestNewIDListFromBytes_Error(t *testing.T) {
+	// Topology list will contain the list of strings to be passed to
+	// NewIDListFromBytes
+	var topologyList [][]byte
+
+	// ExpectedNodes will contain the constructed nodes, to be compared
+	// one-by-one to the output of NewIDListFromBytes
+	var expectedNodes []*ID
 
 	// Construct a topology list
 	for i := 0; i < 10; i++ {
 		// construct id
-		idBytes := make([]byte, NodeIdLen)
-		rand.Read(idBytes)
-		expectedId := NewNodeFromBytes(idBytes)
+		idBytes := newRandomBytes(ArrIDLen, t)
+		expectedId := NewIdFromBytes(idBytes, t)
 		expectedNodes = append(expectedNodes, expectedId)
 
-		// Inject a bad string into the list of strings at an arbitrary point
-		if i == rand.Int()%9 {
-			topologyList = append(topologyList, expectedId.String()+"badString")
+		// Inject a bad byte slices into the list of slices at an arbitrary point
+		if i == rand.Int()%5 {
+			expectedIdBytes := []byte{1, 2, 3}
+			topologyList = append(topologyList, expectedIdBytes)
 		}
 	}
 
 	// Attempt to convert the topologyList
-	_, err := NewNodeListFromStrings(topologyList)
+	_, err := NewIDListFromBytes(topologyList)
 	if err != nil {
 		return
 	}
 
-	t.Errorf("Expected error case, should not successfully create a list of nodes due to a bad" +
-		"topology")
+	t.Errorf("Expected error case, should not successfully create a list" +
+		"of nodes due to a bad topology")
 }
