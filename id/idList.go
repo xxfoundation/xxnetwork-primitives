@@ -7,7 +7,7 @@ package id
 
 import "github.com/pkg/errors"
 
-// NodeIdList.go handles operations that create a list of id.Node objects.
+// idList.go handles operations that create a list of id.ID objects.
 
 // NewIDListFromBytes creates a list of IDs from a list of byte slices. On
 // success, it returns a new list. On failure, it returns a nil list and an
