@@ -17,7 +17,7 @@ import (
 type Item interface {
 	// To reviewer: Is this the correct name for this method? It's always the
 	// sender ID in the client, but that might not be the case on the nodes
-	GetSender() *id.User
+	GetSender() *id.ID
 	GetMessageType() int32
 }
 
@@ -36,7 +36,7 @@ type listenerRecord struct {
 type Switchboard struct {
 	// By matching with the keys for each level of the map,
 	// you can find the listeners that meet each criterion
-	listeners map[id.User]map[int32][]*listenerRecord
+	listeners map[id.ID]map[int32][]*listenerRecord
 	lastID    int
 	mux       sync.RWMutex
 }
@@ -44,7 +44,7 @@ type Switchboard struct {
 // NewSwitchboard generates and returns a new switchboard object.
 func NewSwitchboard() *Switchboard {
 	return &Switchboard{
-		listeners: make(map[id.User]map[int32][]*listenerRecord),
+		listeners: make(map[id.ID]map[int32][]*listenerRecord),
 		lastID:    0,
 	}
 }
@@ -60,7 +60,7 @@ func NewSwitchboard() *Switchboard {
 // pass nil to this.
 //
 // If a message matches multiple listeners, all of them will hear the message.
-func (lm *Switchboard) Register(user *id.User, messageType int32,
+func (lm *Switchboard) Register(user *id.ID, messageType int32,
 	newListener Listener, i ...interface{}) string {
 	lm.mux.Lock()
 	defer lm.mux.Unlock()
@@ -115,7 +115,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		matches = appendIfUnique(matches, listener)
 	}
 
-	for _, listener := range lm.listeners[*id.ZeroID][item.GetMessageType()] {
+	for _, listener := range lm.listeners[id.ZeroUser][item.GetMessageType()] {
 		matches = appendIfUnique(matches, listener)
 	}
 
@@ -123,7 +123,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		matches = appendIfUnique(matches, listener)
 	}
 
-	for _, listener := range lm.listeners[*id.ZeroID][0] {
+	for _, listener := range lm.listeners[id.ZeroUser][0] {
 		matches = appendIfUnique(matches, listener)
 	}
 
@@ -131,7 +131,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		matches = appendIfUnique(matches, listener)
 	}
 
-	for _, listener := range lm.listeners[*id.ZeroID][0] {
+	for _, listener := range lm.listeners[id.ZeroUser][0] {
 		matches = appendIfUnique(matches, listener)
 	}
 
@@ -140,7 +140,7 @@ func (lm *Switchboard) matchListeners(item Item) []*listenerRecord {
 		matches = appendIfUnique(matches, listener)
 	}
 
-	for _, listener := range lm.listeners[*id.ZeroID][item.GetMessageType()] {
+	for _, listener := range lm.listeners[id.ZeroUser][item.GetMessageType()] {
 		matches = appendIfUnique(matches, listener)
 	}
 
