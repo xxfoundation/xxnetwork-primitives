@@ -14,7 +14,7 @@ type ListeningQueue chan Item
 
 // ListenChannel sets up a listening queue and adds it to the switchboard.
 func (lm *Switchboard) ListenChannel(
-	messageType int32, sender *id.User, channelBufferSize int) (id string,
+	messageType int32, sender *id.ID, channelBufferSize int) (id string,
 	messageQueue ListeningQueue) {
 	messageQueue = make(ListeningQueue, channelBufferSize)
 	id = lm.Register(sender, messageType, messageQueue)
