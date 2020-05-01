@@ -168,6 +168,40 @@ func TestNewIdFromBytes(t *testing.T) {
 	}
 }
 
+// Tests that NewIdFromBytes() creates a new ID from bytes with a length smaller
+// than 33. The resulting ID should have the bytes and the rest should be 0.
+func TestNewIdFromBytes_Underflow(t *testing.T) {
+	// Expected values
+	expectedBytes := newRandomBytes(ArrIDLen/2, t)
+	expectedArr := [ArrIDLen]byte{}
+	copy(expectedArr[:], expectedBytes)
+
+	// Create the ID and check its contents
+	newID := NewIdFromBytes(expectedBytes, t)
+
+	if !bytes.Equal(expectedArr[:], newID[:]) {
+		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
+			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
+	}
+}
+
+// Tests that NewIdFromBytes() creates a new ID from bytes with a length larger
+// than 33. The resulting ID should the original bytes truncated to 33 bytes.
+func TestNewIdFromBytes_Overflow(t *testing.T) {
+	// Expected values
+	expectedBytes := newRandomBytes(ArrIDLen*2, t)
+	expectedArr := [ArrIDLen]byte{}
+	copy(expectedArr[:], expectedBytes)
+
+	// Create the ID and check its contents
+	newID := NewIdFromBytes(expectedBytes, t)
+
+	if !bytes.Equal(expectedArr[:], newID[:]) {
+		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
+			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
+	}
+}
+
 // Tests that NewIdFromBytes() panics when given a nil testing object.
 func TestNewIdFromBytes_TestError(t *testing.T) {
 	defer func() {
@@ -179,6 +213,50 @@ func TestNewIdFromBytes_TestError(t *testing.T) {
 
 	// Call function with nil testing object
 	_ = NewIdFromBytes(newRandomBytes(ArrIDLen, t), nil)
+}
+
+// Tests that NewIdFromString() creates a new ID from string correctly. The new
+// ID is created from a string that is 32 bytes long so that no truncation or
+// padding is required. The test checks that the original string is still
+// present in the data.
+func TestNewIdFromString(t *testing.T) {
+	// Test values
+	expectedIdString := "Test ID string of correct length"
+	expectedType := Generic
+	expectedID := new(ID)
+	copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
+
+	// Create the ID and check its contents
+	newID := NewIdFromString(expectedIdString, expectedType, t)
+
+	// Check if the new ID matches the expected ID
+	if !expectedID.Cmp(newID) {
+		t.Errorf("NewIdFromString() produced an ID with the incorrect data."+
+			"\n\texpected: %v\n\treceived: %v", expectedID[:], newID[:])
+	}
+
+	// Check if the original string is still in the first 32 bytes
+	newIdString := string(newID.Bytes()[:ArrIDLen-1])
+	if expectedIdString != newIdString {
+		t.Errorf("NewIdFromString() did not correctly convert the original "+
+			"string to bytes.\n\texpected string: %#v\n\treceived string: %#v"+
+			"\n\texpected bytes: %v\n\treceived bytes: %v",
+			expectedIdString, newIdString,
+			[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
+	}
+}
+
+// Tests that NewIdFromString() panics when given a nil testing object.
+func TestNewIdFromString_TestError(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("NewIdFromString() did not panic when it received a " +
+				"nil testing object when it should have.")
+		}
+	}()
+
+	// Call function with nil testing object
+	_ = NewIdFromString("test", Generic, nil)
 }
 
 // Tests that NewIdFromUInt() creates a new ID with the correct contents by

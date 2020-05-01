@@ -51,7 +51,7 @@ func Unmarshal(data []byte) (*ID, error) {
 }
 
 // Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
-// Marshal() and any changes made here will effect how Marshal() functions.
+// Marshal() and any changes made here will affect how Marshal() functions.
 func (i *ID) Bytes() []byte {
 	newBytes := make([]byte, ArrIDLen)
 	copy(newBytes, i[:])
@@ -89,22 +89,43 @@ func (i *ID) SetType(idType Type) {
 }
 
 // NewIdFromBytes creates a new ID from a copy of the data. It is similar to
-// Unmarshal(), but does not do any error checking.
+// Unmarshal() but does not do any error checking. If the data is longer than
+// ArrIDLen, then it is truncated. If it is shorter, then the remaining bytes
+// are filled with zeroes. This function is for testing purposes only.
 func NewIdFromBytes(data []byte, t *testing.T) *ID {
 	// Ensure that this function is only run in testing environments
 	if t == nil {
-		panic("NewIdFromUInt() can only be used for testing.")
+		panic("NewIdFromBytes() can only be used for testing.")
 	}
 
 	newID := new(ID)
-	copy(newID[:], data[:ArrIDLen])
+	copy(newID[:], data[:])
 
 	return newID
 }
 
-// NewIdFromUInt converts the specified uint64 into a bytes and returns a new
-// ID based off of it with the specified ID type. The remaining space of the
-// array is filled with zeros. The function is for testing purposes only.
+// NewIdFromString creates a new ID from the given string and type. If the
+// string is longer than dataLen, then it is truncated. If it is shorter, then
+// the remaining bytes are filled with zeroes. This function is for testing
+// purposes only.
+func NewIdFromString(idString string, idType Type, t *testing.T) *ID {
+	// Ensure that this function is only run in testing environments
+	if t == nil {
+		panic("NewIdFromString() can only be used for testing.")
+	}
+
+	// Convert the string to bytes and create new ID from it
+	newID := NewIdFromBytes([]byte(idString), t)
+
+	// Set the ID type
+	newID.SetType(idType)
+
+	return newID
+}
+
+// NewIdFromUInt converts the specified uint64 into bytes and returns a new ID
+// based off it with the specified ID type. The remaining space of the array is
+// filled with zeros. This function is for testing purposes only.
 func NewIdFromUInt(idUInt uint64, idType Type, t *testing.T) *ID {
 	// Ensure that this function is only run in testing environments
 	if t == nil {
@@ -124,13 +145,13 @@ func NewIdFromUInt(idUInt uint64, idType Type, t *testing.T) *ID {
 }
 
 // NewIdFromUInt converts the specified uint64 array into bytes and returns a
-// new ID based off of it with the specified ID type. Unlike NewIdFromUInt(),
-// the four uint64s provided fill the entire ID array. The function is for
-// testing purposes only.
+// new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
+// four uint64s provided fill the entire ID array. This function is for testing
+// purposes only.
 func NewIdFromUInts(idUInts [4]uint64, idType Type, t *testing.T) *ID {
 	// Ensure that this function is only run in testing environments
 	if t == nil {
-		panic("NewIdFromUInt() can only be used for testing.")
+		panic("NewIdFromUInts() can only be used for testing.")
 	}
 
 	// Create the new ID
