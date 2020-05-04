@@ -39,7 +39,7 @@ func (i *ID) Marshal() []byte {
 func Unmarshal(data []byte) (*ID, error) {
 	// Return an error if the length of data is incorrect
 	if len(data) != ArrIDLen {
-		return nil, errors.Errorf("Could not marshal byte slice to ID: "+
+		return nil, errors.Errorf("Could not unmarshal byte slice to ID: "+
 			"length of data must be %d, length received was %d",
 			ArrIDLen, len(data))
 	}
