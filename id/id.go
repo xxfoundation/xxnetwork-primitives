@@ -92,9 +92,12 @@ func (i *ID) SetType(idType Type) {
 // Unmarshal() but does not do any error checking. If the data is longer than
 // ArrIDLen, then it is truncated. If it is shorter, then the remaining bytes
 // are filled with zeroes. This function is for testing purposes only.
-func NewIdFromBytes(data []byte, t *testing.T) *ID {
+func NewIdFromBytes(data []byte, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
-	if t == nil {
+	switch x.(type) {
+	case *testing.T, *testing.M:
+		break
+	default:
 		panic("NewIdFromBytes() can only be used for testing.")
 	}
 
@@ -108,14 +111,17 @@ func NewIdFromBytes(data []byte, t *testing.T) *ID {
 // string is longer than dataLen, then it is truncated. If it is shorter, then
 // the remaining bytes are filled with zeroes. This function is for testing
 // purposes only.
-func NewIdFromString(idString string, idType Type, t *testing.T) *ID {
+func NewIdFromString(idString string, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
-	if t == nil {
+	switch x.(type) {
+	case *testing.T, *testing.M:
+		break
+	default:
 		panic("NewIdFromString() can only be used for testing.")
 	}
 
 	// Convert the string to bytes and create new ID from it
-	newID := NewIdFromBytes([]byte(idString), t)
+	newID := NewIdFromBytes([]byte(idString), x)
 
 	// Set the ID type
 	newID.SetType(idType)
@@ -126,9 +132,12 @@ func NewIdFromString(idString string, idType Type, t *testing.T) *ID {
 // NewIdFromUInt converts the specified uint64 into bytes and returns a new ID
 // based off it with the specified ID type. The remaining space of the array is
 // filled with zeros. This function is for testing purposes only.
-func NewIdFromUInt(idUInt uint64, idType Type, t *testing.T) *ID {
+func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
-	if t == nil {
+	switch x.(type) {
+	case *testing.T, *testing.M:
+		break
+	default:
 		panic("NewIdFromUInt() can only be used for testing.")
 	}
 
@@ -148,10 +157,13 @@ func NewIdFromUInt(idUInt uint64, idType Type, t *testing.T) *ID {
 // new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
-func NewIdFromUInts(idUInts [4]uint64, idType Type, t *testing.T) *ID {
+func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
-	if t == nil {
-		panic("NewIdFromUInts() can only be used for testing.")
+	switch x.(type) {
+	case *testing.T, *testing.M:
+		break
+	default:
+		panic("NewIdFromUInt() can only be used for testing.")
 	}
 
 	// Create the new ID
