@@ -178,6 +178,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 
 	// Convert Gateways slice to byte slice
 	for _, val := range ndf.Gateways {
+		b = append(b, val.ID...)
 		b = append(b, []byte(val.Address)...)
 		b = append(b, []byte(val.TlsCertificate)...)
 	}
