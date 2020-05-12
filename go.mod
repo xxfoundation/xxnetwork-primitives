@@ -3,6 +3,7 @@ module gitlab.com/elixxir/primitives
 go 1.13
 
 require (
+	github.com/fsnotify/fsnotify v1.4.9
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
