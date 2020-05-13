@@ -35,6 +35,7 @@ setup:
   stage: setup
   image: $DOCKER_IMAGE
   script:
+    - git clean -ffdx
     - go mod vendor -v
     - go build ./...
     - go mod tidy
