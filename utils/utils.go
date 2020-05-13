@@ -1,8 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 Privategrity Corporation                                   /
-//                                                                             /
-// All rights reserved.                                                        /
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                                       //
+//                                                                                        //
+// Use of this source code is governed by a license that can be found in the LICENSE file //
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // Package utils contains general utility functions used by our system.
 // They are generic and perform basic tasks. As of writing, it mostly contains
@@ -122,8 +122,13 @@ func FileExists(path string) bool {
 	// Get file description information and if the file exists
 	info, exists := exists(path)
 
+	isFile := false
+	if info != nil {
+		isFile = !info.IsDir()
+	}
+
 	// Check if the file is a directory
-	return exists && !info.IsDir()
+	return exists && isFile
 }
 
 // DirExists checks if the directory at the path exists. It returns false if the

@@ -1,8 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 Privategrity Corporation                                   /
-//                                                                             /
-// All rights reserved.                                                        /
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                                       //
+//                                                                                        //
+// Use of this source code is governed by a license that can be found in the LICENSE file //
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // Package format contains the message payload format. The structure can
 // seen from this diagram. The entire message is 4096 bits with two payloads each 2048 bits.
