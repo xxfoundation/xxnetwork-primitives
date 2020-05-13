@@ -9,7 +9,7 @@ cache:
 variables:
   REPO_DIR: gitlab.com/elixxir
   REPO_NAME: primitives
-  DOCKER_IMAGE: golang:1.13.4-buster
+  DOCKER_IMAGE: elixxirlabs/cuda-go:latest
   MIN_CODE_COVERAGE: "90.0"
 
 before_script:
@@ -26,33 +26,20 @@ before_script:
   - export GOFLAGS=-mod=vendor
 
 stages:
-  - setup
-  - test
   - build
   - trigger_integration
 
-setup:
-  stage: setup
+build:
+  stage: build
   image: $DOCKER_IMAGE
   script:
     - git clean -ffdx
     - go mod vendor -v
     - go build ./...
     - go mod tidy
-  artifacts:
-    paths:
-      - vendor/
-
-test:
-  stage: test
-  image: $DOCKER_IMAGE
-  script:
-    - GO111MODULE=off go get -u github.com/haya14busa/goverage
-    - apt-get update
-    - apt-get install bc -y
 
     - mkdir -p testdata
-    - goverage -coverprofile=testdata/coverage.out -v ./... | grep -v "no packages being tested depend on"
+    - go-acc --covermode atomic --output testdata/coverage.out ./... -- -v
     - cat testdata/coverage.out | grep -v pb[.]go > testdata/coverage-real.out
     - go tool cover -func=testdata/coverage-real.out
     - go tool cover -html=testdata/coverage-real.out -o testdata/coverage.html
@@ -61,20 +48,13 @@ test:
     - go tool cover -func=testdata/coverage-real.out | grep "total:" | awk '{print $3}' | sed 's/\%//g' > testdata/coverage-percentage.txt
     - export CODE_CHECK=$(echo "$(cat testdata/coverage-percentage.txt) >= $MIN_CODE_COVERAGE" | bc -l)
     - (if [ "$CODE_CHECK" == "1" ]; then echo "Minimum coverage of $MIN_CODE_COVERAGE succeeded"; else echo "Minimum coverage of $MIN_CODE_COVERAGE failed"; exit 1; fi);
-
-  artifacts:
-    paths:
-      - testdata/
-
-build:
-  stage: build
-  image: $DOCKER_IMAGE
-  script:
     - mkdir -p release
     - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' ./...
     - cd release
   artifacts:
     paths:
+      - vendor/
+      - testdata/
       - release/
 
 trigger:
