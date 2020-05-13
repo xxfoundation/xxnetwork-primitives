@@ -167,6 +167,7 @@ func TestMakeDirs_PathError(t *testing.T) {
 // file exists.
 func TestWriteFile(t *testing.T) {
 	path := "temp/temp2/test.txt"
+	os.MkdirAll(path, os.ModePerm)
 	data := []byte("test data")
 	err := WriteFile(path, data, DirPerms, FilePerms)
 
