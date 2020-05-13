@@ -166,8 +166,9 @@ func TestMakeDirs_PathError(t *testing.T) {
 // Tests WriteFile() by checking if the directory structure and the
 // file exists.
 func TestWriteFile(t *testing.T) {
-	path := "temp/temp2/test.txt"
+	path := "temp/temp2"
 	os.MkdirAll(path, os.ModePerm)
+	path += "/test.txt"
 	data := []byte("test data")
 	err := WriteFile(path, data, DirPerms, FilePerms)
 
@@ -257,7 +258,7 @@ func TestExist(t *testing.T) {
 // Tests that TestExist() correctly finds a directory that exists.
 func TestExist_Dir(t *testing.T) {
 	path := "a/"
-	err := MakeDirs(path+"d", FilePerms)
+	err := MakeDirs(path+"d", DirPerms)
 
 	if err != nil {
 		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
@@ -307,7 +308,7 @@ func TestFileExists(t *testing.T) {
 // Tests that FileExists() false when the file is a directory.
 func TestFileExists_DirError(t *testing.T) {
 	path := "a/d"
-	err := MakeDirs(path, FilePerms)
+	err := MakeDirs(path, DirPerms)
 
 	if err != nil {
 		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
@@ -338,7 +339,7 @@ func TestFileExists_NoFileError(t *testing.T) {
 // Tests that DirExists() correctly finds a directory that exists.
 func TestDirExists(t *testing.T) {
 	path := "a/"
-	err := MakeDirs(path+"d", FilePerms)
+	err := MakeDirs(path+"d", DirPerms)
 
 	if err != nil {
 		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
