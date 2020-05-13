@@ -122,8 +122,13 @@ func FileExists(path string) bool {
 	// Get file description information and if the file exists
 	info, exists := exists(path)
 
+	isFile := false
+	if info != nil {
+		isFile = !info.IsDir()
+	}
+
 	// Check if the file is a directory
-	return exists && !info.IsDir()
+	return exists && isFile
 }
 
 // DirExists checks if the directory at the path exists. It returns false if the
