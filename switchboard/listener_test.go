@@ -24,11 +24,11 @@ type MockListener struct {
 
 type Message struct {
 	Contents    []byte
-	Sender      *id.User
+	Sender      *id.ID
 	MessageType int32
 }
 
-func (m *Message) GetSender() *id.User {
+func (m *Message) GetSender() *id.ID {
 	return m.Sender
 }
 
@@ -54,13 +54,14 @@ func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{})
 	}
 }
 
-var specificUser = id.NewUserFromUints(&[4]uint64{0, 0, 0, 5})
+var specificUser *id.ID
 var specificMessageType int32 = 5
 var delay = 10 * time.Millisecond
 
-func OneListenerSetup() (*Switchboard, *MockListener) {
+func OneListenerSetup(t *testing.T) (*Switchboard, *MockListener) {
 	var listeners *Switchboard
 	listeners = NewSwitchboard()
+	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
 	// add one listener to the map
 	fullyMatchedListener := &MockListener{}
 	listeners.Register(specificUser, specificMessageType,
@@ -70,7 +71,7 @@ func OneListenerSetup() (*Switchboard, *MockListener) {
 
 func TestListenerMap_SpeakOne(t *testing.T) {
 	// set up
-	listeners, fullyMatchedListener := OneListenerSetup()
+	listeners, fullyMatchedListener := OneListenerSetup(t)
 
 	// speak
 	listeners.Speak(&Message{
@@ -90,7 +91,7 @@ func TestListenerMap_SpeakOne(t *testing.T) {
 
 func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
 	// set up
-	listeners, fullyMatchedListener := OneListenerSetup()
+	listeners, fullyMatchedListener := OneListenerSetup(t)
 
 	// speak
 	for i := 0; i < 20; i++ {
@@ -112,7 +113,8 @@ func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
 
 func TestListenerMap_SpeakToAnother(t *testing.T) {
 	// set up
-	listeners, fullyMatchedListener := OneListenerSetup()
+	listeners, fullyMatchedListener := OneListenerSetup(t)
+	nonzeroUser := id.NewIdFromUInts([4]uint64{0, 0, 0, 786}, id.User, t)
 
 	// speak
 	listeners.Speak(&Message{
@@ -132,7 +134,7 @@ func TestListenerMap_SpeakToAnother(t *testing.T) {
 
 func TestListenerMap_SpeakDifferentType(t *testing.T) {
 	// set up
-	listeners, fullyMatchedListener := OneListenerSetup()
+	listeners, fullyMatchedListener := OneListenerSetup(t)
 
 	// speak
 	listeners.Speak(&Message{
@@ -150,8 +152,7 @@ func TestListenerMap_SpeakDifferentType(t *testing.T) {
 	}
 }
 
-var zeroUser = id.ZeroID
-var nonzeroUser = id.NewUserFromUints(&[4]uint64{0, 0, 0, 786})
+var zeroUser = id.ZeroUser
 var zeroMessageType int32
 
 func WildcardListenerSetup() (*Switchboard, *MockListener) {
@@ -159,13 +160,14 @@ func WildcardListenerSetup() (*Switchboard, *MockListener) {
 	listeners = NewSwitchboard()
 	// add one listener to the map
 	wildcardListener := &MockListener{}
-	listeners.Register(zeroUser, zeroMessageType, wildcardListener)
+	listeners.Register(&zeroUser, zeroMessageType, wildcardListener)
 	return listeners, wildcardListener
 }
 
 func TestListenerMap_SpeakWildcard(t *testing.T) {
 	// set up
 	listeners, wildcardListener := WildcardListenerSetup()
+	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
 
 	// speak
 	listeners.Speak(&Message{
@@ -185,6 +187,7 @@ func TestListenerMap_SpeakWildcard(t *testing.T) {
 
 func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	listeners := NewSwitchboard()
+	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
 
 	individualListeners := make([]*MockListener, 0)
 
@@ -200,7 +203,7 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 	listeners.Register(specificUser, zeroMessageType, userListener)
 	// wildcard listener for all messages
 	wildcardListener := &MockListener{}
-	listeners.Register(zeroUser, zeroMessageType, wildcardListener)
+	listeners.Register(&zeroUser, zeroMessageType, wildcardListener)
 
 	// send to all types for our user
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
@@ -211,7 +214,7 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 		})
 	}
 	// send to all types for a different user
-	otherUser := id.NewUserFromUint(98, t)
+	otherUser := id.NewIdFromUInt(98, id.User, t)
 	for messageType := int32(1); messageType <= int32(20); messageType++ {
 		go listeners.Speak(&Message{
 			MessageType: messageType,
@@ -244,10 +247,11 @@ func TestListenerMap_SpeakManyToMany(t *testing.T) {
 func TestListenerMap_SpeakFallback(t *testing.T) {
 	var listeners *Switchboard
 	listeners = NewSwitchboard()
+	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
 	// add one normal and one fallback listener to the map
 	fallbackListener := &MockListener{}
 	fallbackListener.IsFallback = true
-	listeners.Register(zeroUser, zeroMessageType, fallbackListener)
+	listeners.Register(&zeroUser, zeroMessageType, fallbackListener)
 	specificListener := &MockListener{}
 	listeners.Register(specificUser, specificMessageType,
 		specificListener)
@@ -279,7 +283,7 @@ func TestListenerMap_SpeakFallback(t *testing.T) {
 }
 
 func TestListenerMap_SpeakBody(t *testing.T) {
-	listeners, listener := OneListenerSetup()
+	listeners, listener := OneListenerSetup(t)
 	expected := []byte{0x01, 0x02, 0x03, 0x04}
 	listeners.Speak(&Message{
 		MessageType: specificMessageType,
@@ -299,6 +303,7 @@ func TestListenerMap_SpeakBody(t *testing.T) {
 
 func TestListenerMap_Unregister(t *testing.T) {
 	listeners := NewSwitchboard()
+	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
 	listenerID := listeners.Register(specificUser, specificMessageType,
 		&MockListener{})
 	listeners.Unregister(listenerID)
@@ -317,11 +322,11 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 	listeners := NewSwitchboard()
 	l := &MockListener{}
 	hearChan := make(chan struct{}, 5)
-	listeners.Register(id.ZeroID, 3, l, hearChan)
+	listeners.Register(&id.ZeroUser, 3, l, hearChan)
 	// Should match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 0"),
-		Sender:      id.NewUserFromUint(8, t),
+		Sender:      id.NewIdFromUInt(8, id.User, t),
 		MessageType: 3,
 	})
 	tmr := time.NewTimer(time.Second)
@@ -339,7 +344,7 @@ func TestListenerMap_SpecificListener(t *testing.T) {
 	// Should not match
 	listeners.Speak(&Message{
 		Contents:    []byte("Test 2"),
-		Sender:      id.NewUserFromUint(8, t),
+		Sender:      id.NewIdFromUInt(8, id.User, t),
 		MessageType: 0,
 	})
 
