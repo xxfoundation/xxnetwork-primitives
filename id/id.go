@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"testing"
 )
 
@@ -53,6 +54,9 @@ func Unmarshal(data []byte) (*ID, error) {
 // Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
 // Marshal() and any changes made here will affect how Marshal() functions.
 func (i *ID) Bytes() []byte {
+	if i == nil {
+		jww.CRITICAL.Panicf("cannot get bytes of a nil ID")
+	}
 	newBytes := make([]byte, ArrIDLen)
 	copy(newBytes, i[:])
 
@@ -62,11 +66,17 @@ func (i *ID) Bytes() []byte {
 // Cmp determines whether two IDs are the same. Returns true if they are equal
 // and false otherwise.
 func (i *ID) Cmp(y *ID) bool {
+	if i == nil || y == nil {
+		jww.CRITICAL.Panicf("cannot compare nil IDs")
+	}
 	return *i == *y
 }
 
 // DeepCopy creates a new copy of an ID.
 func (i *ID) DeepCopy() *ID {
+	if i == nil {
+		jww.CRITICAL.Panicf("cannot deep copy a nil ID")
+	}
 	newID := new(ID)
 	copy(newID[:], i[:])
 
@@ -80,11 +90,17 @@ func (i *ID) String() string {
 
 // GetType returns the ID's type. It is the last byte of the array.
 func (i *ID) GetType() Type {
+	if i == nil {
+		jww.CRITICAL.Panicf("cannot get the type of a nil ID")
+	}
 	return Type(i[ArrIDLen-1])
 }
 
 // SetType changes the ID type by setting the last byte to the specified type.
 func (i *ID) SetType(idType Type) {
+	if i == nil {
+		jww.CRITICAL.Panicf("cannot set the type of a nil ID")
+	}
 	i[ArrIDLen-1] = byte(idType)
 }
 
