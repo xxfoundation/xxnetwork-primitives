@@ -1,8 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 Privategrity Corporation                                   /
-//                                                                             /
-// All rights reserved.                                                        /
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                                       //
+//                                                                                        //
+// Use of this source code is governed by a license that can be found in the LICENSE file //
+////////////////////////////////////////////////////////////////////////////////////////////
 
 // Contains the generic ID type, which is a byte array that represents an entity
 // ID. The first bytes in the array contain the actual ID data while the last
