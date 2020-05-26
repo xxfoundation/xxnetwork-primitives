@@ -12,6 +12,7 @@ package idf
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/elixxir/primitives/id"
 	"gitlab.com/elixxir/primitives/utils"
@@ -21,12 +22,13 @@ import (
 const saltLen = 32
 
 // IdFile structure matches the JSON structure used to save IDs and salts. The
-// ID type is also saved as a string to make the file easy to read; it is never
-// used or processed.
+// ID and ID type are saved as strings to make the file easy to read; they are
+// never used or processed.
 type IdFile struct {
-	Salt [saltLen]byte     `json:"salt"`
-	ID   [id.ArrIDLen]byte `json:"id"`
-	Type string            `json:"type"`
+	Salt     [saltLen]byte     `json:"salt"`
+	ID       [id.ArrIDLen]byte `json:"id"`
+	Type     string            `json:"type"`
+	IdString string            `json:"idString"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -112,6 +114,9 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 
 	// Set the IDF type
 	newIDF.Type = genID.GetType().String()
+
+	// Set the ID string
+	newIDF.IdString = genID.String()
 
 	return newIDF, nil
 }
