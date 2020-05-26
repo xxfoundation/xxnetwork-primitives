@@ -12,7 +12,6 @@ package idf
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/elixxir/primitives/id"
 	"gitlab.com/elixxir/primitives/utils"
@@ -25,10 +24,10 @@ const saltLen = 32
 // ID and ID type are saved as strings to make the file easy to read; they are
 // never used or processed.
 type IdFile struct {
-	Salt     [saltLen]byte     `json:"salt"`
-	ID       [id.ArrIDLen]byte `json:"id"`
-	Type     string            `json:"type"`
-	IdString string            `json:"idString"`
+	ID      string            `json:"id"`
+	Type    string            `json:"type"`
+	Salt    [saltLen]byte     `json:"salt"`
+	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -53,7 +52,7 @@ func UnloadIDF(filePath string) ([]byte, *id.ID, error) {
 	}
 
 	// Unmarshal ID bytes into ID
-	newID, err := id.Unmarshal(idf.ID[:])
+	newID, err := id.Unmarshal(idf.IdBytes[:])
 
 	return idf.Salt[:], newID, err
 }
@@ -110,13 +109,13 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 	copy(newIDF.Salt[:], salt)
 
 	// Copy marshaled ID byte slice into IDF ID array
-	copy(newIDF.ID[:], genID.Marshal())
+	copy(newIDF.IdBytes[:], genID.Marshal())
 
 	// Set the IDF type
 	newIDF.Type = genID.GetType().String()
 
 	// Set the ID string
-	newIDF.IdString = genID.String()
+	newIDF.ID = genID.String()
 
 	return newIDF, nil
 }

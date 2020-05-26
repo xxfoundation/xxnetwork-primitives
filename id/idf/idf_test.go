@@ -16,11 +16,11 @@ import (
 )
 
 // Random test values
-var randomIdfJson = "{\"salt\":[133,90,216,104,29,13,134,209,233,30,0,22," +
-	"121,57,203,102,148,210,196,34,172,210,8,160,7,41,57,72,127,105,153," +
-	"235],\"id\":[82,253,252,7,33,130,101,79,22,63,95,15,154,98,29,114,149," +
-	"102,199,77,16,3,124,77,123,187,4,7,209,226,198,73,2],\"type\":\"node\"," +
-	"\"idString\":\"Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC\"}"
+var randomIdfJson = "{\"id\":\"Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC\"," +
+	"\"type\":\"node\",\"salt\":[133,90,216,104,29,13,134,209,233,30,0,22," +
+	"121,57,203,102,148,210,196,34,172,210,8,160,7,41,57,72,127,105,153,235]," +
+	"\"idBytes\":[82,253,252,7,33,130,101,79,22,63,95,15,154,98,29,114,149," +
+	"102,199,77,16,3,124,77,123,187,4,7,209,226,198,73,2]}"
 var randomIDBytes = [id.ArrIDLen]byte{82, 253, 252, 7, 33, 130, 101, 79, 22,
 	63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123, 187,
 	4, 7, 209, 226, 198, 73, 2}
@@ -29,10 +29,10 @@ var randomSaltBytes = [saltLen]byte{133, 90, 216, 104, 29, 13, 134, 209, 233,
 	57, 72, 127, 105, 153, 235}
 var randomType = "node"
 var randomIDF = IdFile{
-	Salt:     randomSaltBytes,
-	ID:       randomIDBytes,
-	Type:     randomType,
-	IdString: "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
+	ID:      "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
+	Type:    randomType,
+	IdBytes: randomIDBytes,
+	Salt:    randomSaltBytes,
 }
 
 // Tests that newIdfFromJSON() creates the correct IdFile object form the given
@@ -194,7 +194,7 @@ func TestWriteIDF_BadPathError(t *testing.T) {
 	}
 }
 
-// Tests that UnloadIDF() returns the expected salt and ID.
+// Tests that UnloadIDF() returns the expected salt and IdBytes.
 func TestUnloadIDF(t *testing.T) {
 	// Test values
 	filePath := "test_ID.json"
@@ -232,9 +232,9 @@ func TestUnloadIDF(t *testing.T) {
 			"\n\texpected: %v\n\treceived: %v", expectedSalt, newSalt)
 	}
 
-	// Check if returned ID is correct
+	// Check if returned IdBytes is correct
 	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF() returned incorrect ID."+
+		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
 			"\n\texpected: %v\n\treceived: %v",
 			expectedID.Bytes(), newID.Bytes())
 	}
@@ -261,9 +261,9 @@ func TestUnloadIDF_FilePathError(t *testing.T) {
 			"\n\texpected: %v\n\treceived: %v", nil, newSalt)
 	}
 
-	// Check that the returned ID is nil
+	// Check that the returned IdBytes is nil
 	if newID != nil {
-		t.Errorf("UnloadIDF() returned non-nil ID on error."+
+		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
 			"\n\texpected: %v\n\treceived: %v", nil, newID)
 	}
 }
@@ -307,9 +307,9 @@ func TestUnloadIDF_InvalidJsonError(t *testing.T) {
 			"\n\texpected: %v\n\treceived: %v", nil, newSalt)
 	}
 
-	// Check that the returned ID is nil
+	// Check that the returned IdBytes is nil
 	if newID != nil {
-		t.Errorf("UnloadIDF() returned non-nil ID on error."+
+		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
 			"\n\texpected: %v\n\treceived: %v", nil, newID)
 	}
 }
@@ -426,9 +426,9 @@ func TestIDF_LoadUnload(t *testing.T) {
 			"\n\texpected: %v\n\treceived: %v", expectedSalt, newSalt)
 	}
 
-	// Check if returned ID is correct
+	// Check if returned IdBytes is correct
 	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF() returned incorrect ID."+
+		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
 			"\n\texpected: %v\n\treceived: %v",
 			expectedID.Bytes(), newID.Bytes())
 	}
