@@ -21,12 +21,13 @@ import (
 const saltLen = 32
 
 // IdFile structure matches the JSON structure used to save IDs and salts. The
-// ID type is also saved as a string to make the file easy to read; it is never
-// used or processed.
+// ID and ID type are saved as strings to make the file easy to read; they are
+// never used or processed.
 type IdFile struct {
-	Salt [saltLen]byte     `json:"salt"`
-	ID   [id.ArrIDLen]byte `json:"id"`
-	Type string            `json:"type"`
+	ID      string            `json:"id"`
+	Type    string            `json:"type"`
+	Salt    [saltLen]byte     `json:"salt"`
+	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -51,7 +52,7 @@ func UnloadIDF(filePath string) ([]byte, *id.ID, error) {
 	}
 
 	// Unmarshal ID bytes into ID
-	newID, err := id.Unmarshal(idf.ID[:])
+	newID, err := id.Unmarshal(idf.IdBytes[:])
 
 	return idf.Salt[:], newID, err
 }
@@ -108,10 +109,13 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 	copy(newIDF.Salt[:], salt)
 
 	// Copy marshaled ID byte slice into IDF ID array
-	copy(newIDF.ID[:], genID.Marshal())
+	copy(newIDF.IdBytes[:], genID.Marshal())
 
 	// Set the IDF type
 	newIDF.Type = genID.GetType().String()
+
+	// Set the ID string
+	newIDF.ID = genID.String()
 
 	return newIDF, nil
 }
