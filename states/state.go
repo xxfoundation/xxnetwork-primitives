@@ -37,6 +37,8 @@ func (s Round) String() string {
 		return "PRECOMPUTING"
 	case STANDBY:
 		return "STANDBY"
+	case QUEUED:
+		return "QUEUED"
 	case REALTIME:
 		return "REALTIME"
 	case COMPLETED:

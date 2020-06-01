@@ -11,8 +11,8 @@ import "testing"
 //tests the test stringer is correct
 func TestActivity_String(t *testing.T) {
 	//define some states to check
-	expectedStateStringer := []string{"PENDING", "PRECOMPUTING", "STANDBY",
-		"REALTIME", "COMPLETED", "FAILED", "UNKNOWN STATE: 6"}
+	expectedStateStringer := []string{"PENDING", "PRECOMPUTING", "STANDBY", "QUEUED",
+		"REALTIME", "COMPLETED", "FAILED", "UNKNOWN STATE: 7"}
 
 	//check if states give the correct return
 	for st := PENDING; st <= NUM_STATES; st++ {
