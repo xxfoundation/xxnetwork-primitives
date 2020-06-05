@@ -20,6 +20,7 @@ const (
 	PENDING = Round(iota)
 	PRECOMPUTING
 	STANDBY
+	QUEUED
 	REALTIME
 	COMPLETED
 	FAILED
@@ -36,6 +37,8 @@ func (s Round) String() string {
 		return "PRECOMPUTING"
 	case STANDBY:
 		return "STANDBY"
+	case QUEUED:
+		return "QUEUED"
 	case REALTIME:
 		return "REALTIME"
 	case COMPLETED:
