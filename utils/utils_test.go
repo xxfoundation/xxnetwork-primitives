@@ -539,10 +539,10 @@ func Test_exist_NoFileError(t *testing.T) {
 // Tests that SearchDefaultLocations() finds the specified file in the user's
 // home directory
 func TestSearchDefaultLocations(t *testing.T) {
-	testDir := fmt.Sprintf(".testDir-%d/", time.Now().Nanosecond())
+	testDir := fmt.Sprintf("testDir-%d/", time.Now().Nanosecond())
 	testFile := fmt.Sprintf("testFile-%d.txt", time.Now().Nanosecond())
 	testPath := testDir + testFile
-	expectedPath, err := ExpandPath("~/" + testPath)
+	expectedPath, err := ExpandPath("~/." + testPath)
 	if err != nil {
 		t.Fatalf("ExpandPath() failed to exapnd the path %s: %+v", testPath, err)
 	}
@@ -590,5 +590,27 @@ func TestSearchDefaultLocations_NotFoundError(t *testing.T) {
 	if foundPath != "" {
 		t.Errorf("SearchDefaultLocations() did not return an empty path on error."+
 			"\n\texpected: %s\n\treceived: %s", "", foundPath)
+	}
+}
+
+// Tests that getDefaultSearchDirs generates the correct list of default paths.
+func TestGetDefaultSearchDirs(t *testing.T) {
+	testDir := "xxnetwork"
+	expectedDir0, err := ExpandPath("~/." + testDir + "/")
+	expectedDir1, err := ExpandPath("/etc/" + testDir + "/")
+
+	testDirs, err := getDefaultSearchDirs(testDir)
+	if err != nil {
+		t.Errorf("getDefaultSearchDirs() produced an unxpected error: %+v", err)
+	}
+
+	if testDirs[0] != expectedDir0 {
+		t.Errorf("getDefaultSearchDirs() did not return the correct path for "+
+			"home.\n\texpected: %s\n\treceived: %s", expectedDir0, testDirs[0])
+	}
+
+	if testDirs[1] != expectedDir1 {
+		t.Errorf("getDefaultSearchDirs() did not return the correct path for "+
+			"/etc/.\n\texpected: %s\n\treceived: %s", expectedDir1, testDirs[1])
 	}
 }

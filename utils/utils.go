@@ -161,26 +161,21 @@ func exists(path string) (os.FileInfo, bool) {
 // SearchDefaultLocations searches for a file path in a default directory in
 // a number of hard-coded paths, including the user's home folder and /etc/. If
 // the file is found, its full path is returned. Otherwise, the path is blank
-// and an error is returned. Note that defaultDirectory MUST be a relative path.
-func SearchDefaultLocations(filePath string, defaultDirectory string) (string, error) {
+// and an error is returned.
+//
+// Note that defaultDirectory MUST be a relative path. By default, when checking
+// the home directory a "." is prepended the to defaultDirectory.
+func SearchDefaultLocations(defaultFileName string, defaultDirectory string) (string, error) {
 	// Get the user's home directory
-	home, err := homedir.Dir()
+	defaultDirs, err := getDefaultSearchDirs(defaultDirectory)
 	if err != nil {
 		return "", errors.Errorf("Could not get home directory: %+v", err)
 	}
 
-	var searchDirs []string
-
-	// Add the home directory to the search
-	searchDirs = append(searchDirs, home+"/"+defaultDirectory+"/")
-
-	// Add /etc/ to the search
-	searchDirs = append(searchDirs, "/etc/"+defaultDirectory+"/")
-
 	// Search the directories for the file
-	for i := range searchDirs {
+	for _, dir := range defaultDirs {
 		// Format the path and check for errors
-		path := searchDirs[i] + "/" + filePath
+		path := dir + "/" + defaultFileName
 		foundFilePath, err := ExpandPath(path)
 		if err != nil {
 			return "", errors.Errorf("Error expanding path %s: %v", path, err)
@@ -193,5 +188,25 @@ func SearchDefaultLocations(filePath string, defaultDirectory string) (string, e
 	}
 
 	return "", errors.Errorf("Could not find %s in any of the directories: %v",
-		filePath, searchDirs)
+		defaultFileName, defaultDirs)
+}
+
+// getDefaultSearchDirs retrieves the list of default directories to search for
+// configuration files in. Note that defaultDirectory MUST be a relative path.
+func getDefaultSearchDirs(defaultDirectory string) ([]string, error) {
+	var searchDirs []string
+
+	// Get the user's home directory
+	home, err := homedir.Dir()
+	if err != nil {
+		return nil, errors.Errorf("Could not get home directory: %+v", err)
+	}
+
+	// Add the home directory to the search
+	searchDirs = append(searchDirs, filepath.Clean(home+"/."+defaultDirectory+"/"))
+
+	// Add /etc/ to the search
+	searchDirs = append(searchDirs, filepath.Clean("/etc/"+defaultDirectory+"/"))
+
+	return searchDirs, nil
 }
