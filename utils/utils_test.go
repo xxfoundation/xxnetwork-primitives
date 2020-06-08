@@ -11,11 +11,13 @@ package utils
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/mitchellh/go-homedir"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 const sep = string(filepath.Separator)
@@ -29,7 +31,7 @@ func TestExpandPath_Happy(t *testing.T) {
 	newPath, err := ExpandPath(testPath)
 
 	if err != nil {
-		t.Errorf("ExpandPath() produced an unexpected error:\n\t%v", err)
+		t.Errorf("ExpandPath() produced an unexpected error: %v", err)
 	}
 
 	if newPath != expectPath {
@@ -44,7 +46,7 @@ func TestExpandPath_Default(t *testing.T) {
 	newPath, err := ExpandPath(path)
 
 	if err != nil {
-		t.Errorf("ExpandPath() produced an unexpected error:\n\t%v", err)
+		t.Errorf("ExpandPath() produced an unexpected error: %v", err)
 	}
 
 	if newPath != path {
@@ -59,7 +61,7 @@ func TestExpandPath_EmptyPath(t *testing.T) {
 	newPath, err := ExpandPath(path)
 
 	if err != nil {
-		t.Errorf("ExpandPath() produced an unexpected error:\n\t%v", err)
+		t.Errorf("ExpandPath() produced an unexpected error: %v", err)
 	}
 
 	if newPath != path {
@@ -84,47 +86,65 @@ func TestExpandPath_PathError(t *testing.T) {
 // the file name) by checking if the directory structure exists.
 func TestMkdirAll(t *testing.T) {
 	path := "temp/temp2/test.txt"
-	err := mkdirAll(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := mkdirAll(path, DirPerms)
 	if err != nil {
-		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
+		t.Errorf("mkdirAll() produced an unexpected error: %v", err)
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("mkdirAll() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll("temp")
 }
 
 // Tests that mkdirAll() creates the directories in the specified path (does not
 // include the file name) by checking if the directory structure exists.
 func TestMkdirAll_DirectoryPath(t *testing.T) {
 	path := "temp/temp2/"
-	err := mkdirAll(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := mkdirAll(path, DirPerms)
 	if err != nil {
-		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
+		t.Errorf("mkdirAll() produced an unexpected error: %v", err)
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("mkdirAll() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll("temp")
 }
 
 // Tests that mkdirAll() does nothing for an empty path.
 func TestMkdirAll_EmptyPath(t *testing.T) {
 	path := ""
-	err := mkdirAll(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := mkdirAll(path, DirPerms)
 	if err != nil {
-		t.Errorf("mkdirAll() produced an unexpected error:\n\t%v", err)
+		t.Errorf("mkdirAll() produced an unexpected error: %v", err)
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
@@ -136,26 +156,39 @@ func TestMkdirAll_EmptyPath(t *testing.T) {
 // Tests MakeDirs() by checking if the directory structure exists.
 func TestMakeDirs(t *testing.T) {
 	path := "temp/temp2/test.txt"
-	err := MakeDirs(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := MakeDirs(path, DirPerms)
 	if err != nil {
-		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+		t.Errorf("MakeDirs() produced an unexpected error: %v", err)
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
 		t.Errorf("MakeDirs() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll("temp")
 }
 
 // Tests that MakeDirs() produces an error on an invalid path.
 func TestMakeDirs_PathError(t *testing.T) {
 	path := "~a/test/test.txt"
-	err := MakeDirs(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := MakeDirs(path, DirPerms)
 	if err == nil {
 		t.Errorf("MakeDirs() did not produce error when expected:"+
 			"\n\texpected: %v\n\treceived: %v",
@@ -166,31 +199,48 @@ func TestMakeDirs_PathError(t *testing.T) {
 // Tests WriteFile() by checking if the directory structure and the
 // file exists.
 func TestWriteFile(t *testing.T) {
-	path := "temp/temp2"
-	os.MkdirAll(path, os.ModePerm)
-	path += "/test.txt"
+	dirPath := "temp/temp2"
+	path := dirPath + "/test.txt"
 	data := []byte("test data")
-	err := WriteFile(path, data, DirPerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll("temp/")
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", "temp/", err)
+		}
+	}()
+
+	err := os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("MkdirAll() produced an unexpected error: %v", err)
+	}
+
+	err = WriteFile(path, data, DirPerms, FilePerms)
+	if err != nil {
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	if _, err = os.Stat(path); os.IsExist(err) {
 		t.Errorf("WriteFile() did not correctly make the directories:"+
 			"\n\t%s", path)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll("temp")
 }
 
 // Tests that WriteFile() returns an error with a malformed path.
 func TestWriteFile_PathError(t *testing.T) {
 	path := "~a/temp/temp2/test.txt"
 	data := []byte("test data")
-	err := WriteFile(path, data, DirPerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, DirPerms, FilePerms)
 	if err == nil {
 		t.Errorf("WriteFile() did not produce error when expected:"+
 			"\n\texpected: %v\n\treceived: %v",
@@ -203,25 +253,29 @@ func TestWriteFile_PathError(t *testing.T) {
 func TestReadFile(t *testing.T) {
 	path := "test.txt"
 	data := []byte("Test string.")
-	err := WriteFile(path, data, FilePerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, FilePerms, FilePerms)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	testData, err := ReadFile(path)
-
 	if err != nil {
-		t.Errorf("ReadFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("ReadFile() produced an unexpected error: %v", err)
 	}
 
 	if !bytes.Equal(testData, data) {
 		t.Errorf("ReadFile() did not return the correct data from the file %s"+
 			"\n\texpected: %s\n\treceived: %s", path, data, testData)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that ReadFile() returns an error with a malformed path.
@@ -240,150 +294,194 @@ func TestReadFile_PathError(t *testing.T) {
 func TestExist(t *testing.T) {
 	path := "test.txt"
 	data := []byte("Test string.")
-	err := WriteFile(path, data, FilePerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, FilePerms, FilePerms)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	exists := Exists(path)
 	if !exists {
 		t.Errorf("Exists() did not find a file that should exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that TestExist() correctly finds a directory that exists.
 func TestExist_Dir(t *testing.T) {
 	path := "a/"
-	err := MakeDirs(path+"d", DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := MakeDirs(path+"d", DirPerms)
 	if err != nil {
-		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+		t.Errorf("MakeDirs() produced an unexpected error: %v", err)
 	}
 
 	exists := Exists(path)
 	if !exists {
 		t.Errorf("Exists() did not find a directory that should exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that TestExist() returns false when a file does not exist.
 func TestExist_NoFileError(t *testing.T) {
 	path := "test.txt"
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
 	exists := Exists(path)
 	if exists {
 		t.Errorf("Exists() found a file when one does not exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that FileExists() correctly finds a file that exists.
 func TestFileExists(t *testing.T) {
 	path := "test.txt"
 	data := []byte("Test string.")
-	err := WriteFile(path, data, FilePerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, FilePerms, FilePerms)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	exists := FileExists(path)
 	if !exists {
 		t.Errorf("FileExists() did not find a file that should exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that FileExists() false when the file is a directory.
 func TestFileExists_DirError(t *testing.T) {
 	path := "a/d"
-	err := MakeDirs(path, DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := MakeDirs(path, DirPerms)
 	if err != nil {
-		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+		t.Errorf("MakeDirs() produced an unexpected error: %v", err)
 	}
 
 	exists := FileExists(path)
 	if exists {
 		t.Errorf("FileExists() found a directory when it was looking for a file")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that FileExists() returns false when a file does not exist.
 func TestFileExists_NoFileError(t *testing.T) {
 	path := "test.txt"
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
 
 	exists := FileExists(path)
 	if exists {
 		t.Errorf("FileExists() found a file when one does not exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that DirExists() correctly finds a directory that exists.
 func TestDirExists(t *testing.T) {
 	path := "a/"
-	err := MakeDirs(path+"d", DirPerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := MakeDirs(path+"d", DirPerms)
 	if err != nil {
-		t.Errorf("MakeDirs() produced an unexpected error:\n\t%v", err)
+		t.Errorf("MakeDirs() produced an unexpected error: %v", err)
 	}
 
 	exists := DirExists(path)
 	if !exists {
 		t.Errorf("DirExists() did not find a directory that should exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that DirExists() false when the file is a directory.
 func TestDirExists_FileError(t *testing.T) {
 	path := "test.txt"
 	data := []byte("Test string.")
-	err := WriteFile(path, data, FilePerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, FilePerms, FilePerms)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	exists := DirExists(path)
 	if exists {
 		t.Errorf("DirExists() found a file when it was looking for a directory")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that DirExists() returns false when a file does not exist.
 func TestDirExists_NoDirError(t *testing.T) {
 	path := "a/b/c/"
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
 	exists := FileExists(path)
 	if exists {
 		t.Errorf("DirExists() found a directroy when one does not exist")
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that Test_exist() correctly finds a file that exists and returns the
@@ -391,10 +489,18 @@ func TestDirExists_NoDirError(t *testing.T) {
 func Test_exist(t *testing.T) {
 	path := "test.txt"
 	data := []byte("Test string.")
-	err := WriteFile(path, data, FilePerms, FilePerms)
 
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+		}
+	}()
+
+	err := WriteFile(path, data, FilePerms, FilePerms)
 	if err != nil {
-		t.Errorf("WriteFile() produced an unexpected error:\n\t%v", err)
+		t.Errorf("WriteFile() produced an unexpected error: %v", err)
 	}
 
 	info, exists := exists(path)
@@ -411,9 +517,6 @@ func Test_exist(t *testing.T) {
 		t.Errorf("exists() did not return the expected FileInfo."+
 			"\n\texpected: %v\n\treceived: %v", expectedInfo, info)
 	}
-
-	// Remove the file after testing
-	_ = os.RemoveAll(path)
 }
 
 // Tests that Test_exist() returns false when a file does not exist. and returns
@@ -430,5 +533,62 @@ func Test_exist_NoFileError(t *testing.T) {
 	if info != nil {
 		t.Errorf("exists() unexpectedly returned a non-nil FileInfo."+
 			"\n\texpected: %v\n\treceived: %v", nil, info)
+	}
+}
+
+// Tests that SearchDefaultLocations() finds the specified file in the user's
+// home directory
+func TestSearchDefaultLocations(t *testing.T) {
+	testDir := fmt.Sprintf(".testDir-%d/", time.Now().Nanosecond())
+	testFile := fmt.Sprintf("testFile-%d.txt", time.Now().Nanosecond())
+	testPath := testDir + testFile
+	expectedPath, err := ExpandPath("~/" + testPath)
+	if err != nil {
+		t.Fatalf("ExpandPath() failed to exapnd the path %s: %+v", testPath, err)
+	}
+	expectedDir, err := ExpandPath("~/" + testDir)
+	if err != nil {
+		t.Fatalf("ExpandPath() failed to exapnd the path %s: %+v", testPath, err)
+	}
+
+	// Delete the test file at the end
+	defer func() {
+		err := os.RemoveAll(expectedDir)
+		if err != nil {
+			t.Fatalf("Error deleting test file %#v:\n%v", expectedDir, err)
+		}
+	}()
+
+	err = WriteFile(expectedPath, []byte("TEST"), FilePerms, DirPerms)
+	if err != nil {
+		t.Fatalf("WriteFile() failed to create file %s: %+v", testPath, err)
+	}
+
+	foundPath, err := SearchDefaultLocations(testFile, testDir)
+	if err != nil {
+		t.Errorf("SearchDefaultLocations() produced an unexpected error: %+v",
+			err)
+	}
+
+	if foundPath != expectedPath {
+		t.Errorf("SearchDefaultLocations() did not find the correct file."+
+			"\n\texpected: %s\n\treceived: %s", expectedPath, foundPath)
+	}
+}
+
+// Tests that SearchDefaultLocations() return an error when the file does not
+// exist.
+func TestSearchDefaultLocations_NotFoundError(t *testing.T) {
+	testDir := fmt.Sprintf(".testDir-%d/", time.Now().Nanosecond())
+	testFile := fmt.Sprintf("testFile-%d.txt", time.Now().Nanosecond())
+
+	foundPath, err := SearchDefaultLocations(testFile, testDir)
+	if err == nil {
+		t.Errorf("SearchDefaultLocations() did not error when expected.")
+	}
+
+	if foundPath != "" {
+		t.Errorf("SearchDefaultLocations() did not return an empty path on error."+
+			"\n\texpected: %s\n\treceived: %s", "", foundPath)
 	}
 }
