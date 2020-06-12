@@ -205,6 +205,9 @@ func getDefaultSearchDirs(defaultDirectory string) ([]string, error) {
 	// Add the home directory to the search
 	searchDirs = append(searchDirs, filepath.Clean(home+"/."+defaultDirectory+"/"))
 
+	// Add /opt/ to the search
+	searchDirs = append(searchDirs, filepath.Clean("/opt/"+defaultDirectory+"/"))
+
 	// Add /etc/ to the search
 	searchDirs = append(searchDirs, filepath.Clean("/etc/"+defaultDirectory+"/"))
 

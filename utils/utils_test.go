@@ -597,7 +597,8 @@ func TestSearchDefaultLocations_NotFoundError(t *testing.T) {
 func TestGetDefaultSearchDirs(t *testing.T) {
 	testDir := "xxnetwork"
 	expectedDir0, err := ExpandPath("~/." + testDir + "/")
-	expectedDir1, err := ExpandPath("/etc/" + testDir + "/")
+	expectedDir1, err := ExpandPath("/opt/" + testDir + "/")
+	expectedDir2, err := ExpandPath("/etc/" + testDir + "/")
 
 	testDirs, err := getDefaultSearchDirs(testDir)
 	if err != nil {
@@ -612,5 +613,10 @@ func TestGetDefaultSearchDirs(t *testing.T) {
 	if testDirs[1] != expectedDir1 {
 		t.Errorf("getDefaultSearchDirs() did not return the correct path for "+
 			"/etc/.\n\texpected: %s\n\treceived: %s", expectedDir1, testDirs[1])
+	}
+
+	if testDirs[2] != expectedDir2 {
+		t.Errorf("getDefaultSearchDirs() did not return the correct path for "+
+			"/etc/.\n\texpected: %s\n\treceived: %s", expectedDir2, testDirs[2])
 	}
 }
