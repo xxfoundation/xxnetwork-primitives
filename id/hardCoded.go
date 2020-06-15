@@ -9,6 +9,9 @@ package id
 // Stored here are global hard coded IDs. The last byte should be set to the
 // correct ID type.
 
+// Note: When adding or removing a hard coded ID, make sure to update
+// GetHardCodedIDs() with the changes.
+
 // ID for permissioning (ID data is the string "Permissioning")
 var Permissioning = ID{80, 101, 114, 109, 105, 115, 115, 105, 111, 110, 105,
 	110, 103, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
@@ -32,3 +35,15 @@ var DummyUser = ID{100, 117, 109, 109, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 // ID for UDB (ID data is in the range of dummy IDs)
 var UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
+
+// GetHardCodedIDs returns an array of all the hard coded IDs.
+func GetHardCodedIDs() (ids []*ID) {
+	ids = append(ids, &Permissioning)
+	ids = append(ids, &NotificationBot)
+	ids = append(ids, &TempGateway)
+	ids = append(ids, &ZeroUser)
+	ids = append(ids, &DummyUser)
+	ids = append(ids, &UDB)
+
+	return
+}
