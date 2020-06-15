@@ -47,3 +47,16 @@ func GetHardCodedIDs() (ids []*ID) {
 
 	return
 }
+
+// CollidesWithHardCodedID searches if the given ID collides with any hard coded
+// IDs. If it collides, then the function returns true. Otherwise, it returns
+// false.
+func CollidesWithHardCodedID(testID *ID) bool {
+	for _, hardCodedID := range GetHardCodedIDs() {
+		if testID.Cmp(hardCodedID) {
+			return true
+		}
+	}
+
+	return false
+}
