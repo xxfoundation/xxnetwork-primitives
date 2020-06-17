@@ -8,17 +8,19 @@ package id
 
 import "github.com/pkg/errors"
 
-// NodeIdList.go handles operations that create a list of id.Node objects
+// idList.go handles operations that create a list of id.ID objects.
 
-// NewNodeListFromStrings creates a list of Node's from a list of strings
-//  On success it returns a new list
-//  On failure it returns a nil list and an error
-func NewNodeListFromStrings(topology []string) ([]*Node, error) {
-	list := make([]*Node, len(topology))
+// NewIDListFromBytes creates a list of IDs from a list of byte slices. On
+// success, it returns a new list. On failure, it returns a nil list and an
+// error.
+func NewIDListFromBytes(topology [][]byte) ([]*ID, error) {
+	list := make([]*ID, len(topology))
+
 	for index, id := range topology {
-		newId, err := NewNodeFromString(id)
+		newId, err := Unmarshal(id)
 		if err != nil {
-			return nil, errors.Errorf("Unable to convert id for index %d: %+v", index, err)
+			return nil, errors.Errorf("Unable to marshal ID for index %d: %+v",
+				index, err)
 		}
 
 		list[index] = newId
