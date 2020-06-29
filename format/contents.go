@@ -41,7 +41,7 @@ type Contents struct {
 func NewContents(newSerial []byte) *Contents {
 	if len(newSerial) != ContentsLen {
 		jww.ERROR.Panicf("new serial not the same size as Contents serial;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			ContentsLen, len(newSerial))
 	}
 
@@ -65,7 +65,7 @@ func (c *Contents) Get() []byte {
 func (c *Contents) Set(newSerial []byte) {
 	if len(newSerial) != ContentsLen {
 		jww.ERROR.Panicf("new serial not the same size as Contents serial;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			ContentsLen, len(newSerial))
 	}
 
@@ -90,7 +90,7 @@ func (c *Contents) GetRightAligned() []byte {
 func (c *Contents) SetRightAligned(newSerial []byte) int {
 	if len(newSerial) > ContentsLen-PadMinLen {
 		jww.ERROR.Panicf("right aligned serial larger then Contents serial;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			ContentsLen-PadMinLen, len(newSerial))
 	}
 

@@ -22,7 +22,7 @@ func TestActivity_String(t *testing.T) {
 	for st := NOT_STARTED; st <= NUM_STATES; st++ {
 		if st.String() != expectedActivityStringer[st] {
 			t.Errorf("Activity %d did not string correctly: expected: %s,"+
-				"recieved: %s", uint8(st), expectedActivityStringer[st], st.String())
+				"received: %s", uint8(st), expectedActivityStringer[st], st.String())
 		}
 	}
 }

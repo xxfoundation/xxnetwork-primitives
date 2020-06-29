@@ -93,7 +93,7 @@ func TestCreateBucketFromParams(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedBucket, testBucket) {
 		t.Errorf("CreateBucketFromParams() produced an incorrect bucket."+
-			"\n\texepcted: %+v\n\trecieved: %+v", expectedBucket, testBucket)
+			"\n\texepcted: %+v\n\treceived: %+v", expectedBucket, testBucket)
 	}
 }
 
