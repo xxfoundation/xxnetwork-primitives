@@ -84,10 +84,10 @@ func TestBuff_GetById(t *testing.T) {
 // Test the basic push function on RingBuff
 func TestBuff_Push(t *testing.T) {
 	rb := setup()
-	oldFirst := rb.old
+	oldFirst := rb.oldest
 	v := 6
 	rb.Push(&v)
-	if rb.old != oldFirst+1 {
+	if rb.oldest != oldFirst+1 {
 		t.Error("Didn't increment old properly")
 	}
 	val := rb.Get().(*int)

@@ -21,18 +21,18 @@ import (
 
 // A circular buffer with the ability to use IDs as position and locks built in
 type Buff struct {
-	buff            []interface{}
-	count, old, new int
+	buff                  []interface{}
+	count, oldest, newest int
 	sync.RWMutex
 }
 
 // Initialize a new ring buffer with length n
 func NewBuff(n int) *Buff {
 	rb := &Buff{
-		buff:  make([]interface{}, n),
-		count: n,
-		old:   0,
-		new:   -1,
+		buff:   make([]interface{}, n),
+		count:  n,
+		oldest: 0,
+		newest: -1,
 	}
 	return rb
 }
@@ -42,7 +42,7 @@ func (rb *Buff) GetNewestId() int {
 	rb.RLock()
 	defer rb.RUnlock()
 
-	return rb.new
+	return rb.newest
 }
 
 // Get the IDof the oldest item in the buffer
@@ -50,7 +50,7 @@ func (rb *Buff) GetOldestId() int {
 	rb.RLock()
 	defer rb.RUnlock()
 
-	return rb.old
+	return rb.oldest
 }
 
 // Push a round to the buffer
@@ -67,12 +67,12 @@ func (rb *Buff) UpsertById(newId int, val interface{}) error {
 	defer rb.Unlock()
 
 	// Make sure the id isn't too old
-	if rb.old > newId {
+	if rb.oldest > newId {
 		return errors.Errorf("Did not upsert value %+v; id is older than first tracked", val)
 	}
 
 	// Get most recent ID so we can figure out where to put this
-	firstEmptyID := rb.new + 1
+	firstEmptyID := rb.newest + 1
 
 	//fill the buffer up until the newID
 	for i := firstEmptyID; i <= newId; i++ {
@@ -91,7 +91,7 @@ func (rb *Buff) Get() interface{} {
 	rb.RLock()
 	defer rb.RUnlock()
 
-	mostRecentIndex := rb.new % rb.count
+	mostRecentIndex := rb.newest % rb.count
 	return rb.buff[mostRecentIndex]
 }
 
@@ -101,13 +101,13 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 	defer rb.RUnlock()
 
 	// Check it's not before our first known id
-	if id < rb.old {
-		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, rb.new)
+	if id < rb.oldest {
+		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, rb.newest)
 	}
 
 	// Check it's not after our last known id
-	if id > rb.new {
-		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, rb.old)
+	if id > rb.newest {
+		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, rb.oldest)
 	}
 
 	return rb.buff[id%rb.count], nil
@@ -130,18 +130,18 @@ func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
 	rb.RLock()
 	defer rb.RUnlock()
 
-	if id < rb.old {
-		id = rb.old - 1
+	if id < rb.oldest {
+		id = rb.oldest - 1
 	}
 
-	if id > rb.new {
+	if id > rb.newest {
 		return nil, errors.Errorf("requested ID %d is higher than the"+
-			" newest id %d", id, rb.new)
+			" newest id %d", id, rb.newest)
 	}
 
-	list := make([]interface{}, rb.new-id)
+	list := make([]interface{}, rb.newest-id)
 
-	for i := id + 1; i <= rb.new; i++ {
+	for i := id + 1; i <= rb.newest; i++ {
 		//error is suppressed because it only occurs when out of bounds,
 		//but bounds are already assured in this function
 		list[i-id-1], _ = rb.GetById(i)
@@ -161,14 +161,14 @@ func (rb *Buff) Len() int {
 // next is a helper function for ringbuff
 // it handles incrementing the old & new markers
 func (rb *Buff) next() {
-	rb.new++
-	if rb.new >= rb.count {
-		rb.old++
+	rb.newest++
+	if rb.newest >= rb.count {
+		rb.oldest++
 	}
 }
 
 // Push a round to the buffer
 func (rb *Buff) push(val interface{}) {
 	rb.next()
-	rb.buff[rb.new%rb.count] = val
+	rb.buff[rb.newest%rb.count] = val
 }
