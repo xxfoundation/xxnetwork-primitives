@@ -23,7 +23,7 @@ import (
 type Buff struct {
 	buff                  []interface{}
 	count, oldest, newest int
-	sync.RWMutex
+	mux                   sync.RWMutex
 }
 
 // Initialize a new ring buffer with length n
@@ -39,32 +39,32 @@ func NewBuff(n int) *Buff {
 
 // Get the ID of the newest item in the buffer
 func (rb *Buff) GetNewestId() int {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	return rb.newest
 }
 
 // Get the IDof the oldest item in the buffer
 func (rb *Buff) GetOldestId() int {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	return rb.oldest
 }
 
 // Push a round to the buffer
 func (rb *Buff) Push(val interface{}) {
-	rb.Lock()
-	defer rb.Unlock()
+	rb.mux.Lock()
+	defer rb.mux.Unlock()
 
 	rb.push(val)
 }
 
 // push a round to a relative index in the buffer
 func (rb *Buff) UpsertById(newId int, val interface{}) error {
-	rb.Lock()
-	defer rb.Unlock()
+	rb.mux.Lock()
+	defer rb.mux.Unlock()
 
 	// Make sure the id isn't too old
 	if rb.oldest > newId {
@@ -88,8 +88,8 @@ func (rb *Buff) UpsertById(newId int, val interface{}) error {
 
 // Retreive the most recent entry
 func (rb *Buff) Get() interface{} {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	mostRecentIndex := rb.newest % rb.count
 	return rb.buff[mostRecentIndex]
@@ -97,8 +97,8 @@ func (rb *Buff) Get() interface{} {
 
 // Retrieve an entry with the given ID
 func (rb *Buff) GetById(id int) (interface{}, error) {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	// Check it's not before our first known id
 	if id < rb.oldest {
@@ -115,8 +115,8 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 
 // Retrieve an entry at the given index
 func (rb *Buff) GetByIndex(i int) (interface{}, error) {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	if i < 0 || i >= rb.count {
 		return nil, errors.Errorf("Could not get item at index %d: index out of bounds", i)
@@ -127,8 +127,8 @@ func (rb *Buff) GetByIndex(i int) (interface{}, error) {
 
 //retrieve all entries newer than the passed one
 func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	if id < rb.oldest {
 		id = rb.oldest - 1
@@ -152,8 +152,8 @@ func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
 
 // Return length of the structure
 func (rb *Buff) Len() int {
-	rb.RLock()
-	defer rb.RUnlock()
+	rb.mux.RLock()
+	defer rb.mux.RUnlock()
 
 	return rb.count
 }
