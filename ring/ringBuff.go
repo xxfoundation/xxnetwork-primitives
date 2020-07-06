@@ -100,17 +100,7 @@ func (rb *Buff) GetById(id int) (interface{}, error) {
 	rb.mux.RLock()
 	defer rb.mux.RUnlock()
 
-	// Check it's not before our first known id
-	if id < rb.oldest {
-		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, rb.newest)
-	}
-
-	// Check it's not after our last known id
-	if id > rb.newest {
-		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, rb.oldest)
-	}
-
-	return rb.buff[id%rb.count], nil
+	return rb.getById(id)
 }
 
 // Retrieve an entry at the given index
@@ -144,7 +134,7 @@ func (rb *Buff) GetNewerById(id int) ([]interface{}, error) {
 	for i := id + 1; i <= rb.newest; i++ {
 		//error is suppressed because it only occurs when out of bounds,
 		//but bounds are already assured in this function
-		list[i-id-1], _ = rb.GetById(i)
+		list[i-id-1], _ = rb.getById(i)
 	}
 
 	return list, nil
@@ -171,4 +161,21 @@ func (rb *Buff) next() {
 func (rb *Buff) push(val interface{}) {
 	rb.next()
 	rb.buff[rb.newest%rb.count] = val
+}
+
+// Retrieve an entry with the given ID for internal use without getting the read
+// lock
+func (rb *Buff) getById(id int) (interface{}, error) {
+
+	// Check it's not before our first known id
+	if id < rb.oldest {
+		return nil, errors.Errorf("requested ID %d is lower than oldest id %d", id, rb.newest)
+	}
+
+	// Check it's not after our last known id
+	if id > rb.newest {
+		return nil, errors.Errorf("requested id %d is higher than most recent id %d", id, rb.oldest)
+	}
+
+	return rb.buff[id%rb.count], nil
 }
