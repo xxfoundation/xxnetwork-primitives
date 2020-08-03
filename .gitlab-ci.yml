@@ -1,0 +1,69 @@
+# From: https://about.gitlab.com/2017/09/21/how-to-create-ci-cd-pipeline-with-autodeploy-to-kubernetes-using-gitlab-and-helm/
+
+cache:
+  untracked: true
+  key: "$CI_BUILD_REF_NAME"
+  paths:
+    - vendor/
+
+variables:
+  REPO_DIR: gitlab.com/elixxir
+  REPO_NAME: primitives
+  DOCKER_IMAGE: elixxirlabs/cuda-go:latest
+  MIN_CODE_COVERAGE: "89.0"
+
+before_script:
+  - go version || echo "Go executable not found."
+  - echo $CI_BUILD_REF
+  - echo $CI_PROJECT_DIR
+  - echo $PWD
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - ssh-keyscan -t rsa gitlab.com > ~/.ssh/known_hosts
+  - git config --global url."git@gitlab.com:".insteadOf "https://gitlab.com/"
+  - export PATH=$HOME/go/bin:$PATH
+  - export GOPRIVATE=gitlab.com/elixxir/*
+
+stages:
+  - build
+  - trigger_integration
+
+build:
+  stage: build
+  image: $DOCKER_IMAGE
+  script:
+    - git clean -ffdx
+    - go mod vendor -v
+    - go build ./...
+    - go mod tidy
+
+    - mkdir -p testdata
+    - go-acc --covermode atomic --output testdata/coverage.out ./... -- -v
+    - cat testdata/coverage.out | grep -v pb[.]go > testdata/coverage-real.out
+    - go tool cover -func=testdata/coverage-real.out
+    - go tool cover -html=testdata/coverage-real.out -o testdata/coverage.html
+
+    # Test Coverage Check
+    - go tool cover -func=testdata/coverage-real.out | grep "total:" | awk '{print $3}' | sed 's/\%//g' > testdata/coverage-percentage.txt
+    - export CODE_CHECK=$(echo "$(cat testdata/coverage-percentage.txt) >= $MIN_CODE_COVERAGE" | bc -l)
+    - (if [ "$CODE_CHECK" == "1" ]; then echo "Minimum coverage of $MIN_CODE_COVERAGE succeeded"; else echo "Minimum coverage of $MIN_CODE_COVERAGE failed"; exit 1; fi);
+    - mkdir -p release
+    - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-w -s' ./...
+    - cd release
+  artifacts:
+    paths:
+      - vendor/
+      - testdata/
+      - release/
+
+trigger:
+  stage: trigger_integration
+  script:
+    # client
+    - "curl -X POST -F token=$CLIENT_TRIGGER_KEY -F ref=master https://gitlab.com/api/v4/projects/5454785/trigger/pipeline"
+    # server
+    - "curl -X POST -F token=$SERVER_TRIGGER_KEY -F ref=master https://gitlab.com/api/v4/projects/5014439/trigger/pipeline"
+  only:
+    - master
