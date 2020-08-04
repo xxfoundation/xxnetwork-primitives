@@ -8,7 +8,7 @@ package idf
 
 import (
 	"bytes"
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/elixxir/primitives/utils"
 	"os"
 	"reflect"
