@@ -9,7 +9,7 @@ package format
 import (
 	"bytes"
 	"encoding/base64"
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"reflect"
 	"testing"

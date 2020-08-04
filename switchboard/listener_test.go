@@ -8,7 +8,7 @@ package switchboard
 
 import (
 	"bytes"
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 	"sync"
 	"testing"
 	"time"
