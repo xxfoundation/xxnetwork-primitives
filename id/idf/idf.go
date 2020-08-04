@@ -13,7 +13,7 @@ package idf
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/elixxir/primitives/utils"
 )
 
