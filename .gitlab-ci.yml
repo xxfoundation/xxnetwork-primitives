@@ -10,7 +10,7 @@ variables:
   REPO_DIR: gitlab.com/elixxir
   REPO_NAME: primitives
   DOCKER_IMAGE: elixxirlabs/cuda-go:latest
-  MIN_CODE_COVERAGE: "89.0"
+  MIN_CODE_COVERAGE: "88.0"
 
 before_script:
   - go version || echo "Go executable not found."
