@@ -5,5 +5,3 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0
 	gitlab.com/elixxir/primitives v0.0.0-20200731184040-494269b53b4d
 )
-
-go 1.13
