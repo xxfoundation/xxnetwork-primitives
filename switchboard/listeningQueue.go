@@ -7,7 +7,7 @@
 package switchboard
 
 import (
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 )
 
 type ListeningQueue chan Item

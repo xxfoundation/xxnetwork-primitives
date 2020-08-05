@@ -8,7 +8,7 @@ package switchboard
 
 import (
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/elixxir/primitives/id"
+	"gitlab.com/xx_network/primitives/id"
 	"reflect"
 	"strconv"
 	"sync"
