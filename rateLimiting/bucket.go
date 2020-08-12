@@ -4,6 +4,8 @@
 // Use of this source code is governed by a license that can be found in the LICENSE file //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+// An implementation of the leaky bucket algorithm:
+// https://en.wikipedia.org/wiki/Leaky_bucket
 package rateLimiting
 
 import (
@@ -11,79 +13,121 @@ import (
 	"time"
 )
 
-// This is an implementation of the leaky bucket algorithm:
-// https://en.wikipedia.org/wiki/Leaky_bucket
-
-// Bucket structure tracks the capacity and rate at which the remaining capacity
-// decreases.
+// Bucket structure tracks the capacity and rate at which the remaining buckets
+// decrease.
 type Bucket struct {
-	capacity   uint      // Maximum number of items the bucket can hold
-	remaining  uint      // Current number of items in the bucket
-	leakRate   float64   // Rate that the bucket leaks at [items/nanosecond]
-	lastUpdate time.Time // Time that the bucket was most recently updated
+	capacity   uint32  // Maximum number of tokens the bucket can hold
+	remaining  uint32  // Current number of tokens in the bucket
+	leakRate   float64 // Rate that the bucket leaks tokens at [tokens/ns]
+	lastUpdate int64   // Time that the bucket was most recently updated
+	locked     bool    // When true, prevents bucket from being deleted when stale
+	whitelist  bool    // When true, adding tokens always returns true
 	sync.Mutex
+
+	// Updates the remaining amount in database bucket. Leave value as nil if
+	// the database is not being used.
+	addToDb func(uint32, int64)
 }
 
-// Create generates a empty bucket with the specified capacity and leak rate.
-func Create(capacity uint, leakRate float64) *Bucket {
+// CreateBucket generates a new empty bucket.
+func CreateBucket(capacity, leaked uint32, leakDuration time.Duration,
+	addToDb func(uint32, int64)) *Bucket {
+
+	// Calculate the leak rate [tokens/nanosecond]
+	leakRate := float64(leaked) / float64(leakDuration.Nanoseconds())
+
+	return CreateBucketFromLeakRatio(capacity, leakRate, addToDb)
+}
+
+// CreateBucketFromLeakRatio generates a new empty bucket.
+func CreateBucketFromLeakRatio(capacity uint32, leakRate float64,
+	addToDb func(uint32, int64)) *Bucket {
 	return &Bucket{
 		capacity:   capacity,
-		remaining:  0, // Start with an empty bucket
+		remaining:  0,
 		leakRate:   leakRate,
-		lastUpdate: time.Now(),
+		lastUpdate: time.Now().UnixNano(),
+		locked:     false,
+		whitelist:  false,
+		addToDb:    addToDb,
 	}
 }
 
-// Capacity returns the max number of items allowed in the bucket.
-func (b *Bucket) Capacity() uint {
+// CreateBucketFromLeakRatio generates a new empty bucket.
+func CreateBucketFromParams(params *BucketParams,
+	addToDb func(uint32, int64)) *Bucket {
+	return &Bucket{
+		capacity:   params.Capacity,
+		remaining:  params.Remaining,
+		leakRate:   params.LeakRate,
+		lastUpdate: params.LastUpdate,
+		locked:     params.Locked,
+		whitelist:  params.Whitelist,
+		addToDb:    addToDb,
+	}
+}
+
+// Capacity returns the max number of tokens allowed in the bucket.
+func (b *Bucket) Capacity() uint32 {
 	return b.capacity
 }
 
-// Remaining returns the remaining space in the bucket.
-func (b *Bucket) Remaining() uint {
+// Remaining returns the number of tokens in the bucket.
+func (b *Bucket) Remaining() uint32 {
 	return b.remaining
 }
 
-// Add adds the specified number of items to the bucket and updates the number
-// of items remaining. Returns true if the items were added; otherwise, returns
-// false if there was insufficient capacity to do so.
-func (b *Bucket) Add(items uint) bool {
+// IsLocked returns true if the bucket is locked.
+func (b *Bucket) IsLocked() bool {
+	return b.locked
+}
+
+// IsWhitelisted returns true if the bucket is on the whitelist.
+func (b *Bucket) IsWhitelisted() bool {
+	return b.whitelist
+}
+
+// Add adds the specified number of tokens to the bucket. Returns true if the
+// tokens were added; otherwise, returns false if there was insufficient
+// capacity to do so.
+func (b *Bucket) Add(tokens uint32) bool {
 	b.Lock()
 	defer b.Unlock()
 
-	// Update the number of remaining items in the bucket
+	// Update the number of remaining tokens in the bucket prior to updating
 	b.update()
 
-	// Add the items to the bucket
-	b.remaining += items
+	// Add the tokens to the bucket
+	b.remaining += tokens
 
-	// If the items went over capacity, return false
-	if b.remaining > b.capacity {
-		return false
-	} else {
-		return true
+	// If using the database, then update the remaining in the database bucket
+	if b.addToDb != nil {
+		b.addToDb(b.remaining, b.lastUpdate)
 	}
+
+	// If the tokens went over capacity, then return false, unless the bucket is
+	// whitelisted.
+	return b.whitelist || b.remaining <= b.capacity
 }
 
-// update calculates and updates the number of remaining items in the bucket
-// since the last update. This function is not thread-safe. It must only be used
-// in a thread-safe manner.
+// update updates the number of remaining tokens in the bucket. It subtracts the
+// number of leaked tokens since lastUpdate from the remaining number of tokens.
+// This function is not thread safe. It must be called with a locked mutex.
 func (b *Bucket) update() {
+	updateTime := time.Now().UnixNano()
+
 	// Calculate the time elapsed since the last update, in nanoseconds
-	elapsedTime := time.Since(b.lastUpdate).Nanoseconds()
+	elapsedTime := updateTime - b.lastUpdate
 
-	// Calculate the number of items that have leaked over the elapsed time
-	itemsLeaked := uint(float64(elapsedTime) * b.leakRate)
+	// Calculate the number of tokens that have leaked over the elapsed time
+	tokensLeaked := uint32(float64(elapsedTime) * b.leakRate)
 
-	// Update the number of remaining items in the bucket by subtract the number
-	// of leaked items from the remaining items ensuring that remaining is no
-	// less than zero
-	if itemsLeaked > b.remaining {
+	// Update the number of remaining tokens in the bucket
+	if tokensLeaked > b.remaining {
 		b.remaining = 0
 	} else {
-		b.remaining -= itemsLeaked
+		b.remaining -= tokensLeaked
 	}
-
 	// Update timestamp
-	b.lastUpdate = time.Now()
+	b.lastUpdate = updateTime
 }
