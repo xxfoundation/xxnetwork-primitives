@@ -7,353 +7,157 @@
 package switchboard
 
 import (
-	"bytes"
-	"gitlab.com/elixxir/primitives/id"
-	"sync"
+	"gitlab.com/xx_network/primitives/id"
+	"reflect"
 	"testing"
 	"time"
 )
 
-type MockListener struct {
-	NumHeard        int
-	IsFallback      bool
-	LastMessage     []byte
-	LastMessageType int32
-	mux             sync.Mutex
-}
+//verify func listener adheres to the listener interface
+var _ Listener = &funcListener{}
 
-type Message struct {
-	Contents    []byte
-	Sender      *id.ID
-	MessageType int32
-}
+//verify chan listener adheres to the listener interface
+var _ Listener = &chanListener{}
 
-func (m *Message) GetSender() *id.ID {
-	return m.Sender
-}
-
-func (m *Message) GetMessageType() int32 {
-	return m.MessageType
-}
-
-func (ml *MockListener) Hear(item Item, isHeardElsewhere bool, i ...interface{}) {
-	ml.mux.Lock()
-	defer ml.mux.Unlock()
-
-	msg := item.(*Message)
-
-	if !isHeardElsewhere || !ml.IsFallback {
-		ml.NumHeard++
-		ml.LastMessage = msg.Contents
-		ml.LastMessageType = msg.GetMessageType()
+//test listenerID returns the userID
+func TestListenerID_GetUserID(t *testing.T) {
+	lid := ListenerID{
+		userID:      id.NewIdFromUInt(42, id.User, t),
+		messageType: 42,
+		listener:    nil,
 	}
 
-	if len(i) > 0 {
-		hearChan := i[0].(chan struct{})
-		hearChan <- struct{}{}
+	if !lid.GetUserID().Cmp(lid.userID) {
+		t.Errorf("Returned userID does not match")
 	}
 }
 
-var specificUser *id.ID
-var specificMessageType int32 = 5
-var delay = 10 * time.Millisecond
+//test listenerID returns the messageType
+func TestListenerID_GetMessageType(t *testing.T) {
+	lid := ListenerID{
+		userID:      id.NewIdFromUInt(42, id.User, t),
+		messageType: 42,
+		listener:    nil,
+	}
 
-func OneListenerSetup(t *testing.T) (*Switchboard, *MockListener) {
-	var listeners *Switchboard
-	listeners = NewSwitchboard()
-	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
-	// add one listener to the map
-	fullyMatchedListener := &MockListener{}
-	listeners.Register(specificUser, specificMessageType,
-		fullyMatchedListener)
-	return listeners, fullyMatchedListener
-}
-
-func TestListenerMap_SpeakOne(t *testing.T) {
-	// set up
-	listeners, fullyMatchedListener := OneListenerSetup(t)
-
-	// speak
-	listeners.Speak(&Message{
-		Contents:    []byte("hmmmm"),
-		Sender:      specificUser,
-		MessageType: specificMessageType,
-	})
-
-	// determine whether the listener heard the message
-	time.Sleep(delay)
-	expected := 1
-	if fullyMatchedListener.NumHeard != 1 {
-		t.Errorf("The listener heard %v messages instead of %v",
-			fullyMatchedListener.NumHeard, expected)
+	if lid.GetMessageType() != lid.messageType {
+		t.Errorf("Returned message type does not match")
 	}
 }
 
-func TestListenerMap_SpeakManyToOneListener(t *testing.T) {
-	// set up
-	listeners, fullyMatchedListener := OneListenerSetup(t)
+//test listenerID returns the name
+func TestListenerID_GetName(t *testing.T) {
+	name := "test"
 
-	// speak
-	for i := 0; i < 20; i++ {
-		go listeners.Speak(&Message{
-			Contents:    make([]byte, 0),
-			Sender:      specificUser,
-			MessageType: specificMessageType,
-		})
+	lid := ListenerID{
+		userID:      id.NewIdFromUInt(42, id.User, t),
+		messageType: 42,
+		listener:    newFuncListener(nil, name),
 	}
 
-	// determine whether the listener heard the message
-	time.Sleep(delay)
-	expected := 20
-	if fullyMatchedListener.NumHeard != expected {
-		t.Errorf("The listener heard %v messages instead of %v",
-			fullyMatchedListener.NumHeard, expected)
+	if lid.GetName() != name {
+		t.Errorf("Returned name type does not match")
 	}
 }
 
-func TestListenerMap_SpeakToAnother(t *testing.T) {
-	// set up
-	listeners, fullyMatchedListener := OneListenerSetup(t)
-	nonzeroUser := id.NewIdFromUInts([4]uint64{0, 0, 0, 786}, id.User, t)
+//tests new function listener creates the funcListener properly
+func TestNewFuncListener(t *testing.T) {
+	f := func(item Item) {}
+	name := "test"
+	listener := newFuncListener(f, name)
 
-	// speak
-	listeners.Speak(&Message{
-		MessageType: specificMessageType,
-		Contents:    make([]byte, 0),
-		Sender:      nonzeroUser,
-	})
+	if listener.listener == nil {
+		t.Errorf("function is wrong")
+	}
 
-	// determine whether the listener heard the message
-	time.Sleep(delay)
-	expected := 0
-	if fullyMatchedListener.NumHeard != expected {
-		t.Errorf("The listener heard %v messages instead of %v",
-			fullyMatchedListener.NumHeard, expected)
+	if listener.name != name {
+		t.Errorf("name is wrong")
 	}
 }
 
-func TestListenerMap_SpeakDifferentType(t *testing.T) {
-	// set up
-	listeners, fullyMatchedListener := OneListenerSetup(t)
-
-	// speak
-	listeners.Speak(&Message{
-		MessageType: specificMessageType + 1,
-		Contents:    make([]byte, 0),
-		Sender:      specificUser,
-	})
-
-	// determine whether the listener heard the message
-	time.Sleep(delay)
-	expected := 0
-	if fullyMatchedListener.NumHeard != expected {
-		t.Errorf("The listener heard %v messages instead of %v",
-			fullyMatchedListener.NumHeard, expected)
-	}
-}
-
-var zeroUser = id.ZeroUser
-var zeroMessageType int32
-
-func WildcardListenerSetup() (*Switchboard, *MockListener) {
-	var listeners *Switchboard
-	listeners = NewSwitchboard()
-	// add one listener to the map
-	wildcardListener := &MockListener{}
-	listeners.Register(&zeroUser, zeroMessageType, wildcardListener)
-	return listeners, wildcardListener
-}
-
-func TestListenerMap_SpeakWildcard(t *testing.T) {
-	// set up
-	listeners, wildcardListener := WildcardListenerSetup()
-	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
-
-	// speak
-	listeners.Speak(&Message{
-		Contents:    make([]byte, 0),
-		Sender:      specificUser,
-		MessageType: specificMessageType + 1,
-	})
-
-	// determine whether the listener heard the message
-	time.Sleep(delay)
-	expected := 1
-	if wildcardListener.NumHeard != expected {
-		t.Errorf("The listener heard %v messages instead of %v",
-			wildcardListener.NumHeard, expected)
-	}
-}
-
-func TestListenerMap_SpeakManyToMany(t *testing.T) {
-	listeners := NewSwitchboard()
-	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
-
-	individualListeners := make([]*MockListener, 0)
-
-	// one user, many types
-	for messageType := int32(1); messageType <= int32(20); messageType++ {
-		newListener := MockListener{}
-		listeners.Register(specificUser, messageType,
-			&newListener)
-		individualListeners = append(individualListeners, &newListener)
-	}
-	// wildcard listener for the user
-	userListener := &MockListener{}
-	listeners.Register(specificUser, zeroMessageType, userListener)
-	// wildcard listener for all messages
-	wildcardListener := &MockListener{}
-	listeners.Register(&zeroUser, zeroMessageType, wildcardListener)
-
-	// send to all types for our user
-	for messageType := int32(1); messageType <= int32(20); messageType++ {
-		go listeners.Speak(&Message{
-			MessageType: messageType,
-			Contents:    make([]byte, 0),
-			Sender:      specificUser,
-		})
-	}
-	// send to all types for a different user
-	otherUser := id.NewIdFromUInt(98, id.User, t)
-	for messageType := int32(1); messageType <= int32(20); messageType++ {
-		go listeners.Speak(&Message{
-			MessageType: messageType,
-			Contents:    make([]byte, 0),
-			Sender:      otherUser,
-		})
+//tests FuncListener Hear works
+func TestFuncListener_Hear(t *testing.T) {
+	m := &Message{
+		Contents:    []byte{0, 1, 2, 3},
+		Sender:      id.NewIdFromUInt(42, id.User, t),
+		MessageType: 69,
 	}
 
-	time.Sleep(delay)
+	heard := make(chan Item, 1)
 
-	expectedIndividuals := 1
-	expectedUserWildcard := 20
-	expectedAllWildcard := 40
-	for i := 0; i < len(individualListeners); i++ {
-		if individualListeners[i].NumHeard != expectedIndividuals {
-			t.Errorf("Individual listener got %v messages, "+
-				"expected %v messages", individualListeners[i].NumHeard, expectedIndividuals)
-		}
+	f := func(item Item) {
+		heard <- item
 	}
-	if userListener.NumHeard != expectedUserWildcard {
-		t.Errorf("User wildcard got %v messages, expected %v message",
-			userListener.NumHeard, expectedUserWildcard)
-	}
-	if wildcardListener.NumHeard != expectedAllWildcard {
-		t.Errorf("User wildcard got %v messages, expected %v message",
-			wildcardListener.NumHeard, expectedAllWildcard)
-	}
-}
 
-func TestListenerMap_SpeakFallback(t *testing.T) {
-	var listeners *Switchboard
-	listeners = NewSwitchboard()
-	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
-	// add one normal and one fallback listener to the map
-	fallbackListener := &MockListener{}
-	fallbackListener.IsFallback = true
-	listeners.Register(&zeroUser, zeroMessageType, fallbackListener)
-	specificListener := &MockListener{}
-	listeners.Register(specificUser, specificMessageType,
-		specificListener)
+	listener := newFuncListener(f, "test")
 
-	// send exactly one message to each of them
-	listeners.Speak(&Message{
-		MessageType: specificMessageType,
-		Contents:    make([]byte, 0),
-		Sender:      specificUser,
-	})
-	listeners.Speak(&Message{
-		MessageType: specificMessageType + 1,
-		Contents:    make([]byte, 0),
-		Sender:      specificUser,
-	})
-
-	time.Sleep(delay)
-
-	expected := 1
-
-	if specificListener.NumHeard != expected {
-		t.Errorf("Specific listener: Expected %v, got %v messages", expected,
-			specificListener.NumHeard)
-	}
-	if fallbackListener.NumHeard != expected {
-		t.Errorf("Fallback listener: Expected %v, got %v messages", expected,
-			fallbackListener.NumHeard)
-	}
-}
-
-func TestListenerMap_SpeakBody(t *testing.T) {
-	listeners, listener := OneListenerSetup(t)
-	expected := []byte{0x01, 0x02, 0x03, 0x04}
-	listeners.Speak(&Message{
-		MessageType: specificMessageType,
-		Contents:    expected,
-		Sender:      specificUser,
-	})
-	time.Sleep(delay)
-	if !bytes.Equal(listener.LastMessage, expected) {
-		t.Errorf("Received message was %v, expected %v",
-			listener.LastMessage, expected)
-	}
-	if listener.LastMessageType != specificMessageType {
-		t.Errorf("Received message type was %v, expected %v",
-			listener.LastMessageType, specificMessageType)
-	}
-}
-
-func TestListenerMap_Unregister(t *testing.T) {
-	listeners := NewSwitchboard()
-	specificUser = id.NewIdFromUInts([4]uint64{0, 0, 0, 5}, id.User, t)
-	listenerID := listeners.Register(specificUser, specificMessageType,
-		&MockListener{})
-	listeners.Unregister(listenerID)
-	if len(listeners.listeners[*specificUser][specificMessageType]) != 0 {
-		t.Error("The listener was still in the map after we stopped" +
-			" listening on it")
-	}
-}
-
-// The following tests show correct behavior in certain type situations.
-// In all cases, the listeners are listening to all users, because these tests
-// are about types.
-// This test demonstrates correct behavior when the crypto and message types
-// are both specified.
-func TestListenerMap_SpecificListener(t *testing.T) {
-	listeners := NewSwitchboard()
-	l := &MockListener{}
-	hearChan := make(chan struct{}, 5)
-	listeners.Register(&id.ZeroUser, 3, l, hearChan)
-	// Should match
-	listeners.Speak(&Message{
-		Contents:    []byte("Test 0"),
-		Sender:      id.NewIdFromUInt(8, id.User, t),
-		MessageType: 3,
-	})
-	tmr := time.NewTimer(time.Second)
+	listener.Hear(m)
 
 	select {
-	case <-hearChan:
-		if l.NumHeard != 1 {
-			t.Error("Listener heard but didn't record")
+	case item := <-heard:
+		if !reflect.DeepEqual(item.(*Message), m) {
+			t.Errorf("Heard message did not match")
 		}
-	case <-tmr.C:
-		t.Error("Listener did not hear")
+	case <-time.After(5 * time.Millisecond):
+		t.Errorf("Did not hear")
+	}
+}
+
+// Test FuncListener returns the correct name
+func TestFuncListener_Name(t *testing.T) {
+	name := "test"
+	listener := newFuncListener(nil, name)
+
+	if listener.Name() != name {
+		t.Errorf("Name did not match")
+	}
+}
+
+//tests new chan listener creates the chanListener properly
+func TestNewChanListener(t *testing.T) {
+	c := make(chan Item)
+	name := "test"
+	listener := newChanListener(c, name)
+
+	if listener.listener == nil {
+		t.Errorf("function is wrong")
 	}
 
-	l.NumHeard = 0
-	// Should not match
-	listeners.Speak(&Message{
-		Contents:    []byte("Test 2"),
-		Sender:      id.NewIdFromUInt(8, id.User, t),
-		MessageType: 0,
-	})
+	if listener.name != name {
+		t.Errorf("name is wrong")
+	}
+}
+
+//tests ChanListener Hear works
+func TestChanListener_Hear(t *testing.T) {
+	m := &Message{
+		Contents:    []byte{0, 1, 2, 3},
+		Sender:      id.NewIdFromUInt(42, id.User, t),
+		MessageType: 69,
+	}
+
+	heard := make(chan Item, 1)
+
+	listener := newChanListener(heard, "test")
+
+	listener.Hear(m)
 
 	select {
-	case <-hearChan:
-		t.Error("Listener heard but should not have")
-	case <-tmr.C:
-		if l.NumHeard != 0 {
-			t.Error("Listener should not have heard")
+	case item := <-heard:
+		if !reflect.DeepEqual(item.(*Message), m) {
+			t.Errorf("Heard message did not match")
 		}
+	case <-time.After(5 * time.Millisecond):
+		t.Errorf("Did not hear")
+	}
+}
+
+// Test FuncListener returns the correct name
+func TestChanListener_Name(t *testing.T) {
+	name := "test"
+	listener := newChanListener(nil, name)
+
+	if listener.Name() != name {
+		t.Errorf("Name did not match")
 	}
 }
