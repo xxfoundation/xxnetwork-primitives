@@ -22,6 +22,7 @@ func (m *Message) GetMessageType() int32 {
 	return m.MessageType
 }
 
+// tests that New create a correctly structured switchboard
 func TestNew(t *testing.T) {
 	sw := New()
 
@@ -34,6 +35,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
+//Tests that register listener handles errors properly
 func TestSwitchboard_RegisterListener_Errors(t *testing.T) {
 	sw := New()
 	_, err := sw.RegisterListener(nil, 0, &funcListener{})
@@ -57,6 +59,7 @@ func TestSwitchboard_RegisterListener_Errors(t *testing.T) {
 	}
 }
 
+//Tests that RegisterListener properly registers the listeners
 func TestSwitchboard_RegisterListener(t *testing.T) {
 	sw := New()
 
@@ -100,6 +103,7 @@ func TestSwitchboard_RegisterListener(t *testing.T) {
 
 }
 
+//Tests that register funcListener handles errors properly
 func TestSwitchboard_RegisterFunc_Errors(t *testing.T) {
 	sw := New()
 	_, err := sw.RegisterFunc("test", nil, 0, func(Item) {})
@@ -123,6 +127,7 @@ func TestSwitchboard_RegisterFunc_Errors(t *testing.T) {
 	}
 }
 
+//Tests that RegisterFunc properly registers the listeners
 func TestSwitchboard_RegisterFunc(t *testing.T) {
 	sw := New()
 
@@ -168,6 +173,7 @@ func TestSwitchboard_RegisterFunc(t *testing.T) {
 	}
 }
 
+//Tests that register chanListener handles errors properly
 func TestSwitchboard_RegisterChan_Errors(t *testing.T) {
 	sw := New()
 	_, err := sw.RegisterChannel("test", nil, 0, make(chan Item))
@@ -191,6 +197,7 @@ func TestSwitchboard_RegisterChan_Errors(t *testing.T) {
 	}
 }
 
+//Tests that RegisterChan properly registers the listeners
 func TestSwitchboard_RegisterChan(t *testing.T) {
 	sw := New()
 
