@@ -39,6 +39,7 @@ func New() *Switchboard {
 func (sw *Switchboard) RegisterListener(user *id.ID, messageType int32,
 	newListener Listener) (ListenerID, error) {
 
+	// check the input data is valid
 	if user == nil {
 		return ListenerID{}, errors.New("cannot register listener to nil user")
 	}
@@ -47,6 +48,7 @@ func (sw *Switchboard) RegisterListener(user *id.ID, messageType int32,
 		return ListenerID{}, errors.New("cannot register nil listener")
 	}
 
+	//register the listener by both ID and messageType
 	sw.mux.Lock()
 
 	sw.id.Add(user, newListener)
@@ -54,6 +56,7 @@ func (sw *Switchboard) RegisterListener(user *id.ID, messageType int32,
 
 	sw.mux.Unlock()
 
+	//return a ListenerID so it can be unregistered in the future
 	return ListenerID{
 		userID:      user,
 		messageType: messageType,
@@ -77,11 +80,16 @@ func (sw *Switchboard) RegisterListener(user *id.ID, messageType int32,
 // If a message matches multiple listeners, all of them will hear the message.
 func (sw *Switchboard) RegisterFunc(name string, user *id.ID, messageType int32,
 	newListener ListenerFunc) (ListenerID, error) {
+	// check that the input data is valid
 	if newListener == nil {
 		return ListenerID{},
 			errors.New("cannot register listener with nil func")
 	}
+
+	// generate a funcListener object adhering to the listener interface
 	fl := newFuncListener(newListener, name)
+
+	//register the listener and return the result
 	return sw.RegisterListener(user, messageType, fl)
 }
 
@@ -101,15 +109,21 @@ func (sw *Switchboard) RegisterFunc(name string, user *id.ID, messageType int32,
 // If a message matches multiple listeners, all of them will hear the message.
 func (sw *Switchboard) RegisterChannel(name string, user *id.ID,
 	messageType int32, newListener chan Item) (ListenerID, error) {
+	// check that the input data is valid
 	if newListener == nil {
 		return ListenerID{},
 			errors.New("cannot register listener with nil channel")
 	}
+
+	// generate a chanListener object adhering to the listener interface
 	cl := newChanListener(newListener, name)
+
+	//register the listener and return the result
 	return sw.RegisterListener(user, messageType, cl)
 }
 
 // Speak broadcasts a message to the appropriate listeners.
+// each is spoken to in their own goroutine
 func (sw *Switchboard) Speak(item Item) {
 	sw.mux.RLock()
 	defer sw.mux.RUnlock()
@@ -118,12 +132,14 @@ func (sw *Switchboard) Speak(item Item) {
 	// well as those that do not care about certain criteria
 	matches := sw.matchListeners(item)
 
-	if matches.Len() > 0 {
-		matches.Do(func(i interface{}) {
-			r := i.(Listener)
-			go r.Hear(item)
-		})
-	} else {
+	//Execute hear on all matched listeners in a new goroutine
+	matches.Do(func(i interface{}) {
+		r := i.(Listener)
+		go r.Hear(item)
+	})
+
+	// print to log if nothing was heard
+	if matches.Len() == 0 {
 		jww.ERROR.Printf(
 			"Message of type %v from user %q didn't match any listeners in"+
 				" the map", item.GetMessageType(), item.GetSender())
@@ -135,15 +151,14 @@ func (sw *Switchboard) Speak(item Item) {
 func (sw *Switchboard) Unregister(listenerID ListenerID) {
 	sw.mux.Lock()
 
-	idSet := sw.id.Get(listenerID.userID)
-	idSet.Remove(listenerID.listener)
-
-	typeSet := sw.messageType.Get(listenerID.messageType)
-	typeSet.Remove(listenerID.listener)
+	sw.id.Remove(listenerID.userID, listenerID.listener)
+	sw.messageType.Remove(listenerID.messageType, listenerID.listener)
 
 	sw.mux.Unlock()
 }
 
+// finds all listeners who match the items sender or ID, or have those fields
+// as generic
 func (sw *Switchboard) matchListeners(item Item) *set.Set {
 	idSet := sw.id.Get(item.GetSender())
 	typeSet := sw.messageType.Get(item.GetMessageType())

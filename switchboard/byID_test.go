@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// tests the newByID functions forms a properly constructed byId
 func TestById_newById(t *testing.T) {
 	nbi := newById()
 
@@ -26,6 +27,7 @@ func TestById_newById(t *testing.T) {
 	}
 }
 
+// tests that when nothing has been added an empty set is returned
 func TestById_Get_Empty(t *testing.T) {
 	nbi := newById()
 
@@ -38,6 +40,7 @@ func TestById_Get_Empty(t *testing.T) {
 	}
 }
 
+//tests that getting a set for a specific ID returns that set
 func TestById_Get_Selected(t *testing.T) {
 	nbi := newById()
 
@@ -58,6 +61,8 @@ func TestById_Get_Selected(t *testing.T) {
 	}
 }
 
+// tests that when getting a specific ID which is not there returns the generic
+// set if is present
 func TestById_Get_Generic(t *testing.T) {
 	nbi := newById()
 
@@ -76,6 +81,8 @@ func TestById_Get_Generic(t *testing.T) {
 	}
 }
 
+// tests that when getting a specific ID is there and there are elements
+// in the generic that the union of the two is returned
 func TestById_Get_GenericSelected(t *testing.T) {
 	nbi := newById()
 
@@ -97,5 +104,205 @@ func TestById_Get_GenericSelected(t *testing.T) {
 
 	if !s.SubsetOf(setUnion) || !setUnion.SubsetOf(s) {
 		t.Errorf("Wrong set returned")
+	}
+}
+
+// Tests that when adding to a set which does not exist, the set is created
+func TestById_Add_New(t *testing.T) {
+	nbi := newById()
+
+	uid := id.NewIdFromUInt(42, id.User, t)
+
+	l := &funcListener{}
+
+	nbi.Add(uid, l)
+
+	s := nbi.list[*uid]
+
+	if s.Len() != 1 {
+		t.Errorf("Should a set of the wrong size")
+	}
+
+	if !s.Has(l) {
+		t.Errorf("Wrong set returned")
+	}
+}
+
+// Tests that when adding to a set which does exist, the set is retained and
+// added to
+func TestById_Add_Old(t *testing.T) {
+	nbi := newById()
+
+	uid := id.NewIdFromUInt(42, id.User, t)
+
+	l1 := &funcListener{}
+	l2 := &funcListener{}
+
+	set1 := set.New(l1)
+
+	nbi.list[*uid] = set1
+
+	nbi.Add(uid, l2)
+
+	s := nbi.list[*uid]
+
+	if s.Len() != 2 {
+		t.Errorf("Should have returned a set")
+	}
+
+	if !s.Has(l1) {
+		t.Errorf("Set does not include the initial listener")
+	}
+
+	if !s.Has(l2) {
+		t.Errorf("Set does not include the new listener")
+	}
+}
+
+// Tests that when adding to a generic ID, the listener is added to the
+// generic set
+func TestById_Add_Generic(t *testing.T) {
+	nbi := newById()
+
+	l1 := &funcListener{}
+	l2 := &funcListener{}
+
+	nbi.Add(&id.ID{}, l1)
+	nbi.Add(AnyUser(), l2)
+
+	s := nbi.generic
+
+	if s.Len() != 2 {
+		t.Errorf("Should have returned a set of size 2")
+	}
+
+	if !s.Has(l1) {
+		t.Errorf("Set does not include the ZeroUser listener")
+	}
+
+	if !s.Has(l2) {
+		t.Errorf("Set does not include the empty user listener")
+	}
+}
+
+// Tests that removing a listener from a set with multiple listeners removes the
+// listener but maintains the set
+func TestById_Remove_ManyInSet(t *testing.T) {
+	nbi := newById()
+
+	uid := id.NewIdFromUInt(42, id.User, t)
+
+	l1 := &funcListener{}
+	l2 := &funcListener{}
+
+	set1 := set.New(l1, l2)
+
+	nbi.list[*uid] = set1
+
+	nbi.Remove(uid, l1)
+
+	if _, ok := nbi.list[*uid]; !ok {
+		t.Errorf("Set removed when it should not have been")
+	}
+
+	if set1.Len() != 1 {
+		t.Errorf("Set is incorrect length after the remove call: %v",
+			set1.Len())
+	}
+
+	if set1.Has(l1) {
+		t.Errorf("Listener 1 still in set, it should not be")
+	}
+
+	if !set1.Has(l2) {
+		t.Errorf("Listener 2 not still in set, it should be")
+	}
+
+}
+
+// Tests that removing a listener from a set with a single listener removes the
+// listener and the set
+func TestById_Remove_SingleInSet(t *testing.T) {
+	nbi := newById()
+
+	uid := id.NewIdFromUInt(42, id.User, t)
+
+	l1 := &funcListener{}
+
+	set1 := set.New(l1)
+
+	nbi.list[*uid] = set1
+
+	nbi.Remove(uid, l1)
+
+	if _, ok := nbi.list[*uid]; ok {
+		t.Errorf("Set not removed when it should have been")
+	}
+
+	if set1.Len() != 0 {
+		t.Errorf("Set is incorrect length after the remove call: %v",
+			set1.Len())
+	}
+
+	if set1.Has(l1) {
+		t.Errorf("Listener 1 still in set, it should not be")
+	}
+}
+
+// Tests that removing a listener from a set with a single listener removes the
+// listener and not the set when the ID iz ZeroUser
+func TestById_Remove_SingleInSet_ZeroUser(t *testing.T) {
+	nbi := newById()
+
+	uid := &id.ZeroUser
+
+	l1 := &funcListener{}
+
+	set1 := set.New(l1)
+
+	nbi.list[*uid] = set1
+
+	nbi.Remove(uid, l1)
+
+	if _, ok := nbi.list[*uid]; !ok {
+		t.Errorf("Set removed when it should not have been")
+	}
+
+	if set1.Len() != 0 {
+		t.Errorf("Set is incorrect length after the remove call: %v",
+			set1.Len())
+	}
+
+	if set1.Has(l1) {
+		t.Errorf("Listener 1 still in set, it should not be")
+	}
+}
+
+// Tests that removing a listener from a set with a single listener removes the
+// listener and not the set when the ID iz ZeroUser
+func TestById_Remove_SingleInSet_EmptyUser(t *testing.T) {
+	nbi := newById()
+
+	uid := &id.ID{}
+
+	l1 := &funcListener{}
+
+	set1 := set.New(l1)
+
+	nbi.list[*uid] = set1
+
+	nbi.Remove(uid, l1)
+
+	if _, ok := nbi.list[*uid]; !ok {
+		t.Errorf("Set removed when it should not have been")
+	}
+
+	if set1.Len() != 0 {
+		t.Errorf("Set is incorrect length after the remove call: %v",
+			set1.Len())
+	}
+
+	if set1.Has(l1) {
+		t.Errorf("Listener 1 still in set, it should not be")
 	}
 }

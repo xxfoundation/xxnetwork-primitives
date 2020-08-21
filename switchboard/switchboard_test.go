@@ -239,7 +239,7 @@ func TestSwitchboard_RegisterChan(t *testing.T) {
 //tests all combinations of hits and misses for speak
 func TestSwitchboard_Speak(t *testing.T) {
 
-	uids := []*id.ID{{}, id.NewIdFromUInt(42, id.User, t), id.NewIdFromUInt(69, id.User, t)}
+	uids := []*id.ID{{}, AnyUser(), id.NewIdFromUInt(42, id.User, t), id.NewIdFromUInt(69, id.User, t)}
 	mts := []int32{AnyType, 42, 69}
 
 	for _, uidReg := range uids {
@@ -277,7 +277,9 @@ func TestSwitchboard_Speak(t *testing.T) {
 
 					sw.Speak(m)
 
-					shouldHear := (m.Sender.Cmp(uidReg) || uidReg.Cmp(&id.ID{})) && (m.MessageType == mtReg || mtReg == AnyType)
+					shouldHear := (m.Sender.Cmp(uidReg) ||
+						uidReg.Cmp(&id.ID{}) || uidReg.Cmp(AnyUser())) &&
+						(m.MessageType == mtReg || mtReg == AnyType)
 
 					var heard1 bool
 
@@ -311,5 +313,50 @@ func TestSwitchboard_Speak(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+//tests that Unregister removes the listener and only the listener
+func TestSwitchboard_Unregister(t *testing.T) {
+	sw := New()
+
+	uid := id.NewIdFromUInt(42, id.User, t)
+	mt := int32(69)
+
+	l := func(Item) {}
+
+	lid1, err := sw.RegisterFunc("a", uid, mt, l)
+	if err != nil {
+		t.Errorf("RegisterFunc should not have errored: %s", err)
+	}
+
+	lid2, err := sw.RegisterFunc("a", uid, mt, l)
+	if err != nil {
+		t.Errorf("RegisterFunc should not have errored: %s", err)
+	}
+
+	sw.Unregister(lid1)
+
+	//get sets to check
+	setID := sw.id.Get(uid)
+	setType := sw.messageType.Get(mt)
+
+	//check that the removed listener is not registered
+	if setID.Has(lid1.listener) {
+		t.Errorf("Removed Listener is registered by ID, should not be")
+	}
+
+	if setType.Has(lid1.listener) {
+		t.Errorf("Removed Listener not registered by Message Type, " +
+			"should not be")
+	}
+
+	//check that the not removed listener is still registered
+	if !setID.Has(lid2.listener) {
+		t.Errorf("Remaining Listener is not registered by ID")
+	}
+
+	if !setType.Has(lid2.listener) {
+		t.Errorf("Remaining Listener is not registered by Message Type")
 	}
 }

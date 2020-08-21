@@ -11,16 +11,17 @@ import (
 	"gitlab.com/xx_network/primitives/id"
 )
 
-const AnyType = int32(0)
-
 type Item interface {
 	GetSender() *id.ID
 	GetMessageType() int32
 }
 
-//interface records adhere to
+//interface for a listener adhere to
 type Listener interface {
+	// the Hear function is called to exercise the listener, passing in the
+	// data as an item
 	Hear(item Item)
+	// Returns a name, used for debugging
 	Name() string
 }
 
@@ -52,12 +53,16 @@ func (lid ListenerID) GetName() string {
 	return lid.listener.Name()
 }
 
-//internal listener implementations
+/*internal listener implementations*/
+
+//listener based off of a function
 type funcListener struct {
 	listener ListenerFunc
 	name     string
 }
 
+// creates a new FuncListener Adhereing to the listener interface out of the
+// passed function and name, returns a pointer to the result
 func newFuncListener(listener ListenerFunc, name string) *funcListener {
 	return &funcListener{
 		listener: listener,
@@ -65,19 +70,26 @@ func newFuncListener(listener ListenerFunc, name string) *funcListener {
 	}
 }
 
+// Adheres to the Hear function of the listener interface, calls the internal
+// function with the passed item
 func (fl *funcListener) Hear(item Item) {
 	fl.listener(item)
 }
 
+// Adheres to the Name function of the listener interface, returns a name.
+// used for debugging
 func (fl *funcListener) Name() string {
 	return fl.name
 }
 
+//listener based off of a channel
 type chanListener struct {
 	listener chan Item
 	name     string
 }
 
+// creates a new ChanListener Adhereing to the listener interface out of the
+// passed channel and name, returns a pointer to the result
 func newChanListener(listener chan Item, name string) *chanListener {
 	return &chanListener{
 		listener: listener,
@@ -85,6 +97,9 @@ func newChanListener(listener chan Item, name string) *chanListener {
 	}
 }
 
+// Adheres to the Hear function of the listener interface, calls the passed the
+// heard item across the channel.  Drops the item if it cannot put it into the
+// channel immediately
 func (cl *chanListener) Hear(item Item) {
 	select {
 	case cl.listener <- item:
@@ -94,6 +109,8 @@ func (cl *chanListener) Hear(item Item) {
 	}
 }
 
+// Adheres to the Name function of the listener interface, returns a name.
+// used for debugging
 func (cl *chanListener) Name() string {
 	return cl.name
 }
