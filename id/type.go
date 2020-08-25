@@ -19,6 +19,7 @@ const (
 	Generic = Type(iota)
 	Gateway
 	Node
+	LiteNode
 	User
 	NumTypes // Gives number of ID types
 )
@@ -32,6 +33,8 @@ func (t Type) String() string {
 		return "gateway"
 	case Node:
 		return "node"
+	case LiteNode:
+		return "litenode"
 	case User:
 		return "user"
 	case NumTypes:

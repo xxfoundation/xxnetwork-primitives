@@ -16,8 +16,9 @@ func TestType_String(t *testing.T) {
 	expectedGeneric := "generic"
 	expectedGateway := "gateway"
 	expectedNode := "node"
+	expectedLiteNode := "litenode"
 	expectedUser := "user"
-	expectedNumTypes := "4"
+	expectedNumTypes := "5"
 
 	// Test Generic stringer
 	testVal := Generic.String()
@@ -40,6 +41,13 @@ func TestType_String(t *testing.T) {
 			"\n\texpected: %s\n\treceived: %s", expectedNode, testVal)
 	}
 
+	// Test LiteNode stringer
+	testVal = LiteNode.String()
+	if expectedLiteNode != testVal {
+		t.Errorf("String() returned incorrect string for LiteNode type."+
+			"\n\texpected: %s\n\treceived: %s", expectedLiteNode, testVal)
+	}
+
 	// Test User stringer
 	testVal = User.String()
 	if expectedUser != testVal {
@@ -59,8 +67,8 @@ func TestType_String(t *testing.T) {
 // defined.
 func TestType_String_Error(t *testing.T) {
 	// Expected/test values
-	expectedError := "UNKNOWN ID TYPE: 5"
-	testType := Type(5)
+	expectedError := "UNKNOWN ID TYPE: 6"
+	testType := Type(6)
 
 	// Test stringer error
 	testVal := testType.String()
