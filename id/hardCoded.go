@@ -36,6 +36,10 @@ var DummyUser = ID{100, 117, 109, 109, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 var UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 
+// ID for a node with the ID data all zeroes (ID data is in the range of dummy IDs)
+var ZeroNode = ID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Node)}
+
 // GetHardCodedIDs returns an array of all the hard coded IDs.
 func GetHardCodedIDs() (ids []*ID) {
 	ids = append(ids, &Permissioning)
@@ -44,7 +48,7 @@ func GetHardCodedIDs() (ids []*ID) {
 	ids = append(ids, &ZeroUser)
 	ids = append(ids, &DummyUser)
 	ids = append(ids, &UDB)
-
+	ids = append(ids, &ZeroNode)
 	return
 }
 
