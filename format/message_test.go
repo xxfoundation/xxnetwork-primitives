@@ -7,13 +7,33 @@
 package format
 
 import (
-	"bytes"
-	"encoding/base64"
 	"math/rand"
-	"reflect"
 	"testing"
 )
 
+func TestContentsSize(t *testing.T) {
+
+	m := NewMessage(256)
+
+	prng := rand.New(rand.NewSource(42))
+
+	for i := 0; i < 1000; i++ {
+		size := uint16(prng.Uint64() % (1<<14 - 1))
+
+		m.setContentsSize(size)
+
+		gotSize := m.getContentsSize()
+
+		if size != gotSize {
+			t.Errorf("Reconstructed size not correct; "+
+				"intial: %v, reconstructed: %v", size, gotSize)
+		}
+
+	}
+
+}
+
+/*
 // Tests that NewAssociatedData() properly sets AssociatedData's serial and all
 // other fields.
 func TestNewMessage(t *testing.T) {
@@ -553,4 +573,4 @@ func TestMessage_SetDecryptedPayloadB_Panic(t *testing.T) {
 	// Create new Message and set payloadB
 	msg := NewMessage()
 	msg.SetDecryptedPayloadB(randSlice)
-}
+}*/
