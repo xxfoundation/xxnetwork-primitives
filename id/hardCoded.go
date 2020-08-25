@@ -36,7 +36,7 @@ var DummyUser = ID{100, 117, 109, 109, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 var UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 
-// ID for a node with the ID data all zeroes (ID data is in the range of dummy IDs)
+// ID for a node with the ID data all zeroes
 var ZeroNode = ID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Node)}
 
