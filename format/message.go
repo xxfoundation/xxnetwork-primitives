@@ -86,7 +86,7 @@ func NewMessage(numPrimeBytes int) Message {
 
 		keyFP:     data[0:KeyFPLen],
 		size:      data[KeyFPLen : KeyFPLen+SizeLen],
-		contents1: data[KeyFPLen+SizeLen:],
+		contents1: data[KeyFPLen+SizeLen : numPrimeBytes],
 
 		mac:         data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:   data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen-TimestampLen],
