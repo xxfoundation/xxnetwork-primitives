@@ -236,12 +236,9 @@ func TestMessage_SetMac_BadFormat(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	mac := make([]byte, MacLen)
-	mac = bytes.Map(func(r rune) rune {
-		return 'a'
-	}, mac)
+	mac[0] |= 0x80
 	msg.SetMac(mac)
 
-	println(mac[0] >> 7)
 }
 
 func TestMessage_SetMac(t *testing.T) {
@@ -415,5 +412,69 @@ func TestMessage_GetTimestamp(t *testing.T) {
 
 	if msg.timestamp[14] == 'x' {
 		t.Errorf("Change to retrieved timestamp altered message field")
+	}
+}
+
+func TestMessage_GetSecretPayload(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	copy(msg.contents1, "contents1")
+	copy(msg.contents2, "contents2")
+	copy(msg.size, []byte("xx"))
+
+	secret := msg.GetSecretPayload()
+	if !bytes.Contains(secret, []byte("contents1")) {
+		t.Errorf("SEcret payload did not include contents 1")
+	}
+	if !bytes.Contains(secret, []byte("contents2")) {
+		t.Errorf("Secret payload did not include contents 2")
+	}
+	if !bytes.Contains(secret, []byte("xx")) {
+		t.Errorf("Secret payload did not include len")
+	}
+}
+
+func TestMessage_GetSecretPayloadSize(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	expectedLen := (2 * MinimumPrimeSize) - AssociatedDataSize + SizeLen
+
+	if msg.GetSecretPayloadSize() != expectedLen {
+		t.Errorf("Didn't get expected length")
+	}
+}
+
+func TestMessage_SetSecretPayload(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	spLen := (2 * MinimumPrimeSize) - AssociatedDataSize + SizeLen
+	sp := make([]byte, spLen)
+	copy(sp[:SizeLen], "xx")
+
+	c1 := make([]byte, len(msg.contents1))
+	c1 = bytes.Map(func(r rune) rune {
+		return 'a'
+	}, c1)
+
+	c2 := make([]byte, len(msg.contents2))
+	c2 = bytes.Map(func(r rune) rune {
+		return 'b'
+	}, c2)
+
+	copy(sp[SizeLen:SizeLen+len(msg.contents1)], c1)
+	copy(sp[SizeLen+len(msg.contents1):SizeLen+len(msg.contents1)+len(msg.contents2)], c2)
+
+	msg.SetSecretPayload(sp)
+
+	if bytes.Contains(msg.size, []byte("a")) || bytes.Contains(msg.size, []byte("b")) ||
+		!bytes.Contains(msg.size, []byte("xx")) {
+		t.Errorf("Setting secret payload failed")
+	}
+	if bytes.Contains(msg.contents1, []byte("x")) || bytes.Contains(msg.contents1, []byte("b")) ||
+		!bytes.Contains(msg.contents1, []byte("aa")) {
+		t.Errorf("Setting secret payload failed")
+	}
+	if bytes.Contains(msg.contents2, []byte("x")) || bytes.Contains(msg.contents2, []byte("a")) ||
+		!bytes.Contains(msg.contents2, []byte("bb")) {
+		t.Errorf("Setting secret payload failed")
 	}
 }
