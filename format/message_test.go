@@ -33,6 +33,17 @@ func TestContentsSize(t *testing.T) {
 
 }
 
+func TestMessage_GetPrimeByteLen(t *testing.T) {
+	const primeSize = 250
+	m := Message{
+		data: make([]byte, primeSize),
+	}
+
+	if m.GetPrimeByteLen() != primeSize {
+		t.Errorf("returned prime size is incorrect")
+	}
+}
+
 /*
 // Tests that NewAssociatedData() properly sets AssociatedData's serial and all
 // other fields.
