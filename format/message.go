@@ -102,6 +102,11 @@ func (m Message) Copy() Message {
 	return m2
 }
 
+//returns the size of the prime used
+func (m Message) GetPrimeByteLen() int {
+	return len(m.data) / 2
+}
+
 // Returns the maximum size of the contents
 func (m Message) ContentsSize() int {
 	return len(m.data) - AssociatedDataSize

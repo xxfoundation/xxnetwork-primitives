@@ -35,6 +35,15 @@ func TestContentsSize(t *testing.T) {
 
 }
 
+func TestMessage_GetPrimeByteLen(t *testing.T) {
+	const primeSize = 250
+	m := NewMessage(primeSize)
+
+	if m.GetPrimeByteLen() != primeSize {
+		t.Errorf("returned prime size is incorrect")
+	}
+}
+
 func TestMessage_Smoke(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
