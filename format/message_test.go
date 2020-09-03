@@ -10,7 +10,9 @@ import (
 	"bytes"
 	id2 "gitlab.com/xx_network/primitives/id"
 	"math/rand"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestContentsSize(t *testing.T) {
@@ -47,11 +49,6 @@ func TestMessage_GetPrimeByteLen(t *testing.T) {
 func TestMessage_Smoke(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-	timestamp := make([]byte, TimestampLen)
-	timestamp = bytes.Map(func(r rune) rune {
-		return 'a'
-	}, timestamp)
-
 	fp := Fingerprint{}
 	keyFp := make([]byte, KeyFPLen)
 	keyFp = bytes.Map(func(r rune) rune {
@@ -76,8 +73,6 @@ func TestMessage_Smoke(t *testing.T) {
 		return 'f'
 	}, contents)
 
-	msg.SetTimestamp(timestamp)
-
 	msg.SetKeyFP(fp)
 
 	msg.SetMac(mac)
@@ -88,10 +83,6 @@ func TestMessage_Smoke(t *testing.T) {
 
 	if bytes.Compare(idData, msg.recipientID) != 0 {
 		t.Errorf("recipient ID was corrupted.  Original: %+v, Current: %+v", idData, msg.recipientID)
-	}
-
-	if bytes.Compare(timestamp, msg.timestamp) != 0 {
-		t.Errorf("timestamp data was corrupted.  Original: %+v, Current: %+v", timestamp, msg.timestamp)
 	}
 
 	if bytes.Compare(mac, msg.mac) != 0 {
@@ -174,22 +165,6 @@ func TestMessage_SetContents(t *testing.T) {
 	}
 	if bytes.Compare(msg.contents2, contents[len(msg.contents1):]) != 0 {
 		t.Errorf("contents 2 not as expected")
-	}
-}
-
-func TestMessage_GetData(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-
-	copy(msg.data, "test")
-	data := msg.GetData()
-	if string(data[:4]) != "test" {
-		t.Errorf("Didn't properly retrieve data field")
-	}
-
-	data[42] = 'q'
-
-	if msg.data[42] == 'q' {
-		t.Errorf("Changes to retrieved data changed the message object")
 	}
 }
 
@@ -385,45 +360,6 @@ func TestMessage_GetRecipientID(t *testing.T) {
 	}
 }
 
-func TestMessage_SetTimestamp_WrongLen(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("SetTimestamp() did not panic when given input of wrong len")
-		}
-	}()
-
-	msg := NewMessage(MinimumPrimeSize)
-	msg.SetTimestamp([]byte("test"))
-}
-
-func TestMessage_SetTimestamp(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-
-	timestamp := make([]byte, TimestampLen)
-	copy(timestamp, "test")
-	msg.SetTimestamp(timestamp)
-
-	if bytes.Compare(timestamp, msg.timestamp) != 0 {
-		t.Errorf("Failed to set timestamp field properly")
-	}
-}
-
-func TestMessage_GetTimestamp(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-
-	copy(msg.timestamp, "test")
-	timestamp := msg.GetTimestamp()
-	if string(timestamp[:4]) != "test" {
-		t.Errorf("Did not properly retrieve timestamp")
-	}
-
-	timestamp[14] = 'x'
-
-	if msg.timestamp[14] == 'x' {
-		t.Errorf("Change to retrieved timestamp altered message field")
-	}
-}
-
 func TestMessage_GetSecretPayload(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
@@ -485,5 +421,23 @@ func TestMessage_SetSecretPayload(t *testing.T) {
 	if bytes.Contains(msg.contents2, []byte("x")) || bytes.Contains(msg.contents2, []byte("a")) ||
 		!bytes.Contains(msg.contents2, []byte("bb")) {
 		t.Errorf("Setting secret payload failed")
+	}
+}
+
+func TestMessage_Marshal(t *testing.T) {
+	m := NewMessage(256)
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	payload := make([]byte, 256)
+	prng.Read(payload)
+	m.SetPayloadA(payload)
+	prng.Read(payload)
+	m.SetPayloadB(payload)
+
+	messageData := m.Marshal()
+	newMsg := Unmarshal(messageData)
+
+	if !reflect.DeepEqual(m, newMsg) {
+		t.Errorf("Failed to Marshal() and Unmarshal() message."+
+			"\n\texpected: %+v\n\treceived: %+v", m, newMsg)
 	}
 }

@@ -17,24 +17,23 @@ const (
 	KeyFPLen       = 32
 	MacLen         = 32
 	RecipientIDLen = 33
-	TimestampLen   = 16
 
-	MinimumPrimeSize = 2*MacLen + RecipientIDLen + TimestampLen
+	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
-	AssociatedDataSize = KeyFPLen + SizeLen + MacLen + RecipientIDLen + TimestampLen
+	AssociatedDataSize = KeyFPLen + SizeLen + MacLen + RecipientIDLen
 )
 
 /*                               Message Structure (not to scale)
-+-----------------------------------------------------------------------------------------------------------+
-|                                                Message                                                    |
-|                                            2*primeSize bits                                               |
-+---------------------------------------------------+-------------------------------------------------------+
-|                  payloadA                         |                 payloadB                              |
-|               primeSize bits                      |              primeSize bits                           |
-+---------+----------+---------+--------------------+---------+-------+-----------+-------------+-----------+
-| grpBitA |  keyFP   |  size   |     Contents1      | grpBitB |  mac  | Contents2 | recipientID | timestamp |
-|  1 bit  | 255 bits | 16 bits |      *below*       | 1 bit   | 255 b |  *below*  |  264 bits   |   128 b   |
-+ --------+----------+---------+--------------------+---------+-------+-----------+-------------+-----------+
++-----------------------------------------------------------------------------------------------+
+|                                                Message										|
+|                                            2*primeSize bits									|
++---------------------------------------------------+-------------------------------------------+
+|                  payloadA                         |                 payloadB                  |
+|               primeSize bits                      |              primeSize bits               |
++---------+----------+---------+--------------------+---------+-------+-----------+-------------+
+| grpBitA |  keyFP   |  size   |     Contents1      | grpBitB |  mac  | Contents2 | recipientID |
+|  1 bit  | 255 bits | 16 bits |      *below*       | 1 bit   | 255 b |  *below*  |  264 bits   |
++ --------+----------+---------+--------------------+---------+-------+-----------+-------------+
 
 size - size in bits of the data which is stored
 
@@ -63,7 +62,6 @@ type Message struct {
 	mac         []byte
 	contents2   []byte
 	recipientID []byte
-	timestamp   []byte
 }
 
 // NewMessage creates a new empty message based upon the size of the encryption
@@ -89,10 +87,21 @@ func NewMessage(numPrimeBytes int) Message {
 		contents1: data[KeyFPLen+SizeLen : numPrimeBytes],
 
 		mac:         data[numPrimeBytes : numPrimeBytes+MacLen],
-		contents2:   data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen-TimestampLen],
-		recipientID: data[2*numPrimeBytes-RecipientIDLen-TimestampLen : 2*numPrimeBytes-TimestampLen],
-		timestamp:   data[2*numPrimeBytes-TimestampLen:],
+		contents2:   data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
+		recipientID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes],
 	}
+}
+
+// Marshal marshals the message into a byte slice.
+func (m *Message) Marshal() []byte {
+	return copyByteSlice(m.data)
+}
+
+// Unmarshal unmarshalls a byte slice into a new Message.
+func Unmarshal(b []byte) Message {
+	m := NewMessage(len(b) / 2)
+	copy(m.data, b)
+	return m
 }
 
 // Returns a copy of the message
@@ -110,11 +119,6 @@ func (m Message) GetPrimeByteLen() int {
 // Returns the maximum size of the contents
 func (m Message) ContentsSize() int {
 	return len(m.data) - AssociatedDataSize
-}
-
-// Returns the underlying data buffer of the message
-func (m Message) GetData() []byte {
-	return copyByteSlice(m.data)
 }
 
 // GetPayloadA returns payload A, which is the first half of the message.
@@ -250,22 +254,6 @@ func (m Message) SetKeyFP(fp Fingerprint) {
 	}
 
 	copy(m.keyFP, fp[:])
-}
-
-// Gets the timestamp
-func (m Message) GetTimestamp() []byte {
-	return copyByteSlice(m.timestamp)
-}
-
-// Sets the timestamp. Panics if the passed data is not the exact right size
-func (m Message) SetTimestamp(ts []byte) {
-	if len(ts) != len(m.timestamp) {
-		jww.ERROR.Panicf("timestamp not the correct size;"+
-			"Expected: %v, Recieved: %v",
-			len(m.timestamp), len(ts))
-	}
-
-	copy(m.timestamp, ts)
 }
 
 // Gets the MAC
