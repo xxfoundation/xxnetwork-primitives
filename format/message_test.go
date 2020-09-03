@@ -8,7 +8,9 @@ package format
 
 import (
 	"math/rand"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestContentsSize(t *testing.T) {
@@ -585,3 +587,21 @@ func TestMessage_SetDecryptedPayloadB_Panic(t *testing.T) {
 	msg := NewMessage()
 	msg.SetDecryptedPayloadB(randSlice)
 }*/
+
+func TestMessage_Marshal(t *testing.T) {
+	m := NewMessage(256)
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	payload := make([]byte, 256)
+	prng.Read(payload)
+	m.SetPayloadA(payload)
+	prng.Read(payload)
+	m.SetPayloadB(payload)
+
+	messageData := m.Marshal()
+	newMsg := Unmarshal(messageData)
+
+	if !reflect.DeepEqual(m, newMsg) {
+		t.Errorf("Failed to Marshal() and Unmarshal() message."+
+			"\n\texpected: %+v\n\treceived: %+v", m, newMsg)
+	}
+}
