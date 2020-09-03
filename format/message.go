@@ -95,6 +95,18 @@ func NewMessage(numPrimeBytes int) Message {
 	}
 }
 
+// Marshal marshals the message into a byte slice.
+func (m *Message) Marshal() []byte {
+	return copyByteSlice(m.data)
+}
+
+// Unmarshal unmarshalls a byte slice into a new Message.
+func Unmarshal(b []byte) Message {
+	m := NewMessage(len(b) / 2)
+	copy(m.data, b)
+	return m
+}
+
 // Returns a copy of the message
 func (m Message) Copy() Message {
 	m2 := NewMessage(len(m.data) / 2)
@@ -110,11 +122,6 @@ func (m Message) GetPrimeByteLen() int {
 // Returns the maximum size of the contents
 func (m Message) ContentsSize() int {
 	return len(m.data) - AssociatedDataSize
-}
-
-// Returns the underlying data buffer of the message
-func (m Message) GetData() []byte {
-	return copyByteSlice(m.data)
 }
 
 // GetPayloadA returns payload A, which is the first half of the message.
