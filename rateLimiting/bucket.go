@@ -145,6 +145,8 @@ type bucketDisk struct {
 }
 
 func (b *Bucket) MarshalJSON() ([]byte, error) {
+	b.Lock()
+	defer b.Unlock()
 	return json.Marshal(&bucketDisk{
 		Capacity:   b.capacity,
 		Remaining:  b.remaining,
@@ -163,12 +165,14 @@ func (b *Bucket) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	b.Lock()
 	b.whitelist = bd.Whitelist
 	b.locked = bd.Locked
 	b.lastUpdate = bd.LastUpdate
 	b.leakRate = bd.LeakRate
 	b.remaining = bd.Remaining
 	b.capacity = bd.Capacity
+	b.Unlock()
 	return nil
 }
 
