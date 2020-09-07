@@ -7,33 +7,35 @@
 package format
 
 import (
-	"encoding/binary"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 )
 
 const (
-	SizeLen        = 2
 	KeyFPLen       = 32
 	MacLen         = 32
 	RecipientIDLen = 33
 
 	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
-	AssociatedDataSize = KeyFPLen + SizeLen + MacLen + RecipientIDLen
+	AssociatedDataSize = KeyFPLen + MacLen + RecipientIDLen
 )
 
 /*                               Message Structure (not to scale)
-+-----------------------------------------------------------------------------------------------+
-|                                                Message										|
-|                                            2*primeSize bits									|
-+---------------------------------------------------+-------------------------------------------+
-|                  payloadA                         |                 payloadB                  |
-|               primeSize bits                      |              primeSize bits               |
-+---------+----------+---------+--------------------+---------+-------+-----------+-------------+
-| grpBitA |  keyFP   |  size   |     Contents1      | grpBitB |  mac  | Contents2 | recipientID |
-|  1 bit  | 255 bits | 16 bits |      *below*       | 1 bit   | 255 b |  *below*  |  264 bits   |
-+ --------+----------+---------+--------------------+---------+-------+-----------+-------------+
++--------------------------------------------------------------------------------------+
+|                                       Message							   			   |
+|                                  2*primeSize bits					    			   |
++------------------------------------------+-------------------------------------------+
+|                  payloadA                |                 payloadB                  |
+|               primeSize bits             |              primeSize bits               |
++---------+----------+---------------------+---------+-------+-----------+-------------+
+| grpBitA |  keyFP   |      Contents1      | grpBitB |  mac  | Contents2 | recipientID |
+|  1 bit  | 255 bits |       *below*       | 1 bit   | 255 b |  *below*  |  264 bits   |
++ --------+----------+---------------------+---------+-------+-----------+-------------+
+|			                     Raw Contents	                     	 |
+|                        2*primeSize - recipientID bits                  |
++------------------------------------------------------------------------+
+
 
 size - size in bits of the data which is stored
 
@@ -57,11 +59,12 @@ type Message struct {
 	payloadB []byte
 
 	keyFP       []byte
-	size        []byte
 	contents1   []byte
 	mac         []byte
 	contents2   []byte
 	recipientID []byte
+
+	rawContents []byte
 }
 
 // NewMessage creates a new empty message based upon the size of the encryption
@@ -83,12 +86,13 @@ func NewMessage(numPrimeBytes int) Message {
 		payloadB: data[numPrimeBytes:],
 
 		keyFP:     data[0:KeyFPLen],
-		size:      data[KeyFPLen : KeyFPLen+SizeLen],
-		contents1: data[KeyFPLen+SizeLen : numPrimeBytes],
+		contents1: data[KeyFPLen:numPrimeBytes],
 
 		mac:         data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:   data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
 		recipientID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes],
+
+		rawContents: data[:2*numPrimeBytes-RecipientIDLen],
 	}
 }
 
@@ -158,15 +162,11 @@ func (m Message) SetPayloadB(payload []byte) {
 // Get contents returns the exact contents of the message. This size of the
 // return is based on the size of the contents actually stored
 func (m Message) GetContents() []byte {
-	size := int(m.getContentsSize())
-	c := make([]byte, size)
 
-	if size <= len(m.contents1) {
-		copy(c, m.contents1[:size])
-	} else {
-		copy(c[:len(m.contents1)], m.contents1)
-		copy(c[len(m.contents1):size], m.contents2[:size-len(m.contents1)])
-	}
+	c := make([]byte, len(m.contents1)+len(m.contents2))
+
+	copy(c[:len(m.contents1)], m.contents1)
+	copy(c[len(m.contents1):], m.contents2)
 
 	return c
 }
@@ -188,37 +188,34 @@ func (m Message) SetContents(c []byte) {
 		copy(m.contents1, c[:len(m.contents1)])
 		copy(m.contents2, c[len(m.contents1):])
 	}
-
-	m.setContentsSize(uint16(len(c)))
 }
 
-// Returns the maximum size of the contents
-func (m Message) GetSecretPayloadSize() int {
-	return SizeLen + len(m.contents1) + len(m.contents2)
+// Get raw contents returns the exact contents of the message. This field
+// crosses over the group barrier and the setter of this is responsible for
+// ensuring the underlying payloads are within the group.
+func (m Message) GetRawContents() []byte {
+	return copyByteSlice(m.rawContents)
 }
 
-// Gets the entire payload which needs to be end to end encrypted for the
-// communication to be secret. Contains the size, Contents1 and Contents2
-func (m Message) GetSecretPayload() []byte {
-	sp := make([]byte, SizeLen+len(m.contents1)+len(m.contents2))
-	copy(sp[:SizeLen], m.size)
-	copy(sp[SizeLen:SizeLen+len(m.contents1)], m.contents1)
-	copy(sp[SizeLen+len(m.contents1):SizeLen+len(m.contents1)+len(m.contents2)], m.contents2)
-	return sp
+// Get size raw contents returns the exact contents of the message.
+func (m Message) GetRawContentsSize() int {
+	return len(m.rawContents)
 }
 
-// Sets the entire payload which needs to be end to end encrypted for the
-// communication to be secret. Sets the size, Contents1 and Contents2. Must be
-// the exact size of the SecretPayload.
-func (m Message) SetSecretPayload(sp []byte) {
-	if len(sp) != m.GetSecretPayloadSize() {
-		jww.ERROR.Panicf("secretPayload wrong size at %v bytes, must be "+
-			"%v bytes", len(sp), m.GetSecretPayloadSize())
+// sets raw  contents of the message. This field crosses over the group barrier
+// and the setter of this is responsible for ensuring the underlying payloads
+// are within the group. This will panic if the payload is greater
+// than the maximum size. This overwrites any storage already in the message.
+// If the passed contents is larger than the maximum contents size this will
+// panic
+func (m Message) SetRawContents(c []byte) {
+	if len(c) != len(m.rawContents) {
+		jww.ERROR.Panicf("Set raw contents too large at %v bytes, "+
+			"must be %v bytes or less", len(c),
+			len(m.contents1)+len(m.contents2))
 	}
 
-	copy(m.size, sp[:SizeLen])
-	copy(m.contents1, sp[SizeLen:SizeLen+len(m.contents1)])
-	copy(m.contents2, sp[SizeLen+len(m.contents1):SizeLen+len(m.contents1)+len(m.contents2)])
+	copy(m.rawContents, c)
 }
 
 // Gets the recipientID
@@ -275,17 +272,6 @@ func (m Message) SetMac(mac []byte) {
 	}
 
 	copy(m.mac, mac)
-}
-
-/*private functions*/
-// Sets the size of the contents
-func (m Message) setContentsSize(s uint16) {
-	binary.BigEndian.PutUint16(m.size, s)
-}
-
-//gets the size of the contents
-func (m Message) getContentsSize() uint16 {
-	return binary.BigEndian.Uint16(m.size)
 }
 
 //helper function to copy a byte slice

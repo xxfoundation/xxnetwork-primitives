@@ -15,28 +15,6 @@ import (
 	"time"
 )
 
-func TestContentsSize(t *testing.T) {
-
-	m := NewMessage(256)
-
-	prng := rand.New(rand.NewSource(42))
-
-	for i := 0; i < 1000; i++ {
-		size := uint16(prng.Uint64() % (1<<14 - 1))
-
-		m.setContentsSize(size)
-
-		gotSize := m.getContentsSize()
-
-		if size != gotSize {
-			t.Errorf("Reconstructed size not correct; "+
-				"intial: %v, reconstructed: %v", size, gotSize)
-		}
-
-	}
-
-}
-
 func TestMessage_GetPrimeByteLen(t *testing.T) {
 	const primeSize = 250
 	m := NewMessage(primeSize)
@@ -141,7 +119,6 @@ func TestMessage_GetContents(t *testing.T) {
 
 	copy(msg.contents1, contents[:len(msg.contents1)])
 	copy(msg.contents2, contents[len(msg.contents1):])
-	msg.setContentsSize(uint16(len(contents)))
 
 	retrieved := msg.GetContents()
 
@@ -360,40 +337,53 @@ func TestMessage_GetRecipientID(t *testing.T) {
 	}
 }
 
-func TestMessage_GetSecretPayload(t *testing.T) {
+func TestMessage_GetRawContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	copy(msg.contents1, "contents1")
 	copy(msg.contents2, "contents2")
-	copy(msg.size, []byte("xx"))
+	copy(msg.keyFP, []byte("fingerprint"))
+	copy(msg.mac, []byte("mac"))
 
-	secret := msg.GetSecretPayload()
+	secret := msg.GetRawContents()
 	if !bytes.Contains(secret, []byte("contents1")) {
-		t.Errorf("SEcret payload did not include contents 1")
+		t.Errorf("Raw contents did not include contents 1")
 	}
 	if !bytes.Contains(secret, []byte("contents2")) {
-		t.Errorf("Secret payload did not include contents 2")
+		t.Errorf("Raw contents did not include contents 2")
 	}
-	if !bytes.Contains(secret, []byte("xx")) {
-		t.Errorf("Secret payload did not include len")
+	if !bytes.Contains(secret, []byte("fingerprint")) {
+		t.Errorf("Raw contents did not include fingerprint")
+	}
+	if !bytes.Contains(secret, []byte("mac")) {
+		t.Errorf("Raw contents did not include mac")
 	}
 }
 
-func TestMessage_GetSecretPayloadSize(t *testing.T) {
+func TestMessage_GetRawContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-	expectedLen := (2 * MinimumPrimeSize) - AssociatedDataSize + SizeLen
+	expectedLen := (2 * MinimumPrimeSize) - RecipientIDLen
 
-	if msg.GetSecretPayloadSize() != expectedLen {
+	if msg.GetRawContentsSize() != expectedLen {
 		t.Errorf("Didn't get expected length")
 	}
 }
 
 func TestMessage_SetSecretPayload(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	spLen := (2 * MinimumPrimeSize) - AssociatedDataSize + SizeLen
+	spLen := (2 * MinimumPrimeSize) - RecipientIDLen
 	sp := make([]byte, spLen)
-	copy(sp[:SizeLen], "xx")
+
+	fp := make([]byte, len(msg.keyFP))
+	fp = bytes.Map(func(r rune) rune {
+		return 'f'
+	}, fp)
+
+	mac := make([]byte, len(msg.mac))
+	mac = bytes.Map(func(r rune) rune {
+		return 'm'
+	}, mac)
 
 	c1 := make([]byte, len(msg.contents1))
 	c1 = bytes.Map(func(r rune) rune {
@@ -405,23 +395,38 @@ func TestMessage_SetSecretPayload(t *testing.T) {
 		return 'b'
 	}, c2)
 
-	copy(sp[SizeLen:SizeLen+len(msg.contents1)], c1)
-	copy(sp[SizeLen+len(msg.contents1):SizeLen+len(msg.contents1)+len(msg.contents2)], c2)
+	copy(sp[:KeyFPLen], fp)
+	copy(sp[MinimumPrimeSize:MinimumPrimeSize+MacLen], mac)
 
-	msg.SetSecretPayload(sp)
+	copy(sp[KeyFPLen:MinimumPrimeSize], c1)
+	copy(sp[MinimumPrimeSize+MacLen:2*MinimumPrimeSize-RecipientIDLen], c2)
 
-	if bytes.Contains(msg.size, []byte("a")) || bytes.Contains(msg.size, []byte("b")) ||
-		!bytes.Contains(msg.size, []byte("xx")) {
-		t.Errorf("Setting secret payload failed")
+	msg.SetRawContents(sp)
+
+	if bytes.Contains(msg.keyFP, []byte("a")) || bytes.Contains(msg.keyFP, []byte("b")) ||
+		bytes.Contains(msg.keyFP, []byte("m")) || !bytes.Contains(msg.keyFP, []byte("f")) {
+		t.Errorf("Setting raw payload failed, key fingerprint contains "+
+			"wrong data: %s", msg.keyFP)
 	}
-	if bytes.Contains(msg.contents1, []byte("x")) || bytes.Contains(msg.contents1, []byte("b")) ||
-		!bytes.Contains(msg.contents1, []byte("aa")) {
-		t.Errorf("Setting secret payload failed")
+
+	if bytes.Contains(msg.mac, []byte("a")) || bytes.Contains(msg.mac, []byte("b")) ||
+		!bytes.Contains(msg.mac, []byte("m")) || bytes.Contains(msg.mac, []byte("f")) {
+		t.Errorf("Setting raw payload failed, mac contains "+
+			"wrong data: %s", msg.mac)
 	}
-	if bytes.Contains(msg.contents2, []byte("x")) || bytes.Contains(msg.contents2, []byte("a")) ||
-		!bytes.Contains(msg.contents2, []byte("bb")) {
-		t.Errorf("Setting secret payload failed")
+
+	if !bytes.Contains(msg.contents1, []byte("a")) || bytes.Contains(msg.contents1, []byte("b")) ||
+		bytes.Contains(msg.contents1, []byte("m")) || bytes.Contains(msg.contents1, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents1 contains "+
+			"wrong data: %s", msg.contents1)
 	}
+
+	if bytes.Contains(msg.contents2, []byte("a")) || !bytes.Contains(msg.contents2, []byte("b")) ||
+		bytes.Contains(msg.contents2, []byte("m")) || bytes.Contains(msg.contents2, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents2 contains "+
+			"wrong data: %s", msg.contents2)
+	}
+
 }
 
 func TestMessage_Marshal(t *testing.T) {
