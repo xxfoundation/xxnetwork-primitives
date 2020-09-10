@@ -9,6 +9,7 @@
 package rateLimiting
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 )
@@ -130,4 +131,54 @@ func (b *Bucket) update() {
 	}
 	// Update timestamp
 	b.lastUpdate = updateTime
+}
+
+// AddToDB isn't meaningfully serializable, so if necessary it should be
+// populated after the fact
+type bucketDisk struct {
+	Capacity   uint32  // Maximum number of tokens the bucket can hold
+	Remaining  uint32  // Current number of tokens in the bucket
+	LeakRate   float64 // Rate that the bucket leaks tokens at [tokens/ns]
+	LastUpdate int64   // Time that the bucket was most recently updated
+	Locked     bool    // When true, prevents bucket from being deleted when stale
+	Whitelist  bool    // When true, adding tokens always returns true
+}
+
+func (b *Bucket) MarshalJSON() ([]byte, error) {
+	b.Lock()
+	defer b.Unlock()
+	return json.Marshal(&bucketDisk{
+		Capacity:   b.capacity,
+		Remaining:  b.remaining,
+		LeakRate:   b.leakRate,
+		LastUpdate: b.lastUpdate,
+		Locked:     b.locked,
+		Whitelist:  b.whitelist,
+	})
+}
+
+// Problem: Doesn't include db func
+func (b *Bucket) UnmarshalJSON(data []byte) error {
+	var bd bucketDisk
+	err := json.Unmarshal(data, &bd)
+	if err != nil {
+		return err
+	}
+
+	b.Lock()
+	b.whitelist = bd.Whitelist
+	b.locked = bd.Locked
+	b.lastUpdate = bd.LastUpdate
+	b.leakRate = bd.LeakRate
+	b.remaining = bd.Remaining
+	b.capacity = bd.Capacity
+	b.Unlock()
+	return nil
+}
+
+// This function should be called after unmarshalling if you need a db function
+func (b *Bucket) SetAddToDB(dbFunc func(uint32, int64)) {
+	b.Lock()
+	b.addToDb = dbFunc
+	b.Unlock()
 }
