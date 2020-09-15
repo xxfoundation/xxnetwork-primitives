@@ -4,7 +4,6 @@ package knownRounds
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
 )
@@ -168,14 +167,12 @@ func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
 	}
 }
 
-// assumption mask << kr and therefore do not have to deal with discontinuity
+// RangeUncheckedMasked masks the bit stream with the provided mask.
 func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 	roundCheck func(id id.Round) bool, maxChecked int) {
 
 	mask.Forward(kr.firstUnchecked)
 	subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
-	fmt.Printf("delta: %d\n", delta)
-	fmt.Printf("subSample: %064b\n", subSample)
 	result := subSample.implies(mask.bitStream)
 	numChecked := 0
 
@@ -195,9 +192,6 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	// numBlocks := int(end/64 - start/64)
 	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start), kr.getBitStreamPos(end))
-	fmt.Printf("start: %d\n", start)
-	fmt.Printf("end: %d\n", end)
-	fmt.Printf("numBlocks: %d\n", numBlocks)
 
 	if kr.lastChecked < end {
 		end = kr.lastChecked

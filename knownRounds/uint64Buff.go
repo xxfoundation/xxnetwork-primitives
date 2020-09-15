@@ -1,7 +1,6 @@
 package knownRounds
 
 import (
-	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
 	"math"
 )
@@ -99,9 +98,6 @@ func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 
 func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
 	ext := make(uint64Buff, numBlocks)
-	fmt.Printf("numBlocks: %d\n", numBlocks)
-	fmt.Printf("ext: %d\n", ext)
-	fmt.Printf("len(u64b): %d\n", len(u64b))
 	copy(ext[:len(u64b)], u64b)
 	return ext
 }

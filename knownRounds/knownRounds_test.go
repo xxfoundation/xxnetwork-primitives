@@ -382,6 +382,12 @@ func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 
 // Test happy path of KnownRounds.RangeUncheckedMasked().
 func TestKnownRounds_RangeUncheckedMasked(t *testing.T) {
+	expectedKR := KnownRounds{
+		bitStream:      uint64Buff{42949672960, 18446744073709551615, 0, 18446744073709551615, 0},
+		firstUnchecked: 15,
+		lastChecked:    191,
+		fuPos:          0,
+	}
 	kr := KnownRounds{
 		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
 		firstUnchecked: 15,
@@ -400,6 +406,11 @@ func TestKnownRounds_RangeUncheckedMasked(t *testing.T) {
 	}
 
 	kr.RangeUncheckedMasked(kr2, roundCheck, 5)
+	if !reflect.DeepEqual(expectedKR, kr) {
+		t.Errorf("RangeUncheckedMasked() incorrectl modified KnownRounds."+
+			"\n\texpected: %+v\n\treceived: %+v", expectedKR, kr)
+	}
+	fmt.Printf("kr.bitStream: %+v\n", kr.bitStream)
 }
 
 // Happy path of getBitStreamPos().
