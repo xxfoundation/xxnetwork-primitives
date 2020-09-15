@@ -428,7 +428,7 @@ func TestBucketMap_AddAllBuckets(t *testing.T) {
 				bp.Key)
 		} else if !reflect.DeepEqual(b, CreateBucketFromParams(bp, nil)) {
 			t.Errorf("addAllBuckets() created bucket %s with incorrect values."+
-				"\n\texpected: %+v\n\trecieved: %+v", bp.Key,
+				"\n\texpected: %+v\n\treceived: %+v", bp.Key,
 				CreateBucketFromParams(bp, nil), b)
 		}
 	}

@@ -81,7 +81,7 @@ type Fingerprint [KeyFPLen]byte
 func NewAssociatedData(newSerial []byte) *AssociatedData {
 	if len(newSerial) != AssociatedDataLen {
 		jww.ERROR.Panicf("new serial not the same size as "+
-			"AssociatedData serial; Expected: %v, Recieved: %v",
+			"AssociatedData serial; Expected: %v, Received: %v",
 			AssociatedDataLen, len(newSerial))
 	}
 
@@ -108,7 +108,7 @@ func (a *AssociatedData) Get() []byte {
 func (a *AssociatedData) Set(newSerial []byte) {
 	if len(newSerial) != AssociatedDataLen {
 		jww.ERROR.Panicf("new serial not the same size as "+
-			"AssociatedData serial; Expected: %v, Recieved: %v",
+			"AssociatedData serial; Expected: %v, Received: %v",
 			AssociatedDataLen, len(newSerial))
 	}
 
@@ -127,7 +127,7 @@ func (a *AssociatedData) GetRecipientID() []byte {
 func (a *AssociatedData) SetRecipientID(newRecipientID []byte) {
 	if len(newRecipientID) != RecipientIDLen {
 		jww.ERROR.Panicf("new recipientID not the same size as "+
-			"AssociatedData newRecipientID; Expected: %v, Recieved: %v",
+			"AssociatedData newRecipientID; Expected: %v, Received: %v",
 			RecipientIDLen, len(newRecipientID))
 	}
 
@@ -177,7 +177,7 @@ func (a *AssociatedData) GetTimestamp() []byte {
 func (a *AssociatedData) SetTimestamp(newTimestamp []byte) {
 	if len(newTimestamp) != TimestampLen {
 		jww.ERROR.Panicf("new timestamp not the same size as "+
-			"AssociatedData timestamp; Expected: %v, Recieved: %v",
+			"AssociatedData timestamp; Expected: %v, Received: %v",
 			TimestampLen, len(newTimestamp))
 	}
 
@@ -195,7 +195,7 @@ func (a *AssociatedData) GetMAC() []byte {
 func (a *AssociatedData) SetMAC(newMAC []byte) {
 	if len(newMAC) != MacLen {
 		jww.ERROR.Panicf("new MAC not the same size as "+
-			"AssociatedData MAC; Expected: %v, Recieved: %v",
+			"AssociatedData MAC; Expected: %v, Received: %v",
 			MacLen, len(newMAC))
 	}
 
@@ -215,7 +215,7 @@ func (a *AssociatedData) DeepCopy() *AssociatedData {
 func NewFingerprint(data []byte) *Fingerprint {
 	if len(data) != KeyFPLen {
 		jww.ERROR.Panicf("fingerprint not the same size as "+
-			"AssociatedData fingerprint; Expected: %v, Recieved: %v",
+			"AssociatedData fingerprint; Expected: %v, Received: %v",
 			KeyFPLen, len(data))
 	}
 

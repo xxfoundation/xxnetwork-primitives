@@ -86,7 +86,7 @@ func (m *Message) GetPayloadA() []byte {
 func (m *Message) SetPayloadA(payload []byte) {
 	if len(payload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			PayloadLen, len(payload))
 	}
 
@@ -103,7 +103,7 @@ func (m *Message) GetPayloadB() []byte {
 func (m *Message) SetPayloadB(payload []byte) {
 	if len(payload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadB;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			PayloadLen, len(payload))
 	}
 
@@ -130,7 +130,7 @@ func (m *Message) GetPayloadBForEncryption() []byte {
 func (m *Message) SetDecryptedPayloadB(newPayload []byte) {
 	if len(newPayload) != PayloadLen {
 		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
-			"Expected: %v, Recieved: %v",
+			"Expected: %v, Received: %v",
 			PayloadLen, len(newPayload))
 	}
 
