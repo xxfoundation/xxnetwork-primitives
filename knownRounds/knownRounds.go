@@ -57,7 +57,7 @@ func (kr *KnownRounds) Marshal() ([]byte, error) {
 	// Copy only the blocks between firstUnchecked and lastChecked to the stream
 	startBlock, _ := kr.bitStream.convertLoc(startPos)
 	for i := uint(0); i < length; i++ {
-		dkr.BitStream[i] = kr.bitStream[i+startBlock]
+		dkr.BitStream[i] = kr.bitStream[(i+startBlock)%uint(len(kr.bitStream))]
 	}
 
 	return json.Marshal(dkr)
