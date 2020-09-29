@@ -8,7 +8,7 @@ package format
 
 import (
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/elixxir/primitives/id"
 )
 
 const (
