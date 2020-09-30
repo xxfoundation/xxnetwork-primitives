@@ -50,8 +50,7 @@ func (u64b uint64Buff) clearRange(start, end int) {
 	}
 }
 
-// copy copies bits from start to end (including the start and end bits) from
-// u64b to copied.
+// copy returns a copy of the bits from start to end (inclusive) from u64b.
 func (u64b uint64Buff) copy(start, end int) uint64Buff {
 	startBlock, startPos := u64b.convertLoc(start)
 
@@ -96,14 +95,16 @@ func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 	return result
 }
 
+// extend increases the length of the buffer to the given size and fills in the
+// values with zeros.
 func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
 	ext := make(uint64Buff, numBlocks)
 	copy(ext[:len(u64b)], u64b)
 	return ext
 }
 
-// convert returns the block index and the position of the bit in that block for
-// the given position in the buffer.
+// convertLoc returns the block index and the position of the bit in that block
+// for the given position in the buffer.
 func (u64b uint64Buff) convertLoc(pos int) (uint, uint) {
 	// Block index in buffer (position / 64)
 	bin := pos >> 6 % len(u64b)
@@ -131,6 +132,9 @@ func (u64b uint64Buff) getBin(block uint) uint {
 // range between start and end. If the start and end appear in the same block,
 // then delta returns 1.
 func (u64b uint64Buff) delta(start, end int) uint {
+	if end == start {
+		return 1
+	}
 	end--
 	if end < start {
 		return uint(len(u64b) - start/64 + end/64 + 1)
