@@ -5,7 +5,6 @@ package knownRounds
 import (
 	"encoding/json"
 	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 )
 
@@ -28,12 +27,12 @@ type DiskKnownRounds struct {
 }
 
 // NewKnownRound creates a new empty KnownRounds in the default state with a
-// bit stream that can hold the given number of rounds.
-func NewKnownRound(roundCapacity int) *KnownRounds {
+// bit stream of the specified size.
+func NewKnownRound(size int) *KnownRounds {
 	return &KnownRounds{
-		bitStream:      make(uint64Buff, (roundCapacity+64)/64),
+		bitStream:      make(uint64Buff, size),
 		firstUnchecked: 0,
-		lastChecked:    0,
+		lastChecked:    1,
 		fuPos:          0,
 	}
 }
@@ -107,15 +106,13 @@ func (kr *KnownRounds) Checked(rid id.Round) bool {
 // the last checked round, then every round between them is set as unchecked and
 // the passed in round becomes the last checked round.
 func (kr *KnownRounds) Check(rid id.Round) {
-	if abs(int(kr.lastChecked-rid))/(len(kr.bitStream)*64) > 0 {
-		jww.FATAL.Panicf("Cannot check a round outside the current scope. " +
-			"Scope is KnownRounds size more rounds than last checked. A call " +
-			"to Forward() can be used to fix the scope.")
-	}
 	if rid < kr.firstUnchecked {
 		return
 	}
 	pos := kr.getBitStreamPos(rid)
+
+	// Set round as checked
+	kr.bitStream.set(pos)
 
 	// If the round ID is newer, then set it as the last checked ID and uncheck
 	// all the newly added rounds in the buffer
@@ -123,40 +120,20 @@ func (kr *KnownRounds) Check(rid id.Round) {
 		kr.bitStream.clearRange(kr.getBitStreamPos(kr.lastChecked+1), pos)
 		kr.lastChecked = rid
 	}
-
-	if kr.getBitStreamPos(kr.firstUnchecked) == pos {
-		kr.migrateFirstUnchecked(rid)
-	}
-
-	// Set round as checked
-	kr.bitStream.set(pos)
-}
-
-func abs(n int) int {
-	if n < 0 {
-		return -n
-	}
-	return n
-}
-
-// migrateFirstUnchecked moves firstUnchecked to the next unchecked round or
-// sets it to lastUnchecked if all rounds are checked.
-func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
-	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
-		rid < kr.lastChecked; rid++ {
-	}
-	kr.fuPos = kr.getBitStreamPos(rid)
-	kr.firstUnchecked = rid
 }
 
 // Forward sets all rounds before the given round ID as checked.
 func (kr *KnownRounds) Forward(rid id.Round) {
 	if rid > kr.lastChecked {
 		kr.firstUnchecked = rid
-		kr.lastChecked = rid
+		kr.lastChecked = rid - 1
 		kr.fuPos = int(rid % 64)
 	} else if rid >= kr.firstUnchecked {
-		kr.migrateFirstUnchecked(rid)
+		for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
+			rid <= kr.lastChecked; rid++ {
+		}
+		kr.fuPos = kr.getBitStreamPos(rid)
+		kr.firstUnchecked = rid
 	}
 }
 
@@ -212,21 +189,17 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 	}
 }
 
-// subSample returns a subsample of the KnownRounds buffer from the start to end
-// round and its length.
 func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
-	// Get the number of blocks spanned by the range
+	// numBlocks := int(end/64 - start/64)
 	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start), kr.getBitStreamPos(end))
 
 	if kr.lastChecked < end {
 		end = kr.lastChecked
 	}
 
-	// Create subsample of the buffer
 	buff := kr.bitStream.copy(kr.getBitStreamPos(start), kr.getBitStreamPos(end+1))
 
-	// Return a buffer of the correct size and its length
-	return buff.extend(int(numBlocks)), abs(int(end - start))
+	return buff.extend(int(numBlocks)), int(end - start)
 }
 
 // Get the position of the bit in the bit stream for the given round ID.
