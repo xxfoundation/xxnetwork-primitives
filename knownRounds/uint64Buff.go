@@ -104,6 +104,7 @@ func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 // extend increases the length of the buffer to the given size and fills in the
 // values with zeros.
 func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
+	//the created buffer is all zeroes per go spec
 	ext := make(uint64Buff, numBlocks)
 	copy(ext[:len(u64b)], u64b)
 	return ext
