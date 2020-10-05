@@ -74,15 +74,24 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 		return err
 	}
 
-	// Return an error if the passed in bit stream is larger than the new stream
-	if len(kr.bitStream) < len(dkr.BitStream) {
-		return errors.Errorf("KnownRounds bitStream size of %d is too small "+
-			"for passed in bit stream of size %d.",
+	// Handle the copying in of the bit stream
+	if len(kr.bitStream) == 0 {
+		// if there is no bitstream, like in wire representations, make the size
+		// equal to what is coming in
+		kr.bitStream = dkr.BitStream
+	} else if len(kr.bitStream) >= len(dkr.BitStream) {
+		//if a size already exists and the data fits within it, copy it into
+		//the begining fo the buffer
+		copy(kr.bitStream, dkr.BitStream)
+	} else {
+		//if the passed in data is larger then the internal buffer, return an
+		// error
+		return errors.Errorf("KnownRounds bitStream size of %d is too"+
+			" small for passed in bit stream of size %d.",
 			len(kr.bitStream), len(dkr.BitStream))
 	}
 
 	// Copy values over
-	copy(kr.bitStream, dkr.BitStream)
 	kr.firstUnchecked = id.Round(dkr.FirstUnchecked)
 	kr.lastChecked = id.Round(dkr.LastChecked)
 	kr.fuPos = int(dkr.FirstUnchecked % 64)
