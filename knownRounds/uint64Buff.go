@@ -20,6 +20,12 @@ func (u64b uint64Buff) set(pos int) {
 	u64b[bin] |= 1 << (63 - offset)
 }
 
+// set modifies the bit at the specified position to be 1.
+func (u64b uint64Buff) clear(pos int) {
+	bin, offset := u64b.convertLoc(pos)
+	u64b[bin] &= ^(1 << (63 - offset))
+}
+
 // clearRange clears all the bits in the buffer between the given range
 // (including the start and end bits).
 //

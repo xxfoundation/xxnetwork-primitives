@@ -161,7 +161,7 @@ func TestKnownRounds_Check_NewKR(t *testing.T) {
 		buff                     uint64Buff
 	}{
 		{1, 1, uint64Buff{0x4000000000000000, 0, 0, 0, 0}},
-		{0, 0, uint64Buff{0x8000000000000000, 0, 0, 0, 0}},
+		{0, 1, uint64Buff{0x8000000000000000, 0, 0, 0, 0}},
 		{75, 75, uint64Buff{0, 0x10000000000000, 0, 0, 0}},
 		{319, 319, uint64Buff{0, 0, 0, 0, 1}},
 	}
