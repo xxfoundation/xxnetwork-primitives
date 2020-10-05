@@ -134,7 +134,14 @@ func (kr *KnownRounds) Check(rid id.Round) {
 	}
 
 	if kr.getBitStreamPos(kr.firstUnchecked) == pos {
-		kr.migrateFirstUnchecked(rid)
+		if kr.getBitStreamPos(kr.lastChecked) == pos {
+			kr.firstUnchecked = rid + 1
+			kr.lastChecked = rid + 1
+			kr.fuPos = kr.getBitStreamPos(rid + 1)
+			kr.bitStream.clear(kr.fuPos)
+		} else {
+			kr.migrateFirstUnchecked(rid)
+		}
 	}
 
 	// Set round as checked
