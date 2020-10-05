@@ -232,14 +232,21 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 // round and its length.
 func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	// Get the number of blocks spanned by the range
-	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start), kr.getBitStreamPos(end))
+	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start),
+		kr.getBitStreamPos(end))
 
+	if start > kr.lastChecked {
+		return make(uint64Buff, numBlocks), int(numBlocks)
+	}
+
+	copyEnd := end
 	if kr.lastChecked < end {
-		end = kr.lastChecked
+		copyEnd = kr.lastChecked
 	}
 
 	// Create subsample of the buffer
-	buff := kr.bitStream.copy(kr.getBitStreamPos(start), kr.getBitStreamPos(end+1))
+	buff := kr.bitStream.copy(kr.getBitStreamPos(start),
+		kr.getBitStreamPos(copyEnd+1))
 
 	// Return a buffer of the correct size and its length
 	return buff.extend(int(numBlocks)), abs(int(end - start))
