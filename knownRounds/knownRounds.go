@@ -210,14 +210,17 @@ func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
 func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 	roundCheck func(id id.Round) bool, maxChecked int) {
 
-	mask.Forward(kr.firstUnchecked)
-	subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
-	result := subSample.implies(mask.bitStream)
 	numChecked := 0
 
-	for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
-		if !result.get(int(i-mask.firstUnchecked)) && roundCheck(i) {
-			kr.Check(i)
+	if mask.firstUnchecked != mask.lastChecked {
+		mask.Forward(kr.firstUnchecked)
+		subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
+		result := subSample.implies(mask.bitStream)
+
+		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
+			if !result.get(int(i-mask.firstUnchecked)) && roundCheck(i) {
+				kr.Check(i)
+			}
 		}
 	}
 
