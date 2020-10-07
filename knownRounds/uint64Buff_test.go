@@ -162,7 +162,7 @@ func Test_uint64Buff_convertLoc(t *testing.T) {
 	// Generate test position and expected block index and offset
 	testData := []struct {
 		pos         int
-		bin, offset uint
+		bin, offset int
 	}{
 		{0, 0, 0},
 		{5, 0, 5},
@@ -192,7 +192,7 @@ func Test_uint64Buff_convertEnd(t *testing.T) {
 	// Generate test position and expected block index and offset
 	testData := []struct {
 		pos         int
-		bin, offset uint
+		bin, offset int
 	}{
 		{0, 0, 0},
 		{5, 0, 5},
@@ -222,8 +222,8 @@ func Test_uint64Buff_convertEnd(t *testing.T) {
 func Test_uint64Buff_getBin(t *testing.T) {
 	// Generate test block indexes and the expected index in the buffer
 	testData := []struct {
-		block       uint
-		expectedBin uint
+		block       int
+		expectedBin int
 	}{
 		{0, 0},
 		{4, 4},
@@ -248,7 +248,7 @@ func Test_uint64Buff_delta(t *testing.T) {
 	// Generate test ranges and the expected delta
 	testData := []struct {
 		start, end    int
-		expectedDelta uint
+		expectedDelta int
 	}{
 		{0, 0, 1},
 		{5, 5, 1},
@@ -289,7 +289,7 @@ func Test_uint64Buff_delta(t *testing.T) {
 func Test_bitMaskRange(t *testing.T) {
 	// Generate test ranges and the expected mask
 	testData := []struct {
-		start, end   uint
+		start, end   int
 		expectedMask uint64
 	}{
 		{0, 0, 0b1111111111111111111111111111111111111111111111111111111111111111},
@@ -305,14 +305,15 @@ func Test_bitMaskRange(t *testing.T) {
 		{65, 65, 0b0000000000000000000000000000000000000000000000000000000000000000},
 	}
 
-	for _, data := range testData {
+	for i, data := range testData {
+		fmt.Printf("round: %2d   start: %2d   end: %2d\n", i, data.start, data.end)
 		testMask := bitMaskRange(data.start, data.end)
 		if testMask != data.expectedMask {
-			t.Errorf("Generated mask for range %d to %d is incorrect."+
+			t.Errorf("Generated mask for range %d to %d is incorrect (round %d)."+
 				"\n\texpected: %064b\n\treceived: %064b"+
 				"\n              0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n              0         1         2         3         4         5         6",
-				data.start, data.end, data.expectedMask, testMask)
+				data.start, data.end, i, data.expectedMask, testMask)
 		}
 	}
 }
