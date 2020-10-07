@@ -37,12 +37,12 @@ func (u64b uint64Buff) clearRange(start, end int) {
 	firstBlock, firstBit := u64b.convertLoc(start)
 
 	// Loop over every the blocks in u64b that are in the range
-	for blockIndex := uint(0); blockIndex < numBlocks; blockIndex++ {
+	for blockIndex := 0; blockIndex < numBlocks; blockIndex++ {
 		// Get index where the block appears in the buffer
 		buffBlock := u64b.getBin(firstBlock + blockIndex)
 
 		// Get the position of the last bit in the current block
-		lastBit := uint(64)
+		lastBit := 64
 		if blockIndex == numBlocks-1 {
 			_, lastBit = u64b.convertEnd(end)
 		}
@@ -64,7 +64,7 @@ func (u64b uint64Buff) copy(start, end int) uint64Buff {
 	copied := make(uint64Buff, numBlocks)
 
 	// Copy all blocks in range
-	for i := uint(0); i < numBlocks; i++ {
+	for i := 0; i < numBlocks; i++ {
 		realBlock := u64b.getBin(startBlock + i)
 		copied[i] = u64b[realBlock]
 	}
@@ -104,7 +104,7 @@ func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 // extend increases the length of the buffer to the given size and fills in the
 // values with zeros.
 func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
-	//the created buffer is all zeroes per go spec
+	// The created buffer is all zeroes per go spec
 	ext := make(uint64Buff, numBlocks)
 	copy(ext[:len(u64b)], u64b)
 	return ext
@@ -112,49 +112,49 @@ func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
 
 // convertLoc returns the block index and the position of the bit in that block
 // for the given position in the buffer.
-func (u64b uint64Buff) convertLoc(pos int) (uint, uint) {
+func (u64b uint64Buff) convertLoc(pos int) (int, int) {
 	// Block index in buffer (position / 64)
 	bin := pos >> 6 % len(u64b)
 
 	// Position of bit in block
 	offset := pos % 64
 
-	return uint(bin), uint(offset)
+	return bin, offset
 }
 
-func (u64b uint64Buff) convertEnd(pos int) (uint, uint) {
+func (u64b uint64Buff) convertEnd(pos int) (int, int) {
 	bin := (pos - 1) / 64
 
 	offset := (pos-1)%64 + 1
 
-	return uint(bin), uint(offset)
+	return bin, offset
 }
 
 // getBin returns the block index in the buffer for the given absolute index.
-func (u64b uint64Buff) getBin(block uint) uint {
-	return block % uint(len(u64b))
+func (u64b uint64Buff) getBin(block int) int {
+	return block % len(u64b)
 }
 
 // delta calculates the number of blocks or parts of blocks contained within the
 // range between start and end. If the start and end appear in the same block,
 // then delta returns 1.
-func (u64b uint64Buff) delta(start, end int) uint {
+func (u64b uint64Buff) delta(start, end int) int {
 	if end == start {
 		return 1
 	}
 	end--
 	if end < start {
-		return uint(len(u64b) - start/64 + end/64 + 1)
+		return len(u64b) - start/64 + end/64 + 1
 	} else {
-		return uint(end/64 - start/64 + 1)
+		return end/64 - start/64 + 1
 	}
 }
 
 // bitMaskRange generates a bit mask that targets the bits in the provided
 // range. The resulting value has 0s in that range and 1s everywhere else.
-func bitMaskRange(start, end uint) uint64 {
-	s := uint64(math.MaxUint64 << (64 - start))
-	e := uint64(math.MaxUint64 >> end)
+func bitMaskRange(start, end int) uint64 {
+	s := uint64(math.MaxUint64 << uint(64-start))
+	e := uint64(math.MaxUint64 >> uint(end))
 	return (s | e) & (getInvert(end < start) ^ (s ^ e))
 }
 

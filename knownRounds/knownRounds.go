@@ -56,8 +56,8 @@ func (kr *KnownRounds) Marshal() ([]byte, error) {
 
 	// Copy only the blocks between firstUnchecked and lastChecked to the stream
 	startBlock, _ := kr.bitStream.convertLoc(startPos)
-	for i := uint(0); i < length; i++ {
-		dkr.BitStream[i] = kr.bitStream[(i+startBlock)%uint(len(kr.bitStream))]
+	for i := 0; i < length; i++ {
+		dkr.BitStream[i] = kr.bitStream[(i+startBlock)%len(kr.bitStream)]
 	}
 
 	return json.Marshal(dkr)
@@ -76,18 +76,18 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 
 	// Handle the copying in of the bit stream
 	if len(kr.bitStream) == 0 {
-		// if there is no bitstream, like in wire representations, make the size
-		// equal to what is coming in
+		// If there is no bitstream, like in the wire representations, then make
+		// the size equal to what is coming in
 		kr.bitStream = dkr.BitStream
 	} else if len(kr.bitStream) >= len(dkr.BitStream) {
-		//if a size already exists and the data fits within it, copy it into
-		//the begining fo the buffer
+		// If a size already exists and the data fits within it, then copy it
+		// into the beginning of the buffer
 		copy(kr.bitStream, dkr.BitStream)
 	} else {
-		//if the passed in data is larger then the internal buffer, return an
-		// error
-		return errors.Errorf("KnownRounds bitStream size of %d is too"+
-			" small for passed in bit stream of size %d.",
+		// If the passed in data is larger then the internal buffer, then return
+		// an error
+		return errors.Errorf("KnownRounds bitStream size of %d is too small "+
+			"for passed in bit stream of size %d.",
 			len(kr.bitStream), len(dkr.BitStream))
 	}
 
@@ -135,19 +135,28 @@ func (kr *KnownRounds) Check(rid id.Round) {
 
 	if kr.getBitStreamPos(kr.firstUnchecked) == pos {
 		if kr.getBitStreamPos(kr.lastChecked) == pos {
+			kr.fuPos = kr.getBitStreamPos(rid + 1)
 			kr.firstUnchecked = rid + 1
 			kr.lastChecked = rid + 1
-			kr.fuPos = kr.getBitStreamPos(rid + 1)
 			kr.bitStream.clear(kr.fuPos)
 		} else {
 			kr.migrateFirstUnchecked(rid)
 		}
 	}
 
+	// Handle cases where rid lapse firstUnchecked one or more times.
+	if rid > kr.firstUnchecked && (rid-kr.firstUnchecked) >= id.Round(kr.Len()) {
+		newFu := rid + 1 - id.Round(kr.Len())
+		kr.fuPos = kr.getBitStreamPos(newFu)
+		kr.firstUnchecked = rid + 1 - id.Round(kr.Len())
+		kr.migrateFirstUnchecked(rid)
+	}
+
 	// Set round as checked
 	kr.bitStream.set(pos)
 }
 
+// abs returns the absolute value of the passed in integer.
 func abs(n int) int {
 	if n < 0 {
 		return -n
@@ -159,7 +168,7 @@ func abs(n int) int {
 // sets it to lastUnchecked if all rounds are checked.
 func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
 	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
-		rid < kr.lastChecked; rid++ {
+		rid <= kr.lastChecked; rid++ {
 	}
 	kr.fuPos = kr.getBitStreamPos(rid)
 	kr.firstUnchecked = rid
@@ -239,7 +248,7 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 		kr.getBitStreamPos(end))
 
 	if start > kr.lastChecked {
-		return make(uint64Buff, numBlocks), int(numBlocks)
+		return make(uint64Buff, numBlocks), numBlocks
 	}
 
 	copyEnd := end
@@ -252,7 +261,7 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 		kr.getBitStreamPos(copyEnd+1))
 
 	// Return a buffer of the correct size and its length
-	return buff.extend(int(numBlocks)), abs(int(end - start))
+	return buff.extend(numBlocks), abs(int(end - start))
 }
 
 // Get the position of the bit in the bit stream for the given round ID.
@@ -264,5 +273,10 @@ func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 		delta = int(rid - kr.firstUnchecked)
 	}
 
-	return kr.fuPos + delta
+	return (kr.fuPos + delta) % kr.Len()
+}
+
+// Len returns the max number of round IDs the buffer can hold.
+func (kr *KnownRounds) Len() int {
+	return len(kr.bitStream) * 64
 }
