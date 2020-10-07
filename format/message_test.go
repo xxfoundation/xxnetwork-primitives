@@ -8,549 +8,441 @@ package format
 
 import (
 	"bytes"
-	"encoding/base64"
+	id2 "gitlab.com/elixxir/primitives/id"
 	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 )
 
-// Tests that NewAssociatedData() properly sets AssociatedData's serial and all
-// other fields.
-func TestNewMessage(t *testing.T) {
-	// Create new Message
-	msg := NewMessage()
+func TestMessage_GetPrimeByteLen(t *testing.T) {
+	const primeSize = 250
+	m := NewMessage(primeSize)
 
-	// Test fields
-	if !bytes.Equal(msg.master[:], make([]byte, TotalLen)) {
-		t.Errorf("NewMessage() did not properly create Message's master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.master, make([]byte, TotalLen))
-	}
-
-	if msg.master[TotalLen-1] != 0 {
-		t.Errorf("NewMessage() did not set the last byte to zero"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.master[TotalLen-1], 0)
+	if m.GetPrimeByteLen() != primeSize {
+		t.Errorf("returned prime size is incorrect")
 	}
 }
 
-// Tests that NewMessage() creates all the fields with the correct lengths.
-func TestNewMessage_Length(t *testing.T) {
-	// Create new Message
-	msg := NewMessage()
+func TestMessage_Smoke(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Test lengths
-	if len(msg.Contents.serial) != ContentsLen {
-		t.Errorf("NewMessage() did not create Message's Contents "+
-			"with the correct length"+
-			"\n\treceived: %d\n\texpected: %d",
-			len(msg.Contents.serial), ContentsLen)
+	fp := Fingerprint{}
+	keyFp := make([]byte, KeyFPLen)
+	keyFp = bytes.Map(func(r rune) rune {
+		return 'c'
+	}, keyFp)
+	copy(fp[:], keyFp)
+
+	mac := make([]byte, MacLen)
+	mac = bytes.Map(func(r rune) rune {
+		return 'd'
+	}, mac)
+
+	recipientId := id2.ID{}
+	idData := make([]byte, RecipientIDLen)
+	idData = bytes.Map(func(r rune) rune {
+		return 'e'
+	}, idData)
+	copy(recipientId[:], idData)
+
+	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	contents = bytes.Map(func(r rune) rune {
+		return 'f'
+	}, contents)
+
+	msg.SetKeyFP(fp)
+
+	msg.SetMac(mac)
+
+	msg.SetRecipientID(&recipientId)
+
+	msg.SetContents(contents)
+
+	if bytes.Compare(idData, msg.recipientID) != 0 {
+		t.Errorf("recipient ID was corrupted.  Original: %+v, Current: %+v", idData, msg.recipientID)
 	}
 
-	if len(msg.AssociatedData.serial) != AssociatedDataLen {
-		t.Errorf("NewMessage() did not create Message's AssociatedData "+
-			"with the correct length"+
-			"\n\treceived: %d\n\texpected: %d",
-			len(msg.AssociatedData.serial), AssociatedDataLen)
+	if bytes.Compare(mac, msg.mac) != 0 {
+		t.Errorf("mac data was corrupted.  Original: %+v, Current: %+v", mac, msg.mac)
 	}
 
-	if len(msg.payloadA) != PayloadLen {
-		t.Errorf("NewMessage() did not create Message's payloadA "+
-			"with the correct length"+
-			"\n\treceived: %d\n\texpected: %d",
-			len(msg.payloadA), PayloadLen)
+	if bytes.Compare(keyFp, msg.keyFP) != 0 {
+		t.Errorf("keyFp data was corrupted.  Original: %+v, Current: %+v", keyFp, msg.keyFP)
 	}
 
-	if len(msg.payloadB) != PayloadLen {
-		t.Errorf("NewMessage() did not create Message's payloadB "+
-			"with the correct length"+
-			"\n\treceived: %d\n\texpected: %d",
-			len(msg.payloadB), PayloadLen)
-	}
-
-	if len(msg.grpByte) != GrpByteLen {
-		t.Errorf("NewMessage() did not create Message's grpByte "+
-			"with the correct length"+
-			"\n\treceived: %d\n\texpected: %d",
-			len(msg.grpByte), GrpByteLen)
-	}
-
-	// Check that Content and AssociatedData serials fit in master
-	sum := len(msg.Contents.serial) + len(msg.AssociatedData.serial) + len(msg.grpByte)
-
-	if sum != len(msg.master) {
-		t.Errorf("The sum of the lengths of Content, AssociatedData, and "+
-			"grpByte does not equal the length of master"+
-			"\n\treceived: %d\n\texpected: %d",
-			sum, len(msg.master))
-	}
-
-	// Check that payloadA and payloadB serials fit in master
-	sum = len(msg.payloadA) + len(msg.payloadB)
-
-	if sum != len(msg.master) {
-		t.Errorf("The sum of the lengths of the payloads does not equal "+
-			"the length of master"+
-			"\n\treceived: %d\n\texpected: %d",
-			sum, len(msg.master))
+	if bytes.Compare(append(msg.contents1, msg.contents2...), contents) != 0 {
+		t.Errorf("contents data was corrupted.  Original: %+v, Current(pt1): %+v, Current(pt2: %+v",
+			contents, msg.contents1, msg.contents2)
 	}
 }
 
-// Tests that no two sub fields overlap (except when they are supposed to),
-// that the start of payloadA, Contents, and master is the same, and that the
-// end of payloadB, grpByte, and master are the same.
-func TestNewMessage_Overlap(t *testing.T) {
-	// Create new Message
-	msg := NewMessage()
+func TestNewMessage_Panic(t *testing.T) {
+	// Defer to an error when NewMessage() does not panic
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("NewMessage() did not panic when expected")
+		}
+	}()
+	_ = NewMessage(MinimumPrimeSize - 1)
+}
 
-	// Check the fields
-	if reflect.ValueOf(msg.master[:0]).Pointer() !=
-		reflect.ValueOf(msg.payloadA[:0]).Pointer() {
-		t.Errorf("The start of master is not the same pointer as the "+
-			"start of payloadA"+
-			"\n\tstart of master:   %d\n\tstart of payloadA: %d",
-			reflect.ValueOf(msg.master[:0]).Pointer(),
-			reflect.ValueOf(msg.payloadA[:0]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.master[:0]).Pointer() !=
-		reflect.ValueOf(msg.Contents.serial[:0]).Pointer() {
-		t.Errorf("The start of master is not the same pointer as the "+
-			"start of Contents"+
-			"\n\tstart of master:   %d\n\tstart of payloadA: %d",
-			reflect.ValueOf(msg.master[:0]).Pointer(),
-			reflect.ValueOf(msg.Contents.serial[:0]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.payloadA[:PayloadLen-1]).Pointer() >=
-		reflect.ValueOf(msg.payloadB[:0]).Pointer() {
-		t.Errorf("The end of payloadA overlaps with the start of payloadB"+
-			"\n\tend of payloadA:   %d\n\tstart of payloadB: %d",
-			reflect.ValueOf(msg.payloadA[:PayloadLen-1]).Pointer(),
-			reflect.ValueOf(msg.payloadB[:0]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.Contents.serial[:ContentsLen-1]).Pointer() >=
-		reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer() {
-		t.Errorf("The end of Contents overlaps with the start of AssociatedData"+
-			"\n\tend of Contents:         %d\n\tstart of AssociatedData: %d",
-			reflect.ValueOf(msg.Contents.serial[:ContentsLen-1]).Pointer(),
-			reflect.ValueOf(msg.AssociatedData.serial[:0]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.AssociatedData.serial[:AssociatedDataLen-1]).Pointer() >=
-		reflect.ValueOf(msg.grpByte[:0]).Pointer() {
-		t.Errorf("The end of AssociatedData overlaps with the start of grpByte"+
-			"\n\tend of AssociatedData:   %d\n\tstart of grpByte:        %d",
-			reflect.ValueOf(msg.AssociatedData.serial[:AssociatedDataLen-1]).Pointer(),
-			reflect.ValueOf(msg.grpByte[:0]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.master[TotalLen-1:]).Pointer() !=
-		reflect.ValueOf(msg.payloadB[PayloadLen-1:]).Pointer() {
-		t.Errorf("The end of master is not the same pointer as the "+
-			"end of payloadB"+
-			"\n\tend of master:   %d\n\tend of payloadB: %d",
-			reflect.ValueOf(msg.master[TotalLen-1:]).Pointer(),
-			reflect.ValueOf(msg.payloadB[PayloadLen-1:]).Pointer())
-	}
-
-	if reflect.ValueOf(msg.master[TotalLen-1:]).Pointer() !=
-		reflect.ValueOf(msg.grpByte[GrpByteLen-1:]).Pointer() {
-		t.Errorf("The end of master is not the same pointer as the "+
-			"end of payloadB"+
-			"\n\tend of master:  %d\n\tend of grpByte: %d",
-			reflect.ValueOf(msg.master[TotalLen-1:]).Pointer(),
-			reflect.ValueOf(msg.grpByte[GrpByteLen-1:]).Pointer())
+func TestMessage_ContentsSize(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize {
+		t.Errorf("Contents size somehow wrong")
 	}
 }
 
-// Tests that when values are set for each field that they are reflected in
-// master.
-func TestMessage_Values(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randPayloadA := make([]byte, PayloadLen)
-	rand.Read(randPayloadA)
-	randPayloadB := make([]byte, PayloadLen)
-	rand.Read(randPayloadB)
-	randContents := make([]byte, ContentsLen)
-	rand.Read(randContents)
-	randAssociatedData := make([]byte, AssociatedDataLen)
-	rand.Read(randAssociatedData)
+func TestMessage_Copy(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Create new Message and set payload fields
-	msg := NewMessage()
-	msg.SetPayloadA(randPayloadA)
-	msg.SetPayloadB(randPayloadB)
+	msgCopy := msg.Copy()
 
-	// Check if the values set to each field are reflected in master
-	if !bytes.Equal(msg.GetPayloadA(), msg.master[payloadAStart:payloadAEnd]) {
-		t.Errorf("payloadA is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadA(), msg.master[payloadAStart:payloadAEnd])
-	}
+	s := []byte("test")
+	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	copy(contents, s)
 
-	if !bytes.Equal(msg.GetPayloadB(), msg.master[payloadBStart:payloadBEnd]) {
-		t.Errorf("payloadB is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB(), msg.master[payloadBStart:payloadBEnd])
-	}
+	msgCopy.SetContents(contents)
 
-	if !bytes.Equal(msg.Contents.Get(), msg.master[contentsStart:contentsEnd]) {
-		t.Errorf("Contents is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.Contents.Get(), msg.master[contentsStart:contentsEnd])
-	}
-
-	if msg.Contents.GetPosition() != invalidPosition {
-		t.Errorf("Contents position is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.Contents.GetPosition(), invalidPosition)
-	}
-
-	if !bytes.Equal(msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd]) {
-		t.Errorf("AssociatedData is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen]) {
-		t.Errorf("AssociatedData recipientID is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen])
-	}
-
-	fp := msg.AssociatedData.GetKeyFP()
-
-	if !bytes.Equal(fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
-		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {
-		t.Errorf("AssociatedData timestamp is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen]) {
-		t.Errorf("AssociatedData MAC is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen])
-	}
-
-	// Create new Message and set Contents and AssociatedData
-	msg.Contents.Set(randContents)
-	msg.AssociatedData.Set(randAssociatedData)
-
-	// Check if the values set to each field are reflected in master
-	if !bytes.Equal(msg.GetPayloadA(), msg.master[payloadAStart:payloadAEnd]) {
-		t.Errorf("payloadA is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadA(), msg.master[payloadAStart:payloadAEnd])
-	}
-
-	if !bytes.Equal(msg.GetPayloadB(), msg.master[payloadBStart:payloadBEnd]) {
-		t.Errorf("payloadB is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB(), msg.master[payloadBStart:payloadBEnd])
-	}
-
-	if !bytes.Equal(msg.Contents.Get(), msg.master[contentsStart:contentsEnd]) {
-		t.Errorf("Contents is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.Contents.Get(), msg.master[contentsStart:contentsEnd])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd]) {
-		t.Errorf("AssociatedData is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.Get(), msg.master[associatedDataStart:associatedDataEnd])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen]) {
-		t.Errorf("AssociatedData recipientID is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetRecipientID(), msg.master[associatedDataStart:associatedDataStart+RecipientIDLen])
-	}
-
-	fp = msg.AssociatedData.GetKeyFP()
-
-	if !bytes.Equal(fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen]) {
-		t.Errorf("AssociatedData keyFP is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			fp[:], msg.master[associatedDataStart+RecipientIDLen:associatedDataStart+RecipientIDLen+KeyFPLen])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen]) {
-		t.Errorf("AssociatedData timestamp is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetTimestamp(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen])
-	}
-
-	if !bytes.Equal(msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen]) {
-		t.Errorf("AssociatedData MAC is not properly mapped to master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.AssociatedData.GetMAC(), msg.master[associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen:associatedDataStart+RecipientIDLen+KeyFPLen+TimestampLen+MacLen])
+	if bytes.Compare(msg.GetContents(), contents) == 0 {
+		t.Errorf("The copy is still pointing at the original data")
 	}
 }
 
-// Tests that Message is always constructed the same way.
-func TestMessage_Consistency(t *testing.T) {
-	// Define the master to check against (64-bit encoded)
-	master, _ := base64.StdEncoding.DecodeString("U4x/lrFkvxuXu59LtHLon1s" +
-		"UhPJSCcnZND6SugndnVLf15tNdkKbYXoMn58NO6VbDMDWFEyIhTWEGsvgcJsHWAg/Yd" +
-		"N1vAK0HfT5GSnhj9qeb4LlTnSOgeeeS71v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEz" +
-		"i6ih3xVec+ix44bC6+uiBuCp1EQikLtPJA8qkNGWnhiBhaXiu0M48bE8657w+BJW1cS" +
-		"/v2+DBAoh+EA2s0tiF9pLLYH2gChHBxwceeWotwtwlpbdLLhKXBeJz8FySMmgo4rBW4" +
-		"4F2WOEGFJiUf980RBDtTBFgI/qONXa2/tJ/+JdLrAyv2a0FaSsTYZ5ziWTf3Hno1TQ3" +
-		"NmHP1m10/sHhuJSRq3I25LdSFikM8r60LDyicyhWDxqsBnzqbov0bUqytGgEAsX7KCD" +
-		"ohdMmDx3peCg9Sgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnqGuLDDmvHP0rO1" +
-		"EhnqeVM6v0SNLEedMmB1M5BZFMjMHPCdo54Okp0CSry8sWk5e7c05+8KbgHxhU3rX+Q" +
-		"k/vesIQiR9ZdeKSqiuKoEfGHNszNz6+csJ6CYwCGX2ua3MsNR32aPh04snxzgnKhgF+" +
-		"fiF0gwP/QcGyPhHEjtF1OdaF928qeYvGTeDl2yhksq08Js5jgjQnZaE9Y=")
+func TestMessage_GetContents(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Generate random byte slice
-	rand.Seed(42)
-	randPayloadA := make([]byte, PayloadLen)
-	rand.Read(randPayloadA)
-	randPayloadB := make([]byte, PayloadLen)
-	rand.Read(randPayloadB)
+	s := []byte("test")
+	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	copy(contents, s)
 
-	// Create new Message and set payload fields
-	msg := NewMessage()
-	msg.SetPayloadA(randPayloadA)
-	msg.SetPayloadB(randPayloadB)
+	copy(msg.contents1, contents[:len(msg.contents1)])
+	copy(msg.contents2, contents[len(msg.contents1):])
 
-	if !bytes.Equal(msg.GetMaster(), master) {
-		t.Errorf("Message's master does not match the hardcoded master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetMaster(), master)
+	retrieved := msg.GetContents()
+
+	if bytes.Compare(retrieved, contents) != 0 {
+		t.Errorf("Did not properly get contents of message: %+v", retrieved)
 	}
 }
 
-// Tests that GetMaster() returns the correct bytes set to Message's master.
-func TestMessage_GetMaster(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, TotalLen)
-	rand.Read(randSlice)
+func TestMessage_SetContents(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Create new Message
-	msg := NewMessage()
-	copy(msg.master[:], randSlice)
+	c := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	contents := bytes.Map(func(r rune) rune {
+		return 'a'
+	}, c)
 
-	if !bytes.Equal(msg.GetMaster(), randSlice) {
-		t.Errorf("GetMaster() did not return the correct data from "+
-			"Message's master"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetMaster(), randSlice)
+	msg.SetContents(contents)
+
+	if bytes.Compare(msg.contents1, contents[:len(msg.contents1)]) != 0 {
+		t.Errorf("contents 1 not as expected")
+	}
+	if bytes.Compare(msg.contents2, contents[len(msg.contents1):]) != 0 {
+		t.Errorf("contents 2 not as expected")
 	}
 }
 
-// Tests that GetPayloadA() returns the correct bytes set to Message's payloadA.
-func TestMessage_GetPayloadA(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, TotalLen)
-	rand.Read(randSlice)
+func TestMessage_SetKeyFP(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Create new Message
-	msg := NewMessage()
-	copy(msg.master[:], randSlice)
+	fp := Fingerprint{}
+	copy(fp[:], "test")
+	msg.SetKeyFP(fp)
 
-	if !bytes.Equal(msg.GetPayloadA(), randSlice[payloadAStart:payloadAEnd]) {
-		t.Errorf("GetPayloadA() did not return the correct data from "+
-			"Message's payloadA"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadA(), randSlice[payloadAStart:payloadAEnd])
+	setFp := Fingerprint{}
+	copy(setFp[:], msg.keyFP)
+	if bytes.Compare(fp[:], setFp[:]) != 0 {
+		t.Errorf("Set fp %+v does not match original %+v", setFp, fp)
 	}
 }
 
-// Tests that SetPayloadA() sets the correct bytes to Message's payloadA and
-// copies the correct number of bytes.
+func TestMessage_GetKeyFP(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	copy(msg.keyFP, "test")
+	fp := msg.GetKeyFP()
+	if string(fp[:4]) != "test" {
+		t.Errorf("Didn't properly retrieve keyFP")
+	}
+
+	fp[14] = 'x'
+
+	if msg.keyFP[14] == 'x' {
+		t.Errorf("Change to retrieved fingerprint altered message field")
+	}
+}
+
+func TestMessage_SetMac_WrongLen(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetMac() did not panic when given wrong length input")
+		}
+	}()
+
+	msg := NewMessage(MinimumPrimeSize)
+
+	msg.SetMac([]byte("mac"))
+}
+
+func TestMessage_SetMac_BadFormat(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetMac() did not panic when given input w/o first byte set to 0")
+		}
+	}()
+
+	msg := NewMessage(MinimumPrimeSize)
+
+	mac := make([]byte, MacLen)
+	mac[0] |= 0x80
+	msg.SetMac(mac)
+
+}
+
+func TestMessage_SetMac(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	mac := make([]byte, MacLen)
+	copy(mac, "mac")
+	mac[0] = 0
+	msg.SetMac(mac)
+
+	if bytes.Compare(msg.mac, mac) != 0 {
+		t.Errorf("Failed to set mac field")
+	}
+}
+
+func TestMessage_GetMac(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	copy(msg.mac, "test")
+	mac := msg.GetMac()
+	if string(mac[:4]) != "test" {
+		t.Errorf("Didn't properly retrieve MAC")
+	}
+
+	mac[14] = 'x'
+
+	if msg.mac[14] == 'x' {
+		t.Errorf("Change to retrieved mac field altered message field")
+	}
+}
+
+func TestMessage_SetPayloadA_WrongLen(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetPayloadA() did not panic when given input of wrong len")
+		}
+	}()
+
+	msg := NewMessage(MinimumPrimeSize)
+
+	msg.SetPayloadA([]byte("test"))
+}
+
 func TestMessage_SetPayloadA(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen)
-	rand.Read(randSlice)
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Create new Message and set payloadA
-	msg := NewMessage()
-	msg.SetPayloadA(randSlice)
+	payloadA := make([]byte, len(msg.payloadA))
+	copy(payloadA, "test")
+	msg.SetPayloadA(payloadA)
 
-	if !bytes.Equal(msg.GetPayloadA(), randSlice) {
-		t.Errorf("SetPayloadA() did not properly set Message's payloadA"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadA(), randSlice)
+	if bytes.Compare(payloadA, msg.payloadA) != 0 {
+		t.Errorf("Failed to set the payload a field properly")
 	}
 }
 
-// Tests that SetPayloadA() panics when the new payload is not the same length
-// as payloadA.
-func TestMessage_SetPayloadA_Panic(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen+5)
-	rand.Read(randSlice)
+func TestMessage_GetPayloadA(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Defer to an error when SetPayloadA() does not panic
+	copy(msg.payloadA, "test")
+	payloadA := msg.GetPayloadA()
+	if string(payloadA[:4]) != "test" {
+		t.Errorf("Did not properly retrieve payload A")
+	}
+
+	payloadA[14] = 'x'
+
+	if msg.payloadA[14] == 'x' {
+		t.Errorf("Change to retreived payloadA field altered message field")
+	}
+}
+
+func TestMessage_SetPayloadB_WrongLen(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetPayloadA() did not panic when expected")
+			t.Errorf("SetPayloadB() did not panic when given input of wrong len")
 		}
 	}()
 
-	// Create new Message and set payloadA
-	msg := NewMessage()
-	msg.SetPayloadA(randSlice)
+	msg.SetPayloadB([]byte("test"))
 }
 
-// Tests that GetPayloadB() returns the correct bytes set to Message's payloadB.
-func TestMessage_GetPayloadB(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, TotalLen)
-	rand.Read(randSlice)
-
-	// Create new Message
-	msg := NewMessage()
-	copy(msg.master[:], randSlice)
-
-	if !bytes.Equal(msg.GetPayloadB(), randSlice[payloadBStart:payloadBEnd]) {
-		t.Errorf("GetPayloadB() did not return the correct data from "+
-			"Message's payloadB"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB(), randSlice[payloadBStart:payloadBEnd])
-	}
-}
-
-// Tests that SetPayloadB() sets the correct bytes to Message's payloadB and
-// copies the correct number of bytes.
 func TestMessage_SetPayloadB(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen)
-	rand.Read(randSlice)
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Create new Message and set payloadB
-	msg := NewMessage()
-	msg.SetPayloadB(randSlice)
+	payloadB := make([]byte, len(msg.payloadB))
+	copy(payloadB, "test")
+	msg.SetPayloadB(payloadB)
 
-	if !bytes.Equal(msg.GetPayloadB(), randSlice) {
-		t.Errorf("SetPayloadB() did not properly set Message's payloadB"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB(), randSlice)
+	if bytes.Compare(msg.payloadB, payloadB) != 0 {
+		t.Errorf("Did not set payloadB field properly")
 	}
 }
 
-// Tests that SetPayloadB() panics when the new payload is not the same length
-// as payloadB.
-func TestMessage_SetPayloadB_Panic(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen+5)
-	rand.Read(randSlice)
+func TestMessage_GetPayloadB(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Defer to an error when SetPayloadB() does not panic
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("SetPayloadB() did not panic when expected")
-		}
-	}()
-
-	// Create new Message and set payloadB
-	msg := NewMessage()
-	msg.SetPayloadB(randSlice)
-}
-
-// Tests that GetPayloadBForEncryption() returns the correct bytes set to
-// Message's payloadB. Also checks that the first and last byte are swapped and
-// that the first byte is zero.
-func TestMessage_GetPayloadBForEncryption(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, TotalLen)
-	rand.Read(randSlice)
-	randSlice[TotalLen-1] = 0
-
-	// Create new Message
-	msg := NewMessage()
-	copy(msg.master[:], randSlice)
-
-	if !bytes.Equal(msg.GetPayloadBForEncryption()[1:PayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1]) {
-		t.Errorf("GetPayloadBForEncryption() did not return the correct data from "+
-			"Message's payloadB"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadBForEncryption()[1:PayloadLen-1], randSlice[payloadBStart+1:payloadBEnd-1])
+	copy(msg.payloadB, "test")
+	payloadB := msg.GetPayloadB()
+	if string(payloadB[:4]) != "test" {
+		t.Errorf("Did not properly retrieve payload B")
 	}
 
-	if msg.GetPayloadBForEncryption()[0] != 0 {
-		t.Errorf("GetPayloadBForEncryption() did not set the first byte to zero"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadBForEncryption()[0], 0)
-	}
+	payloadB[14] = 'x'
 
-	if msg.GetPayloadBForEncryption()[PayloadLen-1] != randSlice[payloadBStart] {
-		t.Errorf("GetPayloadBForEncryption() did not correctly swap the "+
-			"first and last byte"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadBForEncryption()[PayloadLen-1], randSlice[payloadBStart])
+	if msg.payloadB[14] == 'x' {
+		t.Errorf("Change to retreived payloadB field altered message field")
 	}
 }
 
-// Tests that SetDecryptedPayloadB() sets the correct bytes to Message's
-// payloadB and copies the correct number of bytes. Also checks that the first
-// and last bytes are swapped and that the first byte is zero
-func TestMessage_SetDecryptedPayloadB(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen)
-	rand.Read(randSlice)
+func TestMessage_SetRecipientID(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	id := id2.NewIdFromString("testid", id2.Gateway, t)
+	msg.SetRecipientID(id)
 
-	// Create new Message and set payloadB
-	msg := NewMessage()
-	msg.SetDecryptedPayloadB(randSlice)
-
-	if !bytes.Equal(msg.GetPayloadB()[1:PayloadLen-1], randSlice[1:PayloadLen-1]) {
-		t.Errorf("SetDecryptedPayloadB() did not return the correct data from "+
-			"Message's payloadB"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[1:PayloadLen-1], randSlice[1:PayloadLen-1])
-	}
-
-	if msg.GetPayloadB()[PayloadLen-1] != 0 {
-		t.Errorf("SetDecryptedPayloadB() did not set the last byte to zero"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[PayloadLen-1], 0)
-	}
-
-	if msg.GetPayloadB()[0] != randSlice[PayloadLen-1] {
-		t.Errorf("SetDecryptedPayloadB() did not correctly swap the "+
-			"first and last byte"+
-			"\n\treceived: %v\n\texpected: %v",
-			msg.GetPayloadB()[0], randSlice[PayloadLen-1])
+	if bytes.Compare(id[:], msg.recipientID) != 0 {
+		t.Errorf("Did not set recipient id field properly")
 	}
 }
 
-// Tests that SetDecryptedPayloadB() panics when the new payload is not the same
-// length as payloadB.
-func TestMessage_SetDecryptedPayloadB_Panic(t *testing.T) {
-	// Generate random byte slice
-	rand.Seed(42)
-	randSlice := make([]byte, PayloadLen+5)
-	rand.Read(randSlice)
+func TestMessage_GetRecipientID(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
 
-	// Defer to an error when SetPayloadB() does not panic
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("SetDecryptedPayloadB() did not panic when expected")
-		}
-	}()
+	copy(msg.recipientID, "test")
+	recipientId := msg.GetRecipientID()
+	if string(recipientId[:4]) != "test" {
+		t.Errorf("Did not properly retrieve recipient ID")
+	}
 
-	// Create new Message and set payloadB
-	msg := NewMessage()
-	msg.SetDecryptedPayloadB(randSlice)
+	recipientId[14] = 'x'
+
+	if msg.recipientID[14] == 'x' {
+		t.Errorf("Change to retrieved recipientID altered message field")
+	}
+}
+
+func TestMessage_GetRawContents(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	copy(msg.contents1, "contents1")
+	copy(msg.contents2, "contents2")
+	copy(msg.keyFP, []byte("fingerprint"))
+	copy(msg.mac, []byte("mac"))
+
+	secret := msg.GetRawContents()
+	if !bytes.Contains(secret, []byte("contents1")) {
+		t.Errorf("Raw contents did not include contents 1")
+	}
+	if !bytes.Contains(secret, []byte("contents2")) {
+		t.Errorf("Raw contents did not include contents 2")
+	}
+	if !bytes.Contains(secret, []byte("fingerprint")) {
+		t.Errorf("Raw contents did not include fingerprint")
+	}
+	if !bytes.Contains(secret, []byte("mac")) {
+		t.Errorf("Raw contents did not include mac")
+	}
+}
+
+func TestMessage_GetRawContentsSize(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	expectedLen := (2 * MinimumPrimeSize) - RecipientIDLen
+
+	if msg.GetRawContentsSize() != expectedLen {
+		t.Errorf("Didn't get expected length")
+	}
+}
+
+func TestMessage_SetSecretPayload(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	spLen := (2 * MinimumPrimeSize) - RecipientIDLen
+	sp := make([]byte, spLen)
+
+	fp := make([]byte, len(msg.keyFP))
+	fp = bytes.Map(func(r rune) rune {
+		return 'f'
+	}, fp)
+
+	mac := make([]byte, len(msg.mac))
+	mac = bytes.Map(func(r rune) rune {
+		return 'm'
+	}, mac)
+
+	c1 := make([]byte, len(msg.contents1))
+	c1 = bytes.Map(func(r rune) rune {
+		return 'a'
+	}, c1)
+
+	c2 := make([]byte, len(msg.contents2))
+	c2 = bytes.Map(func(r rune) rune {
+		return 'b'
+	}, c2)
+
+	copy(sp[:KeyFPLen], fp)
+	copy(sp[MinimumPrimeSize:MinimumPrimeSize+MacLen], mac)
+
+	copy(sp[KeyFPLen:MinimumPrimeSize], c1)
+	copy(sp[MinimumPrimeSize+MacLen:2*MinimumPrimeSize-RecipientIDLen], c2)
+
+	msg.SetRawContents(sp)
+
+	if bytes.Contains(msg.keyFP, []byte("a")) || bytes.Contains(msg.keyFP, []byte("b")) ||
+		bytes.Contains(msg.keyFP, []byte("m")) || !bytes.Contains(msg.keyFP, []byte("f")) {
+		t.Errorf("Setting raw payload failed, key fingerprint contains "+
+			"wrong data: %s", msg.keyFP)
+	}
+
+	if bytes.Contains(msg.mac, []byte("a")) || bytes.Contains(msg.mac, []byte("b")) ||
+		!bytes.Contains(msg.mac, []byte("m")) || bytes.Contains(msg.mac, []byte("f")) {
+		t.Errorf("Setting raw payload failed, mac contains "+
+			"wrong data: %s", msg.mac)
+	}
+
+	if !bytes.Contains(msg.contents1, []byte("a")) || bytes.Contains(msg.contents1, []byte("b")) ||
+		bytes.Contains(msg.contents1, []byte("m")) || bytes.Contains(msg.contents1, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents1 contains "+
+			"wrong data: %s", msg.contents1)
+	}
+
+	if bytes.Contains(msg.contents2, []byte("a")) || !bytes.Contains(msg.contents2, []byte("b")) ||
+		bytes.Contains(msg.contents2, []byte("m")) || bytes.Contains(msg.contents2, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents2 contains "+
+			"wrong data: %s", msg.contents2)
+	}
+
+}
+
+func TestMessage_Marshal(t *testing.T) {
+	m := NewMessage(256)
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	payload := make([]byte, 256)
+	prng.Read(payload)
+	m.SetPayloadA(payload)
+	prng.Read(payload)
+	m.SetPayloadB(payload)
+
+	messageData := m.Marshal()
+	newMsg := Unmarshal(messageData)
+
+	if !reflect.DeepEqual(m, newMsg) {
+		t.Errorf("Failed to Marshal() and Unmarshal() message."+
+			"\n\texpected: %+v\n\treceived: %+v", m, newMsg)
+	}
 }

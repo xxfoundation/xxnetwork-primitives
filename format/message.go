@@ -6,135 +6,277 @@
 
 package format
 
-import jww "github.com/spf13/jwalterweatherman"
+import (
+	jww "github.com/spf13/jwalterweatherman"
+	"gitlab.com/elixxir/primitives/id"
+)
 
 const (
-	// Length of the entire message serial
-	TotalLen = 512 // 4096 bits
+	KeyFPLen       = 32
+	MacLen         = 32
+	RecipientIDLen = 33
 
-	// Length, start index, and end index of the payloads
-	PayloadLen    = 256 // 2048 bits
-	payloadAStart = 0
-	payloadAEnd   = payloadAStart + PayloadLen
-	payloadBStart = payloadAEnd
-	payloadBEnd   = payloadBStart + PayloadLen
+	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
-	// Length, start index, and end index of grpByte
-	GrpByteLen   = 1 // 8 bits
-	grpByteStart = associatedDataEnd
-	grpByteEnd   = grpByteStart + GrpByteLen
+	AssociatedDataSize = KeyFPLen + MacLen + RecipientIDLen
 )
 
 /*                               Message Structure (not to scale)
-+----------------------------------------------------------------------------------------+
-|                                         Message                                        |
-|                                        4096 bits                                       |
-+----------------------------------------------------------------------------------------+
-|                  payloadA                  |                 payloadB                  |
-|                 2048 bits                  |                2048 bits                  |
-+------------------------------------+-------+---------------------------------+---------+
-|              Contents              |             AssociatedData              | grpByte |
-|              3192 bits             |                896 bits                 | 8 bits  |
-+------------------------------------+-----------------------------------------+         |
-|     padding     |       data       | recipientID | keyFP | timestamp |  mac  |         |
-|   88–3192 bits  |    0–3104 bits   |   256 bits  | 256 b |  128 bits | 256 b |         |
-+-----------------+------------------+-------------+-------+-----------+-------+---------+
++--------------------------------------------------------------------------------------+
+|                                       Message							   			   |
+|                                  2*primeSize bits					    			   |
++------------------------------------------+-------------------------------------------+
+|                  payloadA                |                 payloadB                  |
+|               primeSize bits             |              primeSize bits               |
++---------+----------+---------------------+---------+-------+-----------+-------------+
+| grpBitA |  keyFP   |      Contents1      | grpBitB |  mac  | Contents2 | recipientID |
+|  1 bit  | 255 bits |       *below*       | 1 bit   | 255 b |  *below*  |  264 bits   |
++ --------+----------+---------------------+---------+-------+-----------+-------------+
+|			                     Raw Contents	                     	 |
+|                        2*primeSize - recipientID bits                  |
++------------------------------------------------------------------------+
+
+
+size - size in bits of the data which is stored
+
+Size Contents1 = primeSize - grpBitASize - keyFPSize - sizeSize
+Size Contents2 = primeSize - grpBitBSize - macSize- recipientIDSize - timestampSize
+
+the size of the data in the two contents fields is stored within the "size" field
+
+/////Adherence to the group/////////////////////////////////////////////////////
+The first bits of keyFingerprint and MAC are enforced to be 0, thus ensuring
+PayloadA and PayloadB are within the group
 */
 
 // Message structure stores all the data serially. Subsequent fields point to
-// subsections of the serialised data so that the message is always serialized,
-// it is ready to go, and no copies are required.
+// subsections of the serialised data.
 type Message struct {
-	master         [TotalLen]byte // serialised message data
-	Contents                      // points to the contents of the message
-	AssociatedData                // points to the associate data of the message
-	payloadA       []byte         // points to the first half of the message
-	payloadB       []byte         // points to the second half of the message
-	grpByte        []byte         // zero value byte ensures payloadB is in the group
+	data []byte
+
+	//Note: These are mapped to locations in the data object
+	payloadA []byte
+	payloadB []byte
+
+	keyFP       []byte
+	contents1   []byte
+	mac         []byte
+	contents2   []byte
+	recipientID []byte
+
+	rawContents []byte
 }
 
-// NewMessage creates a new empty message. It points the contents, associated
-// data, payload A, and payload B, to their respective parts of master.
-func NewMessage() *Message {
-	newMsg := &Message{master: [TotalLen]byte{}}
+// NewMessage creates a new empty message based upon the size of the encryption
+// primes. All subcomponents point to locations in the internal data buffer.
+// Panics if the prime size to too small.
+func NewMessage(numPrimeBytes int) Message {
+	if numPrimeBytes < MinimumPrimeSize {
+		jww.FATAL.Panicf("cannot make message based off of a prime of "+
+			"size %v, minnimum size is %v to small prime", numPrimeBytes,
+			MinimumPrimeSize)
+	}
 
-	newMsg.Contents = *NewContents(newMsg.master[contentsStart:contentsEnd])
-	newMsg.AssociatedData = *NewAssociatedData(
-		newMsg.master[associatedDataStart:associatedDataEnd])
+	data := make([]byte, 2*numPrimeBytes)
 
-	newMsg.payloadA = newMsg.master[payloadAStart:payloadAEnd]
-	newMsg.payloadB = newMsg.master[payloadBStart:payloadBEnd]
+	return Message{
+		data: data,
 
-	newMsg.grpByte = newMsg.master[grpByteStart:grpByteEnd]
-	copy(newMsg.grpByte, []byte{0})
+		payloadA: data[:numPrimeBytes],
+		payloadB: data[numPrimeBytes:],
 
-	return newMsg
+		keyFP:     data[0:KeyFPLen],
+		contents1: data[KeyFPLen:numPrimeBytes],
+
+		mac:         data[numPrimeBytes : numPrimeBytes+MacLen],
+		contents2:   data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
+		recipientID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes],
+
+		rawContents: data[:2*numPrimeBytes-RecipientIDLen],
+	}
 }
 
-// GetMaster returns the entire serialised message.
-func (m *Message) GetMaster() []byte {
-	return m.master[:]
+// Marshal marshals the message into a byte slice.
+func (m *Message) Marshal() []byte {
+	return copyByteSlice(m.data)
+}
+
+// Unmarshal unmarshalls a byte slice into a new Message.
+func Unmarshal(b []byte) Message {
+	m := NewMessage(len(b) / 2)
+	copy(m.data, b)
+	return m
+}
+
+// Returns a copy of the message
+func (m Message) Copy() Message {
+	m2 := NewMessage(len(m.data) / 2)
+	copy(m2.data, m.data)
+	return m2
+}
+
+//returns the size of the prime used
+func (m Message) GetPrimeByteLen() int {
+	return len(m.data) / 2
+}
+
+// Returns the maximum size of the contents
+func (m Message) ContentsSize() int {
+	return len(m.data) - AssociatedDataSize
 }
 
 // GetPayloadA returns payload A, which is the first half of the message.
-func (m *Message) GetPayloadA() []byte {
-	return m.payloadA
+func (m Message) GetPayloadA() []byte {
+	return copyByteSlice(m.payloadA)
 }
 
 // SetPayloadA copies the passed byte slice into payload A. If the specified
 // byte slice is not exactly the same size as payload A, then it panics.
-func (m *Message) SetPayloadA(payload []byte) {
-	if len(payload) != PayloadLen {
+func (m Message) SetPayloadA(payload []byte) {
+	if len(payload) != len(m.payloadA) {
 		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
 			"Expected: %v, Recieved: %v",
-			PayloadLen, len(payload))
+			len(m.payloadA), len(payload))
 	}
 
 	copy(m.payloadA, payload)
 }
 
 // GetPayloadB returns payload B, which is the last half of the message.
-func (m *Message) GetPayloadB() []byte {
-	return m.payloadB
+func (m Message) GetPayloadB() []byte {
+	return copyByteSlice(m.payloadB)
 }
 
 // SetPayloadB copies the passed byte slice into payload B. If the specified
 // byte slice is not exactly the same size as payload B, then it panics.
-func (m *Message) SetPayloadB(payload []byte) {
-	if len(payload) != PayloadLen {
+func (m Message) SetPayloadB(payload []byte) {
+	if len(payload) != len(m.payloadB) {
 		jww.ERROR.Panicf("new payload not the same size as PayloadB;"+
 			"Expected: %v, Recieved: %v",
-			PayloadLen, len(payload))
+			len(m.payloadB), len(payload))
 	}
 
 	copy(m.payloadB, payload)
 }
 
-// GetPayloadBForEncryption ensures payload B is in the group for encrypting. It
-// returns payload B with the first byte swapped to the end and the first byte
-// to zero.
-func (m *Message) GetPayloadBForEncryption() []byte {
-	payloadCopy := make([]byte, PayloadLen)
-	copy(payloadCopy, m.payloadB)
-	payloadCopy[PayloadLen-1] = payloadCopy[0]
-	payloadCopy[0] = 0
+// Get contents returns the exact contents of the message. This size of the
+// return is based on the size of the contents actually stored
+func (m Message) GetContents() []byte {
 
-	return payloadCopy
+	c := make([]byte, len(m.contents1)+len(m.contents2))
+
+	copy(c[:len(m.contents1)], m.contents1)
+	copy(c[len(m.contents1):], m.contents2)
+
+	return c
 }
 
-// SetDecryptedPayloadB is used when receiving a decrypted payload B to ensure
-// all data is put back in the right order. If the specified byte array is not
-// exactly the same size as payload B, then it panics. Specifically, it moves
-// the last byte to the front and sets the last byte to zero. Assumes the
-// newPayload is in the group and that its first byte is zero.
-func (m *Message) SetDecryptedPayloadB(newPayload []byte) {
-	if len(newPayload) != PayloadLen {
-		jww.ERROR.Panicf("new payload not the same size as PayloadA;"+
-			"Expected: %v, Recieved: %v",
-			PayloadLen, len(newPayload))
+// sets the contents of the message. This will panic if the payload is greater
+// than the maximum size. This overwrites any storage already in the message but
+// will not clear bits beyond the size of the passed contents.
+// If the passed contents is larger than the maximum contents size this will
+// panic
+func (m Message) SetContents(c []byte) {
+	if len(c) > len(m.contents1)+len(m.contents2) {
+		jww.ERROR.Panicf("contents too large at %v bytes, must be "+
+			"%v bytes or less", len(c), len(m.contents1)+len(m.contents2))
 	}
 
-	copy(m.payloadB, newPayload)
-	m.payloadB[0] = m.payloadB[PayloadLen-1]
-	m.payloadB[PayloadLen-1] = 0
+	if len(c) <= len(m.contents1) {
+		copy(m.contents1, c)
+	} else {
+		copy(m.contents1, c[:len(m.contents1)])
+		copy(m.contents2, c[len(m.contents1):])
+	}
+}
+
+// Get raw contents returns the exact contents of the message. This field
+// crosses over the group barrier and the setter of this is responsible for
+// ensuring the underlying payloads are within the group.
+func (m Message) GetRawContents() []byte {
+	return copyByteSlice(m.rawContents)
+}
+
+// Get size raw contents returns the exact contents of the message.
+func (m Message) GetRawContentsSize() int {
+	return len(m.rawContents)
+}
+
+// sets raw  contents of the message. This field crosses over the group barrier
+// and the setter of this is responsible for ensuring the underlying payloads
+// are within the group. This will panic if the payload is greater
+// than the maximum size. This overwrites any storage already in the message.
+// If the passed contents is larger than the maximum contents size this will
+// panic
+func (m Message) SetRawContents(c []byte) {
+	if len(c) != len(m.rawContents) {
+		jww.ERROR.Panicf("Set raw contents too large at %v bytes, "+
+			"must be %v bytes or less", len(c),
+			len(m.contents1)+len(m.contents2))
+	}
+
+	copy(m.rawContents, c)
+}
+
+// Gets the recipientID
+func (m Message) GetRecipientID() *id.ID {
+	rid := id.ID{}
+	copy(rid[:], m.recipientID)
+	return &rid
+}
+
+// Sets the recipientID
+func (m Message) SetRecipientID(rid *id.ID) {
+	copy(m.recipientID, rid[:])
+}
+
+// Gets the Key Fingerprint
+func (m Message) GetKeyFP() Fingerprint {
+	fp := Fingerprint{}
+	copy(fp[:], m.keyFP)
+	return fp
+}
+
+// Sets the Key Fingerprint. Checks that the first bit of the Key Fingerprint is
+// 0, otherwise it panics.
+func (m Message) SetKeyFP(fp Fingerprint) {
+	if len(fp) != len(m.keyFP) {
+		jww.ERROR.Panicf("key fingerprint not the correct size;"+
+			"Expected: %v, Recieved: %v",
+			len(m.keyFP), len(fp))
+	}
+
+	if fp[0]>>7 != 0 {
+		jww.ERROR.Panicf("key fingerprint's first bit is not zero")
+	}
+
+	copy(m.keyFP, fp[:])
+}
+
+// Gets the MAC
+func (m Message) GetMac() []byte {
+	return copyByteSlice(m.mac)
+}
+
+// Sets the MAC. Checks that the first bit of the MAC is
+// 0, otherwise it panics.
+func (m Message) SetMac(mac []byte) {
+	if len(mac) != len(m.mac) {
+		jww.ERROR.Panicf("mac is not the correct size;"+
+			"Expected: %v, Recieved: %v",
+			len(m.mac), len(mac))
+	}
+
+	if mac[0]>>7 != 0 {
+		jww.ERROR.Panicf("mac's first bit is not zero")
+	}
+
+	copy(m.mac, mac)
+}
+
+//helper function to copy a byte slice
+func copyByteSlice(s []byte) []byte {
+	c := make([]byte, len(s))
+	copy(c, s)
+	return c
 }

@@ -8,6 +8,7 @@ package rateLimiting
 
 import (
 	"math"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -65,7 +66,7 @@ func TestLookupBucket_NewBuckets(t *testing.T) {
 	buckets := make([]*Bucket, 10)
 
 	for i := 0; i < 10; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 
 		if len(bm.buckets) != (i + 1) {
 			t.Errorf("LookupBucket() has incorrect length when looking up new buckets\n\treceived: %v\n\texpected: %v", len(bm.buckets), i+1)
@@ -88,13 +89,13 @@ func TestLookupBucket_RecallBuckets(t *testing.T) {
 	buckets := make([]*Bucket, 10)
 
 	for i := 0; i < 10; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 	}
 
 	for i := 0; i < 9; i++ {
-		bu := bm.LookupBucket(string(i))
+		bu := bm.LookupBucket(strconv.Itoa(i))
 
-		b, ok := bm.buckets[string(i)]
+		b, ok := bm.buckets[strconv.Itoa(i)]
 
 		if &bu == &buckets[i] {
 			t.Errorf("LookupBucket() did not return a bucket when looking up existing buckets\n\treceived: %v\n\texpected: %v", &bu, &buckets[i])
@@ -145,13 +146,13 @@ func TestClearStaleBuckets(t *testing.T) {
 	bm := CreateBucketMap(math.MaxUint32, math.MaxFloat64, 10*time.Second, 3*time.Second)
 	buckets := make([]*Bucket, 20)
 	for i := 0; i < 10; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 	}
 
 	time.Sleep(5 * time.Second)
 
 	for i := 10; i < 20; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 	}
 
 	time.Sleep(1 * time.Second)
@@ -163,7 +164,7 @@ func TestClearStaleBuckets(t *testing.T) {
 	}
 
 	for i := 10; i < 20; i++ {
-		_, exists := bm.buckets[string(i)]
+		_, exists := bm.buckets[strconv.Itoa(i)]
 
 		if !exists {
 			t.Errorf("clearOldBuckets() cleared key (%d) that was not old enough", i)
@@ -177,13 +178,13 @@ func TestStaleBucketWorker(t *testing.T) {
 	bm := CreateBucketMap(math.MaxUint32, math.MaxFloat64, 3*time.Second, 5*time.Second)
 	buckets := make([]*Bucket, 20)
 	for i := 0; i < 10; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 	}
 
 	time.Sleep(5 * time.Second)
 
 	for i := 10; i < 20; i++ {
-		buckets[i] = bm.LookupBucket(string(i))
+		buckets[i] = bm.LookupBucket(strconv.Itoa(i))
 	}
 
 	time.Sleep(4 * time.Second)
@@ -193,7 +194,7 @@ func TestStaleBucketWorker(t *testing.T) {
 	}
 
 	for i := 10; i < 20; i++ {
-		_, exists := bm.buckets[string(i)]
+		_, exists := bm.buckets[strconv.Itoa(i)]
 
 		if !exists {
 			t.Errorf("clearOldBuckets() cleared key (%d) that was not old enough", i)
