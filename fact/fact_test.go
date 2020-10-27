@@ -1,4 +1,4 @@
-package contact
+package fact
 
 import (
 	"reflect"
@@ -20,30 +20,6 @@ func TestNewFact(t *testing.T) {
 
 	if !reflect.DeepEqual(e, g) {
 		t.Errorf("The returned Fact did not match the expected Fact")
-	}
-}
-
-// Test Get() function correctly gets the fact string
-func TestFact_Get(t *testing.T) {
-	f := Fact{
-		Fact: "testing",
-		T:    1,
-	}
-
-	if f.Get() != f.Fact {
-		t.Errorf("f.Get() did not return the same value as f.Fact")
-	}
-}
-
-// Test Type() function correctly gets the type number
-func TestFact_Type(t *testing.T) {
-	f := Fact{
-		Fact: "testing",
-		T:    1,
-	}
-
-	if f.Type() != int(f.T) {
-		t.Errorf("f.Type() did not return the same value as int(f.T)")
 	}
 }
 

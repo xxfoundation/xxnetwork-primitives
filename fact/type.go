@@ -1,4 +1,4 @@
-package contact
+package fact
 
 import (
 	"fmt"
@@ -41,12 +41,12 @@ func (t FactType) Stringify() string {
 }
 
 func UnstringifyFactType(s string) (FactType, error) {
-	switch s[0] {
-	case 'U':
+	switch s {
+	case "U":
 		return Username, nil
-	case 'E':
+	case "E":
 		return Email, nil
-	case 'P':
+	case "P":
 		return Phone, nil
 	}
 	return 3, errors.Errorf("Unknown Fact FactType: %s", s)

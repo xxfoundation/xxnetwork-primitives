@@ -1,4 +1,4 @@
-package contact
+package fact
 
 import (
 	"testing"
