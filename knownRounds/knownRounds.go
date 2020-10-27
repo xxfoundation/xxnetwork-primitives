@@ -117,6 +117,11 @@ func (kr *KnownRounds) Checked(rid id.Round) bool {
 // the last checked round, then every round between them is set as unchecked and
 // the passed in round becomes the last checked round.
 func (kr *KnownRounds) Check(rid id.Round) {
+	if abs(int(kr.lastChecked-rid))/(len(kr.bitStream)*64) > 0 {
+		jww.FATAL.Panicf("Cannot check a round outside the current scope. " +
+			"Scope is KnownRounds size more rounds than last checked. A call " +
+			"to Forward() can be used to fix the scope.")
+	}
 	if rid < kr.firstUnchecked {
 		return
 	}
