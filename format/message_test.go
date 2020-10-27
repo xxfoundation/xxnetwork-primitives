@@ -8,7 +8,7 @@ package format
 
 import (
 	"bytes"
-	id2 "gitlab.com/elixxir/primitives/id"
+	id2 "gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"reflect"
 	"testing"
