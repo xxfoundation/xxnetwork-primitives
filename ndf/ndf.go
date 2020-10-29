@@ -235,7 +235,7 @@ func (n *Node) GetNodeId() (*id.ID, error) {
 }
 
 // GetGatewayId formats the gateway id into the id format specified in the id package of this repo
-func (n *Node) GetGatewayId() (*id.ID, error) {
+func (n *Gateway) GetGatewayId() (*id.ID, error) {
 	newID, err := id.Unmarshal(n.ID)
 	if err != nil {
 		return nil, err

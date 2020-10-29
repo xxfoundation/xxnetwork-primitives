@@ -416,19 +416,14 @@ func TestGetNodeId(t *testing.T) {
 }
 
 // Happy path
-func TestNode_GetGatewayId(t *testing.T) {
-	jsonData, _, err := DecodeNDF(ExampleNDF)
-	if err != nil {
-		t.Errorf("DecodeNDF() unexpectedly produced an error"+
-			"\n\treceived: %#v\n\texpected: %#v",
-			err, nil)
-	}
+func TestGetGatewayId(t *testing.T) {
+	gw := Gateway{make([]byte, 33), "52.41.80.104", "-----BEGIN CERT"}
 
 	// Expected id, pulled from the global ExampleNDF
 	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	// Fetch the id
-	receivedGatewayId, err := jsonData.Nodes[0].GetGatewayId()
+	receivedGatewayId, err := gw.GetGatewayId()
 	if err != nil {
 		t.Errorf("GetGatewayId() produces an error:\n%v", err)
 	}
