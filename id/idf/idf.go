@@ -14,7 +14,7 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
-	"gitlab.com/elixxir/primitives/utils"
+	"gitlab.com/xx_network/primitives/utils"
 )
 
 // The length of the salt byte array
