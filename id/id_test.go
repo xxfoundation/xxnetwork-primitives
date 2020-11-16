@@ -44,9 +44,13 @@ func TestID_Cmp(t *testing.T) {
 	// Test values
 	randomBytes1 := newRandomBytes(ArrIDLen, t)
 	randomBytes2 := newRandomBytes(ArrIDLen, t)
+	randomBytes3 := make([]byte, ArrIDLen)
+	copy(randomBytes3, randomBytes2)
+	randomBytes3[ArrIDLen-1] = ^randomBytes3[ArrIDLen-1]
 	testID1 := NewIdFromBytes(randomBytes1, t)
 	testID2 := NewIdFromBytes(randomBytes1, t)
 	testID3 := NewIdFromBytes(randomBytes2, t)
+	testID4 := NewIdFromBytes(randomBytes3, t)
 
 	// Compare two equal IDs
 	testVal := testID1.Cmp(testID2)
@@ -57,6 +61,13 @@ func TestID_Cmp(t *testing.T) {
 
 	// Compare two unequal IDs
 	testVal = testID1.Cmp(testID3)
+	if testVal {
+		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
+			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
+	}
+
+	// Compare two almost equal IDs
+	testVal = testID3.Cmp(testID4)
 	if testVal {
 		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
 			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
