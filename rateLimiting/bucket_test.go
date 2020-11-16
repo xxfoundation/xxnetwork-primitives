@@ -7,6 +7,7 @@
 package rateLimiting
 
 import (
+	"encoding/json"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -93,7 +94,7 @@ func TestCreateBucketFromParams(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedBucket, testBucket) {
 		t.Errorf("CreateBucketFromParams() produced an incorrect bucket."+
-			"\n\texepcted: %+v\n\trecieved: %+v", expectedBucket, testBucket)
+			"\n\texepcted: %+v\n\treceived: %+v", expectedBucket, testBucket)
 	}
 }
 
@@ -335,5 +336,38 @@ func TestAdd_ThreadSafe(t *testing.T) {
 		t.Errorf("Add() did not correctly lock the thread.")
 	case <-time.After(50 * time.Millisecond):
 		return
+	}
+}
+
+// Tests that MarshalJSON and UnmarshalJSON can serialize and deserialize buckets
+func TestBucket_MarshalUnmarshal(t *testing.T) {
+	b := CreateBucketFromLeakRatio(10, 1, nil)
+
+	data, err := json.Marshal(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(data))
+	var b2 Bucket
+	err = json.Unmarshal(data, &b2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(b, &b2) {
+		t.Error("buckets should be equal after serialization/deserialization")
+	}
+}
+
+// Tests that AddToDB can be set up after marshalling/unmarshalling
+func TestBucket_AddToDB(t *testing.T) {
+	called := false
+
+	var b2 Bucket
+	b2.SetAddToDB(func(u uint32, i int64) {
+		called = true
+	})
+	b2.addToDb(0, 0)
+	if !called {
+		t.Error("addToDb should have been called")
 	}
 }

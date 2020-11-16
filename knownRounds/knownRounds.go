@@ -92,6 +92,7 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	}
 
 	// Copy values over
+	copy(kr.bitStream, dkr.BitStream)
 	kr.firstUnchecked = id.Round(dkr.FirstUnchecked)
 	kr.lastChecked = id.Round(dkr.LastChecked)
 	kr.fuPos = int(dkr.FirstUnchecked % 64)
@@ -125,6 +126,9 @@ func (kr *KnownRounds) Check(rid id.Round) {
 		return
 	}
 	pos := kr.getBitStreamPos(rid)
+
+	// Set round as checked
+	kr.bitStream.set(pos)
 
 	// If the round ID is newer, then set it as the last checked ID and uncheck
 	// all the newly added rounds in the buffer
