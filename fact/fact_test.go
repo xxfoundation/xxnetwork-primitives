@@ -82,7 +82,7 @@ func TestValidateFact_Email(t *testing.T) {
 
 	// Invalid Fact Host
 	invalidHost := Fact{
-		Fact: "invalid@gmail2.com",
+		Fact: "test@912-wrong-domain902.com",
 		T:    Email,
 	}
 
