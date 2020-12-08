@@ -3,8 +3,6 @@ package fact
 import (
 	"github.com/badoux/checkmail"
 	"github.com/pkg/errors"
-	"net"
-	"strings"
 )
 
 type Fact struct {
@@ -40,20 +38,20 @@ func UnstringifyFact(s string) (Fact, error) {
 
 func ValidateFact(fact Fact, extraFactInformation string) error {
 	switch fact.T {
-		case Phone:
-			err := validateNumber(fact.Fact, extraFactInformation)
-			if err != nil {
-				return err
-			}
-			return nil
-		case Email:
-			err := validateEmail(fact.Fact)
-			if err != nil {
-				return err
-			}
-			return nil
-		default:
-			return errors.Errorf("Unknown fact type: %v", fact.T)
+	case Phone:
+		err := validateNumber(fact.Fact, extraFactInformation)
+		if err != nil {
+			return err
+		}
+		return nil
+	case Email:
+		err := validateEmail(fact.Fact)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("Unknown fact type: %v", fact.T)
 
 	}
 
@@ -61,18 +59,11 @@ func ValidateFact(fact Fact, extraFactInformation string) error {
 
 //todo: we need more information passed in, namely a country code
 // look up documentation here: https://docs.google.com/document/d/1_CdhcKaKXI-BBwjWVUsavmI-fGi46RSZoDeZTPx-SBQ/edit#
-func validateEmail(email string) error{
+func validateEmail(email string) error {
 	// Check that the input is validly formatted
 	err := checkmail.ValidateFormat(email)
 	if err != nil {
 		return errors.Errorf("Could not validate format for email [%s]: %v", email, err)
-	}
-
-	// Look up the host and see if it's a valid email server
-	_, host := split(email)
-	mx, err := net.LookupMX(host)
-	if err != nil || len(mx) == 0 {
-		return errors.Errorf("Could not validate host for email [%s]: %v", email, err)
 	}
 
 	// Check that the domain is valid and reachable
@@ -83,16 +74,9 @@ func validateEmail(email string) error{
 	return nil
 }
 
-func validateNumber(fact, countryCode string)  error  {
+func validateNumber(fact, countryCode string) error {
 	// fixme: need standardized way to get country code. Either also passed,
 	// or concat with fact, but needs to be parsed out
 	// OR use Twilio directly here, however would need auth key at a low level somehow
 	return nil
-}
-
-func split(email string) (account, host string) {
-	i := strings.LastIndexByte(email, '@')
-	account = email[:i]
-	host = email[i+1:]
-	return
 }

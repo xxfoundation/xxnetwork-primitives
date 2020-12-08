@@ -64,15 +64,40 @@ func TestFact_UnstringifyFact(t *testing.T) {
 	}
 }
 
-func TestFact_ValidateFact(t *testing.T)  {
-	// Expected fact from above test
-	e := Fact{
-		Fact: "xxxxxxxxxxxx123873j7djd741jrfhoiajdfhoewnuflkjvauirfhvkjdsafqyuusakjcg@carrere.cc",
+// Unit test
+func TestFact_ValidateFact(t *testing.T) {
+	// Valid Fact
+	validFact := Fact{
+		Fact: "devinputvalidation@elixxir.io ",
 		T:    Email,
 	}
 
-	err := ValidateFact(e, "")
+	err := ValidateFact(validFact, "")
 	if err != nil {
+		t.Errorf("Unexpected error in happy path: %v", err)
+	}
+
+	// Invalid Fact Host
+	invalidHost := Fact{
+		Fact: "invalid@gmail2.com",
+		T:    Email,
+	}
+
+	// Should not be able to verify host gmail2
+	err = ValidateFact(invalidHost, "")
+	if err == nil {
+		t.Errorf("Unexpected error in error path: %v", err)
+	}
+
+	// Invalid Fact Host
+	invalidEmail := Fact{
+		Fact: "test@gmail@gmail.com",
+		T:    Email,
+	}
+
+	// Should not be able to verify user
+	err = ValidateFact(invalidEmail, "")
+	if err == nil {
 		t.Errorf("Unexpected error in happy path: %v", err)
 	}
 }
