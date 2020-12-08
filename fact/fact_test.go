@@ -63,3 +63,16 @@ func TestFact_UnstringifyFact(t *testing.T) {
 		t.Errorf("The returned Fact did not match the expected Fact")
 	}
 }
+
+func TestFact_ValidateFact(t *testing.T)  {
+	// Expected fact from above test
+	e := Fact{
+		Fact: "xxxxxxxxxxxx123873j7djd741jrfhoiajdfhoewnuflkjvauirfhvkjdsafqyuusakjcg@carrere.cc",
+		T:    Email,
+	}
+
+	err := ValidateFact(e, "")
+	if err != nil {
+		t.Errorf("Unexpected error in happy path: %v", err)
+	}
+}
