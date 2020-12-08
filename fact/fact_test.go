@@ -70,7 +70,7 @@ func TestFact_UnstringifyFact(t *testing.T) {
 func TestValidateFact_Email(t *testing.T) {
 	// Valid Fact
 	validFact := Fact{
-		Fact: "devinputvalidation@elixxir.io ",
+		Fact: "devinputvalidation@elixxir.io",
 		T:    Email,
 	}
 
