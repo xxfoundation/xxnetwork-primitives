@@ -2,6 +2,7 @@ package fact
 
 import (
 	"github.com/badoux/checkmail"
+	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
 )
 
@@ -74,9 +75,13 @@ func validateEmail(email string) error {
 	return nil
 }
 
-func validateNumber(fact, countryCode string) error {
-	// fixme: need standardized way to get country code. Either also passed,
-	// or concat with fact, but needs to be parsed out
-	// OR use Twilio directly here, however would need auth key at a low level somehow
+func validateNumber(number, countryCode string) error {
+	num, err := phonenumbers.Parse(number, countryCode)
+	if err != nil {
+		return errors.Errorf("Could not parse number [%s]: %v", number, err)
+	}
+	if !phonenumbers.IsValidNumber(num) {
+		return errors.Errorf("Could not validate number [%s]: %v", number, err)
+	}
 	return nil
 }
