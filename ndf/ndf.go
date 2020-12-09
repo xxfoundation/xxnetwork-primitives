@@ -28,7 +28,7 @@ import (
 // Permissioning in this case tells the requester that it is not ready with an error message.
 // The requester checks if the error message contains this string, and thus knows it needs to ask
 // again.
-const NO_NDF = "Permissioning server does not have an ndf to give"
+const NO_NDF = "Contacted server does not have an ndf to give"
 
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go.
@@ -71,8 +71,9 @@ type Notification struct {
 
 // UDB is the structure for the UDB object in the JSON file.
 type UDB struct {
-	ID        []byte `json:"Id"`
-	PubKeyPem string `json:"Public_key_PEM"`
+	ID      []byte `json:"Id"`
+	Cert    string `json:"Cert"`
+	Address string `json:"Address"`
 }
 
 // Group is the structure for a group in the JSON file; it is used for the E2E
@@ -197,7 +198,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
-	b = append(b, []byte(ndf.UDB.PubKeyPem)...)
+	b = append(b, []byte(ndf.UDB.Cert)...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
