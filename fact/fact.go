@@ -37,10 +37,12 @@ func UnstringifyFact(s string) (Fact, error) {
 	return NewFact(ft, fact)
 }
 
-func ValidateFact(fact Fact, extraFactInformation string) error {
+// Take the fact passed in and checks the input to see if it
+//  valid based on the type of fact it is
+func ValidateFact(fact Fact, extraFactInformation ...string) error {
 	switch fact.T {
 	case Phone:
-		err := validateNumber(fact.Fact, extraFactInformation)
+		err := validateNumber(fact.Fact, extraFactInformation[0])
 		if err != nil {
 			return err
 		}
@@ -58,8 +60,7 @@ func ValidateFact(fact Fact, extraFactInformation string) error {
 
 }
 
-//todo: we need more information passed in, namely a country code
-// look up documentation here: https://docs.google.com/document/d/1_CdhcKaKXI-BBwjWVUsavmI-fGi46RSZoDeZTPx-SBQ/edit#
+// Validate the email input and check if the host is contact-able
 func validateEmail(email string) error {
 	// Check that the input is validly formatted
 	err := checkmail.ValidateFormat(email)
@@ -75,6 +76,8 @@ func validateEmail(email string) error {
 	return nil
 }
 
+// Checks if the number and country code passed in is parse-able
+// and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
 	num, err := phonenumbers.Parse(number, countryCode)
 	if err != nil {
