@@ -1,25 +1,21 @@
-To whom it may concern,
+Copyright (c) 2020, xx network SEZC
 
-You can download, modify, compile and deploy this source code for the purpose of participating in the xx network as a
-beta node, in accordance with your beta node participation agreement.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-You can also download, modify, compile and deploy the source code for non-commercial testing and verification
-(i.e., security and bug review) purposes.  You can repost aspects of the source code on both the BetaNet forum
-(forum.xx.network) and the official Discord (https://discord.gg/D4NHmv4) consistent with these purposes.
-To release a bug or security report outside the BetaNet forum or official Discord, you must notify bugs@xx.network at
-least three business days in advance Pacific time.
+1. Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.
 
-The xx network SEZC hereby grants you a non-transferable license under its legal rights limited to the purposes above.
-
-This Agreement and the license that it grants you expires the earlier of March 1st 2021 or the launch of the xx network
-MainNet.
-
-THE SOURCE CODE IS PROVIDED TO YOU ON AN “AS IS” BASIS WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-INCLUDING ANY WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR USE, OR ANY WARRANTY THAT THE SOURCE CODE
- DOES NOT INFRINGE THE RIGHTS OF OTHERS (WHETHER PATENT RIGHTS, COPYRIGHTS OR OTHERWISE).
-
-THE XX NETWORK SEZC WILL NOT BE LIABLE TO YOU FOR ANY DAMAGES OF ANY KIND, WHETHER DIRECT, SPECIAL, CONSEQUENTIAL,
-INCIDENTAL, INDIRECT OR OTHERWISE, EVEN IF THE XX NETWORK SEZC HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES,
-WHICH ARISE OUT OF THIS AGREEMENT OR THE USE OR PERFORMANCE OF THE SOURCE CODE.
-
-The xx network SEZC
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
