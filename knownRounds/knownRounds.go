@@ -179,7 +179,7 @@ func abs(n int) int {
 // sets it to lastUnchecked if all rounds are checked.
 func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
 	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
-		rid <= kr.lastChecked; rid++ {
+		rid < kr.lastChecked; rid++ {
 	}
 	kr.fuPos = kr.getBitStreamPos(rid)
 	kr.firstUnchecked = rid
