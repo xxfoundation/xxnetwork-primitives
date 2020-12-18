@@ -18,11 +18,20 @@ type Fact struct {
 	T    FactType
 }
 
+// NewFact checks if the inputted information is a valid fact on the
+// fact type. If so, it returns a new fact object. If not, it returns a
+// validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
-	return Fact{
+
+	f := Fact{
 		Fact: fact,
 		T:    ft,
-	}, nil
+	}
+	if err := ValidateFact(f); err != nil {
+		return Fact{}, err
+	}
+
+	return f, nil
 }
 
 // marshal is for transmission for UDB, not a part of the fact interface
@@ -46,15 +55,20 @@ func UnstringifyFact(s string) (Fact, error) {
 
 // Take the fact passed in and checks the input to see if it
 //  valid based on the type of fact it is
-func ValidateFact(fact Fact, extraFactInformation ...string) error {
+func ValidateFact(fact Fact) error {
 	switch fact.T {
+	case Username:
+		return nil
 	case Phone:
-		err := validateNumber(fact.Fact, extraFactInformation[0])
+		// Extract specific information for validating a number
+		number, code := extractNumberInfo(fact.Fact)
+		err := validateNumber(number, code)
 		if err != nil {
 			return err
 		}
 		return nil
 	case Email:
+		// Check input of email inputted
 		err := validateEmail(fact.Fact)
 		if err != nil {
 			return err
@@ -65,6 +79,17 @@ func ValidateFact(fact Fact, extraFactInformation ...string) error {
 
 	}
 
+}
+
+// Numbers are assumed to have the 2 letter country code appended
+// to the fact, with the rest of the information being a phone number
+// Example: 6502530000US is a valid US number with the country code
+// that would be the fact information for a phone number
+func extractNumberInfo(fact string) (number, countryCode string) {
+	factLen := len(fact)
+	number = fact[:factLen-2]
+	countryCode = fact[factLen-2:]
+	return
 }
 
 // Validate the email input and check if the host is contact-able

@@ -16,11 +16,11 @@ import (
 func TestNewFact(t *testing.T) {
 	// Expected result
 	e := Fact{
-		Fact: "testing",
+		Fact: "devinputvalidation@elixxir.io",
 		T:    1,
 	}
 
-	g, err := NewFact(Email, "testing")
+	g, err := NewFact(Email, "devinputvalidation@elixxir.io")
 	if err != nil {
 		t.Error(err)
 	}
@@ -34,11 +34,11 @@ func TestNewFact(t *testing.T) {
 // The output is verified to work in the test below
 func TestFact_Stringify(t *testing.T) {
 	f := Fact{
-		Fact: "testing",
+		Fact: "devinputvalidation@elixxir.io",
 		T:    1,
 	}
 
-	expected := "Etesting"
+	expected := "Edevinputvalidation@elixxir.io"
 	got := f.Stringify()
 	t.Log(got)
 
@@ -52,12 +52,12 @@ func TestFact_Stringify(t *testing.T) {
 func TestFact_UnstringifyFact(t *testing.T) {
 	// Expected fact from above test
 	e := Fact{
-		Fact: "testing",
+		Fact: "devinputvalidation@elixxir.io",
 		T:    Email,
 	}
 
 	// Stringify-ed Fact from above test
-	m := "Etesting"
+	m := "Edevinputvalidation@elixxir.io"
 	f, err := UnstringifyFact(m)
 	if err != nil {
 		t.Error(err)
@@ -82,7 +82,7 @@ func TestValidateFact_Email(t *testing.T) {
 	}
 
 	// Happy path with valid email and host
-	err := ValidateFact(validFact, "")
+	err := ValidateFact(validFact)
 	if err != nil {
 		t.Errorf("Unexpected error in happy path: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestValidateFact_Email(t *testing.T) {
 	}
 
 	// Should not be able to verify host gmail2
-	err = ValidateFact(invalidHost, "")
+	err = ValidateFact(invalidHost)
 	if err == nil {
 		t.Errorf("Expected error in error path: should not be able to verify host gmail2")
 	}
@@ -106,7 +106,7 @@ func TestValidateFact_Email(t *testing.T) {
 	}
 
 	// Should not be able to verify user
-	err = ValidateFact(invalidEmail, "")
+	err = ValidateFact(invalidEmail)
 	if err == nil {
 		t.Errorf("Expected error in error path: should not be able to verify %s", invalidEmail.Fact)
 	}
@@ -121,28 +121,33 @@ func TestValidateFact_PhoneNumber(t *testing.T) {
 
 	// Valid Fact
 	USFact := Fact{
-		Fact: USNumber,
+		Fact: USNumber + USCountryCode,
 		T:    Phone,
 	}
 
 	// Check US valid fact combination
-	err := ValidateFact(USFact, USCountryCode)
+	err := ValidateFact(USFact)
 	if err != nil {
 		t.Errorf("Unexpected error in happy path: %v", err)
 	}
 
+	InvalidFact := Fact{
+		Fact: USNumber + UKCountryCode,
+		T:    Phone,
+	}
+
 	// Invalid number and country code combination
-	err = ValidateFact(USFact, UKCountryCode)
+	err = ValidateFact(InvalidFact)
 	if err == nil {
 		t.Errorf("Expected error path: should not be able to validate US number with UK country code")
 	}
 
-	InvalidFact := Fact{
+	InvalidFact = Fact{
 		Fact: InvalidNumber,
 		T:    Phone,
 	}
 	// Pass in an invalid number with a valid country code
-	err = ValidateFact(InvalidFact, USCountryCode)
+	err = ValidateFact(InvalidFact)
 	if err == nil {
 		t.Errorf("Expected error path: should not be able to validate US number with UK country code")
 	}
