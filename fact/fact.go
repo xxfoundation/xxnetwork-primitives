@@ -57,6 +57,8 @@ func UnstringifyFact(s string) (Fact, error) {
 //  valid based on the type of fact it is
 func ValidateFact(fact Fact) error {
 	switch fact.T {
+	case Username:
+		return nil
 	case Phone:
 		// Extract specific information for validating a number
 		number, code := extractNumberInfo(fact.Fact)
