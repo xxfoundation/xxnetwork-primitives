@@ -18,11 +18,22 @@ type Fact struct {
 	T    FactType
 }
 
+// NewFact checks if the inputted information is a valid fact on the
+// fact type. If so, it returns a new fact object. If not, it returns a
+// validation error. Extra fact information may be passed in if we need
+// more information than just the fact itself. For example, the area code
+// for a phone number is required to parse & validate the number provided
 func NewFact(ft FactType, fact string) (Fact, error) {
-	return Fact{
+
+	f := Fact{
 		Fact: fact,
 		T:    ft,
-	}, nil
+	}
+	if err := ValidateFact(f); err != nil {
+		return Fact{}, err
+	}
+
+	return f, nil
 }
 
 // marshal is for transmission for UDB, not a part of the fact interface
@@ -46,10 +57,11 @@ func UnstringifyFact(s string) (Fact, error) {
 
 // Take the fact passed in and checks the input to see if it
 //  valid based on the type of fact it is
-func ValidateFact(fact Fact, extraFactInformation ...string) error {
+func ValidateFact(fact Fact) error {
 	switch fact.T {
 	case Phone:
-		err := validateNumber(fact.Fact, extraFactInformation[0])
+		number, code := extractFactInformation(fact.Fact)
+		err := validateNumber(number, code)
 		if err != nil {
 			return err
 		}
@@ -65,6 +77,13 @@ func ValidateFact(fact Fact, extraFactInformation ...string) error {
 
 	}
 
+}
+
+func extractFactInformation(fact string) (number, countryCode string) {
+	factLen := len(fact) - 1
+	number = fact[:factLen-2]
+	countryCode = fact[factLen-2:]
+	return
 }
 
 // Validate the email input and check if the host is contact-able
