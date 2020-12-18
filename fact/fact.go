@@ -8,6 +8,7 @@
 package fact
 
 import (
+	"fmt"
 	"github.com/badoux/checkmail"
 	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
@@ -20,9 +21,7 @@ type Fact struct {
 
 // NewFact checks if the inputted information is a valid fact on the
 // fact type. If so, it returns a new fact object. If not, it returns a
-// validation error. Extra fact information may be passed in if we need
-// more information than just the fact itself. For example, the area code
-// for a phone number is required to parse & validate the number provided
+// validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
 
 	f := Fact{
@@ -60,7 +59,8 @@ func UnstringifyFact(s string) (Fact, error) {
 func ValidateFact(fact Fact) error {
 	switch fact.T {
 	case Phone:
-		number, code := extractFactInformation(fact.Fact)
+		number, code := extractNumberInfo(fact.Fact)
+		fmt.Printf("code: %s\n", code)
 		err := validateNumber(number, code)
 		if err != nil {
 			return err
@@ -79,8 +79,11 @@ func ValidateFact(fact Fact) error {
 
 }
 
-func extractFactInformation(fact string) (number, countryCode string) {
-	factLen := len(fact) - 1
+// Numbers are assumed to have the 2 letter country code is appended
+// to the fact, with the rest of the information being a phone number
+// Example: 6502530000US is a valid US number with the country code
+func extractNumberInfo(fact string) (number, countryCode string) {
+	factLen := len(fact)
 	number = fact[:factLen-2]
 	countryCode = fact[factLen-2:]
 	return

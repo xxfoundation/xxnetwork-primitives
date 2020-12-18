@@ -20,7 +20,7 @@ func TestNewFact(t *testing.T) {
 		T:    1,
 	}
 
-	g, err := NewFact(Email, "testing")
+	g, err := NewFact(Email, "devinputvalidation@elixxir.io")
 	if err != nil {
 		t.Error(err)
 	}
@@ -115,6 +115,7 @@ func TestValidateFact_Email(t *testing.T) {
 // Unit test for input validation of emails
 func TestValidateFact_PhoneNumber(t *testing.T) {
 	USCountryCode := "US"
+	UKCountryCode := "UK"
 	InvalidNumber := "020 8743 8000135"
 	USNumber := "6502530000"
 
@@ -130,13 +131,18 @@ func TestValidateFact_PhoneNumber(t *testing.T) {
 		t.Errorf("Unexpected error in happy path: %v", err)
 	}
 
+	InvalidFact := Fact{
+		Fact: USNumber + UKCountryCode,
+		T:    Phone,
+	}
+
 	// Invalid number and country code combination
-	err = ValidateFact(USFact)
+	err = ValidateFact(InvalidFact)
 	if err == nil {
 		t.Errorf("Expected error path: should not be able to validate US number with UK country code")
 	}
 
-	InvalidFact := Fact{
+	InvalidFact = Fact{
 		Fact: InvalidNumber,
 		T:    Phone,
 	}
