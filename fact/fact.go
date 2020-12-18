@@ -8,7 +8,6 @@
 package fact
 
 import (
-	"fmt"
 	"github.com/badoux/checkmail"
 	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
@@ -59,14 +58,15 @@ func UnstringifyFact(s string) (Fact, error) {
 func ValidateFact(fact Fact) error {
 	switch fact.T {
 	case Phone:
+		// Extract specific information for validating a number
 		number, code := extractNumberInfo(fact.Fact)
-		fmt.Printf("code: %s\n", code)
 		err := validateNumber(number, code)
 		if err != nil {
 			return err
 		}
 		return nil
 	case Email:
+		// Check input of email inputted
 		err := validateEmail(fact.Fact)
 		if err != nil {
 			return err
@@ -79,9 +79,10 @@ func ValidateFact(fact Fact) error {
 
 }
 
-// Numbers are assumed to have the 2 letter country code is appended
+// Numbers are assumed to have the 2 letter country code appended
 // to the fact, with the rest of the information being a phone number
 // Example: 6502530000US is a valid US number with the country code
+// that would be the fact information for a phone number
 func extractNumberInfo(fact string) (number, countryCode string) {
 	factLen := len(fact)
 	number = fact[:factLen-2]
