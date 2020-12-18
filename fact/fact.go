@@ -7,7 +7,11 @@
 
 package fact
 
-import "errors"
+import (
+	"github.com/badoux/checkmail"
+	"github.com/nyaruka/phonenumbers"
+	"github.com/pkg/errors"
+)
 
 type Fact struct {
 	Fact string
@@ -15,7 +19,6 @@ type Fact struct {
 }
 
 func NewFact(ft FactType, fact string) (Fact, error) {
-	//todo: filter the fact string
 	return Fact{
 		Fact: fact,
 		T:    ft,
@@ -39,4 +42,56 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 
 	return NewFact(ft, fact)
+}
+
+// Take the fact passed in and checks the input to see if it
+//  valid based on the type of fact it is
+func ValidateFact(fact Fact, extraFactInformation ...string) error {
+	switch fact.T {
+	case Phone:
+		err := validateNumber(fact.Fact, extraFactInformation[0])
+		if err != nil {
+			return err
+		}
+		return nil
+	case Email:
+		err := validateEmail(fact.Fact)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("Unknown fact type: %v", fact.T)
+
+	}
+
+}
+
+// Validate the email input and check if the host is contact-able
+func validateEmail(email string) error {
+	// Check that the input is validly formatted
+	err := checkmail.ValidateFormat(email)
+	if err != nil {
+		return errors.Errorf("Could not validate format for email [%s]: %v", email, err)
+	}
+
+	// Check that the domain is valid and reachable
+	err = checkmail.ValidateHost(email)
+	if err != nil {
+		return errors.Errorf("Could not validate host for email [%s]: %v", email, err)
+	}
+	return nil
+}
+
+// Checks if the number and country code passed in is parse-able
+// and is a valid phone number with that information
+func validateNumber(number, countryCode string) error {
+	num, err := phonenumbers.Parse(number, countryCode)
+	if err != nil {
+		return errors.Errorf("Could not parse number [%s]: %v", number, err)
+	}
+	if !phonenumbers.IsValidNumber(num) {
+		return errors.Errorf("Could not validate number [%s]: %v", number, err)
+	}
+	return nil
 }
