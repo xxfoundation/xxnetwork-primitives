@@ -421,6 +421,42 @@ func TestKnownRounds_RangeUncheckedMasked(t *testing.T) {
 	fmt.Printf("kr.bitStream: %+v\n", kr.bitStream)
 }
 
+// Test happy path of KnownRounds.RangeUncheckedMasked().
+func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
+	expectedKR := KnownRounds{
+		bitStream:      make(uint64Buff, 245),
+		firstUnchecked: 30,
+		lastChecked:    57,
+		fuPos:          30,
+	}
+	expectedKR.bitStream[0] = 0xFFFFFFFD40000040
+	kr := KnownRounds{
+		bitStream:      make(uint64Buff, 245),
+		firstUnchecked: 30,
+		lastChecked:    39,
+		fuPos:          30,
+	}
+	kr.bitStream[0] = 0xFFFFFFFC00000000
+
+	mask := &KnownRounds{
+		bitStream:      uint64Buff{0xFEFFFFFBFFFFFFC0},
+		firstUnchecked: 7,
+		lastChecked:    57,
+		fuPos:          7,
+	}
+
+	roundCheck := func(id id.Round) bool {
+		return id%2 == 1
+	}
+
+	kr.RangeUncheckedMasked(mask, roundCheck, 5)
+	if !reflect.DeepEqual(expectedKR, kr) {
+		t.Errorf("RangeUncheckedMasked() incorrect modified KnownRounds."+
+			"\n\texpected: %+v\n\treceived: %+v", expectedKR, kr)
+	}
+	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
+}
+
 // Happy path of getBitStreamPos().
 func TestKnownRounds_getBitStreamPos(t *testing.T) {
 	// Generate test round IDs and their expected positions
