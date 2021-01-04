@@ -19,7 +19,7 @@ func TestFactList_StringifyUnstringify(t *testing.T) {
 		T:    Email,
 	})
 	expected = append(expected, Fact{
-		Fact: "(270) 301-5797",
+		Fact: "(270) 301-5797US",
 		T:    Phone,
 	})
 
