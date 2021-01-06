@@ -19,12 +19,12 @@ var numOffsets int64 = 1 << 16
 type Id [8]byte
 
 // GetId returns ephemeral ID based on passed in ID
-func GetId(id *id.ID, size uint) (Id, error) {
+func GetId(id *id.ID, size uint, rng csprng.Source) (Id, error) {
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return Id{}, err
 	}
-	return GetIdFromIntermediary(iid, size)
+	return GetIdFromIntermediary(iid, size, rng)
 }
 
 // GetIntermediaryId returns an intermediary ID for ephemeral ID creation (ID hash)
@@ -39,7 +39,7 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 }
 
 // GetIdFromIntermediary returns the ephemeral ID from intermediary (id hash)
-func GetIdFromIntermediary(iid []byte, size uint) (Id, error) {
+func GetIdFromIntermediary(iid []byte, size uint, rng csprng.Source) (Id, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 {
 		return Id{}, errors.New("Cannot generate ID with size > 64")
@@ -64,7 +64,6 @@ func GetIdFromIntermediary(iid []byte, size uint) (Id, error) {
 	fmt.Printf("EID BITS: %+v\n", eidBits.Bytes())
 
 	rand := Id{}
-	rng := csprng.NewSystemRNG()
 	_, err = rng.Read(rand[:])
 	if err != nil {
 		return Id{}, err
