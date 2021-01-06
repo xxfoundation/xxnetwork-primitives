@@ -13,7 +13,7 @@ func TestGetId(t *testing.T) {
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	eid, err = GetId(testId, 28)
+	eid, err = GetId(testId, 16)
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
