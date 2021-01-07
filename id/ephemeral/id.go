@@ -3,9 +3,7 @@ package ephemeral
 import (
 	"crypto"
 	"encoding/binary"
-	"fmt"
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
@@ -20,14 +18,14 @@ var numOffsets int64 = 1 << 16
 type Id [8]byte
 
 // Clear an ID down to the correct size
-func (eid *Id) clear(size uint) {
+func (eid *Id) Clear(size uint) {
 	var mask uint64 = math.MaxUint64 >> (64 - size)
 	maskedId := binary.BigEndian.Uint64(eid[:]) & mask
 	binary.BigEndian.PutUint64(eid[:], maskedId)
 }
 
 // Fill cleared bits of an ID with random data from passed in rng
-func (eid *Id) fill(size uint, rng io.Reader) error {
+func (eid *Id) Fill(size uint, rng io.Reader) error {
 	rand := Id{}
 	_, err := rng.Read(rand[:])
 	if err != nil {
@@ -35,17 +33,18 @@ func (eid *Id) fill(size uint, rng io.Reader) error {
 	}
 	var mask uint64 = math.MaxUint64 << size
 	maskedRand := mask & binary.BigEndian.Uint64(rand[:])
-	binary.BigEndian.PutUint64(eid[:], maskedRand|binary.BigEndian.Uint64(eid[:]))
+	maskedEid := maskedRand | binary.BigEndian.Uint64(eid[:])
+	binary.BigEndian.PutUint64(eid[:], maskedEid)
 	return nil
 }
 
 // GetId returns ephemeral ID based on passed in ID
-func GetId(id *id.ID, size uint, rng csprng.Source) (Id, error) {
+func GetId(id *id.ID, size uint) (Id, error) {
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return Id{}, err
 	}
-	return GetIdFromIntermediary(iid, size, rng)
+	return GetIdFromIntermediary(iid, size)
 }
 
 // GetIntermediaryId returns an intermediary ID for ephemeral ID creation (ID hash)
@@ -60,7 +59,7 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 }
 
 // GetIdFromIntermediary returns the ephemeral ID from intermediary (id hash)
-func GetIdFromIntermediary(iid []byte, size uint, rng csprng.Source) (Id, error) {
+func GetIdFromIntermediary(iid []byte, size uint) (Id, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 {
 		return Id{}, errors.New("Cannot generate ID with size > 64")
@@ -77,15 +76,8 @@ func GetIdFromIntermediary(iid []byte, size uint, rng csprng.Source) (Id, error)
 	}
 	eid := Id{}
 	copy(eid[:], b2b.Sum(nil))
-	fmt.Printf("unmodified: %+v\n", eid)
 
-	eid.clear(size)
-	fmt.Printf("cleared: %+v\n", eid)
-	err = eid.fill(size, rng)
-	if err != nil {
-		return Id{}, err
-	}
-	fmt.Printf("filled: %+v\n", eid)
+	eid.Clear(size)
 
 	return eid, nil
 }
