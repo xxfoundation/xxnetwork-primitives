@@ -14,7 +14,7 @@ func TestGetId(t *testing.T) {
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	eid, err = GetId(testId, 8, csprng.NewSystemRNG())
+	eid, err = GetId(testId, 48, csprng.NewSystemRNG())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}

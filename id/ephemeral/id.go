@@ -3,10 +3,12 @@ package ephemeral
 import (
 	"crypto"
 	"encoding/binary"
+	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
+	"io"
 	"math"
 	"time"
 )
@@ -16,6 +18,26 @@ var numOffsets int64 = 1 << 16
 
 // Ephemeral ID type alias
 type Id [8]byte
+
+// Clear an ID down to the correct size
+func (eid *Id) clear(size uint) {
+	var mask uint64 = math.MaxUint64 >> (64 - size)
+	maskedId := binary.BigEndian.Uint64(eid[:]) & mask
+	binary.BigEndian.PutUint64(eid[:], maskedId)
+}
+
+// Fill cleared bits of an ID with random data from passed in rng
+func (eid *Id) fill(size uint, rng io.Reader) error {
+	rand := Id{}
+	_, err := rng.Read(rand[:])
+	if err != nil {
+		return err
+	}
+	var mask uint64 = math.MaxUint64 << size
+	maskedRand := mask & binary.BigEndian.Uint64(rand[:])
+	binary.BigEndian.PutUint64(eid[:], maskedRand|binary.BigEndian.Uint64(eid[:]))
+	return nil
+}
 
 // GetId returns ephemeral ID based on passed in ID
 func GetId(id *id.ID, size uint, rng csprng.Source) (Id, error) {
@@ -53,23 +75,19 @@ func GetIdFromIntermediary(iid []byte, size uint, rng csprng.Source) (Id, error)
 	if err != nil {
 		return Id{}, err
 	}
-	eid := b2b.Sum(nil)
-	var mask uint64 = math.MaxUint64 >> (64 - size)
-	maskedId := large.NewIntFromBytes(eid).Uint64() & mask
+	eid := Id{}
+	copy(eid[:], b2b.Sum(nil))
+	fmt.Printf("unmodified: %+v\n", eid)
 
-	rand := Id{}
-	_, err = rng.Read(rand[:])
+	eid.clear(size)
+	fmt.Printf("cleared: %+v\n", eid)
+	err = eid.fill(size, rng)
 	if err != nil {
 		return Id{}, err
 	}
-	mask = math.MaxUint64 << size
-	maskedRand := mask & large.NewIntFromBytes(rand[:]).Uint64()
+	fmt.Printf("filled: %+v\n", eid)
 
-	final := large.NewInt(int64(maskedId | maskedRand))
-
-	ret := Id{}
-	copy(ret[:], final.Bytes())
-	return ret, nil
+	return eid, nil
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
