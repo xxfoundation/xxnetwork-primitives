@@ -3,7 +3,6 @@ package ephemeral
 import (
 	"crypto"
 	"encoding/binary"
-	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/crypto/large"
@@ -55,32 +54,21 @@ func GetIdFromIntermediary(iid []byte, size uint, rng csprng.Source) (Id, error)
 		return Id{}, err
 	}
 	eid := b2b.Sum(nil)
-	var mask float64 = 0
-	for i := uint(0); i < size; i++ {
-		mask += math.Pow(2, float64(i))
-	}
-	bitMask := large.NewInt(0).LeftShift(large.NewInt(int64(mask)), 64-size)
-	eidBits := large.NewInt(0).And(bitMask, large.NewIntFromBytes(eid))
-	fmt.Printf("EID BITS: %+v\n", eidBits.Bytes())
+	var mask uint64 = math.MaxUint64 >> (64 - size)
+	maskedId := large.NewIntFromBytes(eid).Uint64() & mask
 
 	rand := Id{}
 	_, err = rng.Read(rand[:])
 	if err != nil {
 		return Id{}, err
 	}
-	var inverseMask float64 = 0
-	for i := uint(0); i < 64-size; i++ {
-		inverseMask += math.Pow(2, float64(i))
-	}
-	inverseBitMask := large.NewInt(int64(inverseMask))
-	randBits := large.NewInt(0).And(inverseBitMask, large.NewIntFromBytes(rand[:]))
-	fmt.Printf("RAND BITS: %+v\n", randBits.Bytes())
+	mask = math.MaxUint64 << size
+	maskedRand := mask & large.NewIntFromBytes(rand[:]).Uint64()
 
-	finalEid := large.NewInt(0).Or(randBits, eidBits)
-	fmt.Printf("Final bits: %+v\n", finalEid.Bytes())
+	final := large.NewInt(int64(maskedId | maskedRand))
 
 	ret := Id{}
-	copy(ret[:], finalEid.Bytes())
+	copy(ret[:], final.Bytes())
 	return ret, nil
 }
 
