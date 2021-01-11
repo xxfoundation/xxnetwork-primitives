@@ -3,48 +3,52 @@ package ephemeral
 import (
 	"crypto"
 	"encoding/binary"
+	"fmt"
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
 	"time"
 )
 
-var period = int64(time.Hour * 24)
-var numOffsets int64 = 1 << 16
+var period = uint64(time.Hour * 24)
+var numOffsets uint64 = 1 << 16
+var nsPerOffset = period / numOffsets
 
 // Ephemeral ID type alias
 type Id [8]byte
 
 // Clear an ID down to the correct size
-func (eid *Id) Clear(size uint) {
+func (eid Id) Clear(size uint) Id {
+	newId := Id{}
 	var mask uint64 = math.MaxUint64 >> (64 - size)
 	maskedId := binary.BigEndian.Uint64(eid[:]) & mask
-	binary.BigEndian.PutUint64(eid[:], maskedId)
+	binary.BigEndian.PutUint64(newId[:], maskedId)
+	return newId
 }
 
 // Fill cleared bits of an ID with random data from passed in rng
-func (eid *Id) Fill(size uint, rng io.Reader) error {
+func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
+	newId := Id{}
 	rand := Id{}
 	_, err := rng.Read(rand[:])
 	if err != nil {
-		return err
+		return Id{}, err
 	}
 	var mask uint64 = math.MaxUint64 << size
 	maskedRand := mask & binary.BigEndian.Uint64(rand[:])
 	maskedEid := maskedRand | binary.BigEndian.Uint64(eid[:])
-	binary.BigEndian.PutUint64(eid[:], maskedEid)
-	return nil
+	binary.BigEndian.PutUint64(newId[:], maskedEid)
+	return newId, nil
 }
 
 // GetId returns ephemeral ID based on passed in ID
-func GetId(id *id.ID, size uint) (Id, error) {
+func GetId(id *id.ID, size uint, timestamp uint64) (Id, error) {
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return Id{}, err
 	}
-	return GetIdFromIntermediary(iid, size)
+	return GetIdFromIntermediary(iid, size, timestamp)
 }
 
 // GetIntermediaryId returns an intermediary ID for ephemeral ID creation (ID hash)
@@ -59,12 +63,12 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 }
 
 // GetIdFromIntermediary returns the ephemeral ID from intermediary (id hash)
-func GetIdFromIntermediary(iid []byte, size uint) (Id, error) {
+func GetIdFromIntermediary(iid []byte, size uint, timestamp uint64) (Id, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 {
 		return Id{}, errors.New("Cannot generate ID with size > 64")
 	}
-	salt := getRotationSalt(iid)
+	salt := getRotationSalt(iid, timestamp)
 
 	_, err := b2b.Write(iid)
 	if err != nil {
@@ -77,22 +81,24 @@ func GetIdFromIntermediary(iid []byte, size uint) (Id, error) {
 	eid := Id{}
 	copy(eid[:], b2b.Sum(nil))
 
-	eid.Clear(size)
+	cleared := eid.Clear(size)
+	copy(eid[:], cleared[:])
 
 	return eid, nil
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
-func getRotationSalt(idHash []byte) []byte {
-	hashNum := large.NewIntFromBytes(idHash)
-	offset := large.NewInt(1).Mod(hashNum, large.NewInt(numOffsets)).Int64()
-	ts := time.Now().UnixNano()
-	timestampPhase := ts % period
+func getRotationSalt(idHash []byte, timestamp uint64) []byte {
+	hashNum := binary.BigEndian.Uint64(idHash)
+	offset := (hashNum % numOffsets) * nsPerOffset
+	fmt.Println(offset)
+	timestampPhase := timestamp % period
+	fmt.Println(timestampPhase)
 	var saltNum uint64
 	if timestampPhase < offset {
-		saltNum = uint64((ts - period) / period)
+		saltNum = (timestamp - period) / period
 	} else {
-		saltNum = uint64(ts / period)
+		saltNum = timestamp / period
 	}
 	salt := make([]byte, 8)
 	binary.BigEndian.PutUint64(salt, saltNum)
