@@ -8,7 +8,6 @@ package format
 
 import (
 	"bytes"
-	id2 "gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -39,39 +38,47 @@ func TestMessage_Smoke(t *testing.T) {
 		return 'd'
 	}, mac)
 
-	recipientId := id2.ID{}
-	idData := make([]byte, RecipientIDLen)
-	idData = bytes.Map(func(r rune) rune {
+	ephemeralRID := make([]byte, EphemeralRIDLen)
+	ephemeralRID = bytes.Map(func(r rune) rune {
 		return 'e'
-	}, idData)
-	copy(recipientId[:], idData)
+	}, ephemeralRID)
+
+	identityFP := make([]byte, IdentityFPLen)
+	identityFP = bytes.Map(func(r rune) rune {
+		return 'f'
+	}, identityFP)
 
 	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
 	contents = bytes.Map(func(r rune) rune {
-		return 'f'
+		return 'g'
 	}, contents)
 
 	msg.SetKeyFP(fp)
 
 	msg.SetMac(mac)
 
-	msg.SetRecipientID(&recipientId)
+	msg.SetEphemeralRID(ephemeralRID)
+	msg.SetIdentityFP(identityFP)
 
 	msg.SetContents(contents)
 
-	if bytes.Compare(idData, msg.recipientID) != 0 {
-		t.Errorf("recipient ID was corrupted.  Original: %+v, Current: %+v", idData, msg.recipientID)
-	}
-
-	if bytes.Compare(mac, msg.mac) != 0 {
+	if !bytes.Equal(mac, msg.mac) {
 		t.Errorf("mac data was corrupted.  Original: %+v, Current: %+v", mac, msg.mac)
 	}
 
-	if bytes.Compare(keyFp, msg.keyFP) != 0 {
+	if !bytes.Equal(keyFp, msg.keyFP) {
 		t.Errorf("keyFp data was corrupted.  Original: %+v, Current: %+v", keyFp, msg.keyFP)
 	}
 
-	if bytes.Compare(append(msg.contents1, msg.contents2...), contents) != 0 {
+	if !bytes.Equal(ephemeralRID, msg.ephemeralRID) {
+		t.Errorf("ephemeralRID data was corrupted.  Original: %+v, Current: %+v", ephemeralRID, msg.ephemeralRID)
+	}
+
+	if !bytes.Equal(identityFP, msg.identityFP) {
+		t.Errorf("identityFP data was corrupted.  Original: %+v, Current: %+v", identityFP, msg.identityFP)
+	}
+
+	if !bytes.Equal(append(msg.contents1, msg.contents2...), contents) {
 		t.Errorf("contents data was corrupted.  Original: %+v, Current(pt1): %+v, Current(pt2: %+v",
 			contents, msg.contents1, msg.contents2)
 	}
@@ -105,7 +112,7 @@ func TestMessage_Copy(t *testing.T) {
 
 	msgCopy.SetContents(contents)
 
-	if bytes.Compare(msg.GetContents(), contents) == 0 {
+	if bytes.Equal(msg.GetContents(), contents) {
 		t.Errorf("The copy is still pointing at the original data")
 	}
 }
@@ -122,7 +129,7 @@ func TestMessage_GetContents(t *testing.T) {
 
 	retrieved := msg.GetContents()
 
-	if bytes.Compare(retrieved, contents) != 0 {
+	if !bytes.Equal(retrieved, contents) {
 		t.Errorf("Did not properly get contents of message: %+v", retrieved)
 	}
 }
@@ -137,26 +144,40 @@ func TestMessage_SetContents(t *testing.T) {
 
 	msg.SetContents(contents)
 
-	if bytes.Compare(msg.contents1, contents[:len(msg.contents1)]) != 0 {
+	if !bytes.Equal(msg.contents1, contents[:len(msg.contents1)]) {
 		t.Errorf("contents 1 not as expected")
 	}
-	if bytes.Compare(msg.contents2, contents[len(msg.contents1):]) != 0 {
+	if !bytes.Equal(msg.contents2, contents[len(msg.contents1):]) {
 		t.Errorf("contents 2 not as expected")
 	}
 }
 
+// Happy path.
 func TestMessage_SetKeyFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
+	fp := NewFingerprint([]byte("test"))
 
-	fp := Fingerprint{}
-	copy(fp[:], "test")
 	msg.SetKeyFP(fp)
 
-	setFp := Fingerprint{}
-	copy(setFp[:], msg.keyFP)
-	if bytes.Compare(fp[:], setFp[:]) != 0 {
-		t.Errorf("Set fp %+v does not match original %+v", setFp, fp)
+	if !bytes.Equal(fp[:], msg.keyFP) {
+		t.Errorf("SetKeyFP() failed to set keyFP."+
+			"\nexpected: %+v\nreceived: %+v", fp, msg.keyFP)
 	}
+}
+
+// Error path: size of provided data incorrect.
+func TestMessage_SetKeyFP_LengthError(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	fp := NewFingerprint([]byte{0b11111111})
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetKeyFP() failed to panic when the first bit of the " +
+				"provided data is not 0.")
+		}
+	}()
+
+	msg.SetKeyFP(fp)
 }
 
 func TestMessage_GetKeyFP(t *testing.T) {
@@ -210,7 +231,7 @@ func TestMessage_SetMac(t *testing.T) {
 	mac[0] = 0
 	msg.SetMac(mac)
 
-	if bytes.Compare(msg.mac, mac) != 0 {
+	if !bytes.Equal(msg.mac, mac) {
 		t.Errorf("Failed to set mac field")
 	}
 }
@@ -250,7 +271,7 @@ func TestMessage_SetPayloadA(t *testing.T) {
 	copy(payloadA, "test")
 	msg.SetPayloadA(payloadA)
 
-	if bytes.Compare(payloadA, msg.payloadA) != 0 {
+	if !bytes.Equal(payloadA, msg.payloadA) {
 		t.Errorf("Failed to set the payload a field properly")
 	}
 }
@@ -290,7 +311,7 @@ func TestMessage_SetPayloadB(t *testing.T) {
 	copy(payloadB, "test")
 	msg.SetPayloadB(payloadB)
 
-	if bytes.Compare(msg.payloadB, payloadB) != 0 {
+	if !bytes.Equal(msg.payloadB, payloadB) {
 		t.Errorf("Did not set payloadB field properly")
 	}
 }
@@ -311,29 +332,96 @@ func TestMessage_GetPayloadB(t *testing.T) {
 	}
 }
 
-func TestMessage_SetRecipientID(t *testing.T) {
+// Happy path.
+func TestMessage_SetEphemeralRID(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	id := id2.NewIdFromString("testid", id2.Gateway, t)
-	msg.SetRecipientID(id)
+	ephemeralRID := make([]byte, EphemeralRIDLen)
+	ephemeralRID = bytes.Map(func(r rune) rune { return 'e' }, ephemeralRID)
 
-	if bytes.Compare(id[:], msg.recipientID) != 0 {
-		t.Errorf("Did not set recipient id field properly")
+	msg.SetEphemeralRID(ephemeralRID)
+
+	if !bytes.Equal(ephemeralRID, msg.ephemeralRID) {
+		t.Errorf("SetEphemeralRID() failed to set the ephemeralRID."+
+			"\nexpected: %+v\nreceived: %+v", ephemeralRID, msg.ephemeralRID)
 	}
 }
 
-func TestMessage_GetRecipientID(t *testing.T) {
+// Error path: provided ephemeral recipient ID data too short.
+func TestMessage_SetEphemeralRID_LengthError(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-	copy(msg.recipientID, "test")
-	recipientId := msg.GetRecipientID()
-	if string(recipientId[:4]) != "test" {
-		t.Errorf("Did not properly retrieve recipient ID")
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetEphemeralRID() failed to panic when the length of " +
+				"the provided data is incorrect.")
+		}
+	}()
+
+	msg.SetEphemeralRID(make([]byte, EphemeralRIDLen*2))
+}
+
+// Happy path.
+func TestMessage_GetEphemeralRID(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	ephemeralRID := make([]byte, EphemeralRIDLen)
+	ephemeralRID = bytes.Map(func(r rune) rune { return 'e' }, ephemeralRID)
+	copy(msg.ephemeralRID, ephemeralRID)
+
+	if !bytes.Equal(ephemeralRID, msg.GetEphemeralRID()) {
+		t.Errorf("GetEphemeralRID() failed to get the correct ephemeralRID."+
+			"\nexpected: %+v\nreceived: %+v", ephemeralRID, msg.GetEphemeralRID())
 	}
 
-	recipientId[14] = 'x'
+	ephemeralRID[2] = 'x'
 
-	if msg.recipientID[14] == 'x' {
-		t.Errorf("Change to retrieved recipientID altered message field")
+	if msg.ephemeralRID[2] == 'x' {
+		t.Error("GetEphemeralRID() failed to make a copy of ephemeralRID.")
+	}
+}
+
+// Happy path.
+func TestMessage_SetIdentityFP(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	identityFP := make([]byte, IdentityFPLen)
+	identityFP = bytes.Map(func(r rune) rune { return 'e' }, identityFP)
+
+	msg.SetIdentityFP(identityFP)
+	if !bytes.Equal(identityFP, msg.identityFP) {
+		t.Errorf("SetIdentityFP() failed to set the identityFP."+
+			"\nexpected: %+v\nreceived: %+v", identityFP, msg.identityFP)
+	}
+}
+
+// Error path: size of provided data is incorrect.
+func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("SetIdentityFP() failed to panic when the length of " +
+				"the provided data is incorrect.")
+		}
+	}()
+
+	msg.SetIdentityFP(make([]byte, IdentityFPLen*2))
+}
+
+// Happy path.
+func TestMessage_GetIdentityFP(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+	identityFP := make([]byte, IdentityFPLen)
+	identityFP = bytes.Map(func(r rune) rune { return 'e' }, identityFP)
+	copy(msg.identityFP, identityFP)
+
+	if !bytes.Equal(identityFP, msg.GetIdentityFP()) {
+		t.Errorf("GetIdentityFP() failed to get the correct identityFP."+
+			"\nexpected: %+v\nreceived: %+v", identityFP, msg.GetIdentityFP())
+	}
+
+	identityFP[2] = 'x'
+
+	if msg.identityFP[2] == 'x' {
+		t.Error("GetIdentityFP() failed to make a copy of identityFP.")
 	}
 }
 
@@ -342,8 +430,8 @@ func TestMessage_GetRawContents(t *testing.T) {
 
 	copy(msg.contents1, "contents1")
 	copy(msg.contents2, "contents2")
-	copy(msg.keyFP, []byte("fingerprint"))
-	copy(msg.mac, []byte("mac"))
+	copy(msg.keyFP, "fingerprint")
+	copy(msg.mac, "mac")
 
 	secret := msg.GetRawContents()
 	if !bytes.Contains(secret, []byte("contents1")) {

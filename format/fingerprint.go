@@ -8,3 +8,10 @@
 package format
 
 type Fingerprint [KeyFPLen]byte
+
+// NewFingerprint generates a new Fingerprint with the provided bytes.
+func NewFingerprint(b []byte) Fingerprint {
+	var fp Fingerprint
+	copy(fp[:], b[:])
+	return fp
+}
