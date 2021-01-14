@@ -2,6 +2,7 @@ package ephemeral
 
 import (
 	"bytes"
+	"encoding/binary"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/primitives/id"
 	_ "golang.org/x/crypto/blake2b"
@@ -117,4 +118,19 @@ func TestGetRotationSalt(t *testing.T) {
 		t.Error("Salt did not change as timestamp increased w/ period of one day")
 	}
 	t.Logf("First: %+v\tSecond: %+v\nThird: %+v\n", salt1, salt2, salt3)
+}
+
+// Unit test for UInt64 method on ephemeral ID
+func TestId_UInt64(t *testing.T) {
+	testId := id.NewIdFromString("zezima", id.User, t)
+	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
+	if err != nil {
+		t.Errorf("Failed to create ephemeral ID: %+v", err)
+	}
+	ueid := eid.UInt64()
+	var b [8]byte
+	binary.BigEndian.PutUint64(b[:], ueid)
+	if bytes.Compare(b[:], eid[:]) != 0 {
+		t.Error("UInt64 conversion is wrong")
+	}
 }
