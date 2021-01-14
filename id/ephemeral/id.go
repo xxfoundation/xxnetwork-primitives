@@ -18,6 +18,11 @@ var nsPerOffset = period / numOffsets
 // Ephemeral ID type alias
 type Id [8]byte
 
+// Return ephemeral ID as a uint64
+func (eid *Id) UInt64() uint64 {
+	return binary.BigEndian.Uint64(eid[:])
+}
+
 // Clear an ID down to the correct size
 func (eid Id) Clear(size uint) Id {
 	newId := Id{}
