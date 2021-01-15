@@ -120,11 +120,6 @@ func (m Message) GetPrimeByteLen() int {
 	return len(m.data) / 2
 }
 
-// ContentsSize returns the maximum size of the contents.
-func (m Message) ContentsSize() int {
-	return len(m.data) - AssociatedDataSize
-}
-
 // GetPayloadA returns payload A, which is the first half of the message.
 func (m Message) GetPayloadA() []byte {
 	return copyByteSlice(m.payloadA)
@@ -157,6 +152,11 @@ func (m Message) SetPayloadB(payload []byte) {
 	copy(m.payloadB, payload)
 }
 
+// ContentsSize returns the maximum size of the contents.
+func (m Message) ContentsSize() int {
+	return len(m.data) - AssociatedDataSize
+}
+
 // GetContents returns the exact contents of the message. This size of the
 // return is based on the size of the contents actually stored.
 func (m Message) GetContents() []byte {
@@ -187,16 +187,16 @@ func (m Message) SetContents(c []byte) {
 	}
 }
 
+// GetRawContentsSize returns the exact contents of the message.
+func (m Message) GetRawContentsSize() int {
+	return len(m.rawContents)
+}
+
 // GetRawContents returns the exact contents of the message. This field crosses
 // over the group barrier and the setter of this is responsible for ensuring the
 // underlying payloads are within the group.
 func (m Message) GetRawContents() []byte {
 	return copyByteSlice(m.rawContents)
-}
-
-// GetRawContentsSize returns the exact contents of the message.
-func (m Message) GetRawContentsSize() int {
-	return len(m.rawContents)
 }
 
 // SetRawContents sets the raw contents of the message. This field crosses over
@@ -212,6 +212,43 @@ func (m Message) SetRawContents(c []byte) {
 	}
 
 	copy(m.rawContents, c)
+}
+
+// GetKeyFP gets the key Fingerprint
+func (m Message) GetKeyFP() Fingerprint {
+	return NewFingerprint(m.keyFP)
+}
+
+// SetKeyFP sets the key Fingerprint. Checks that the first bit of the Key
+// Fingerprint is 0, otherwise it panics.
+func (m Message) SetKeyFP(fp Fingerprint) {
+	if fp[0]>>7 != 0 {
+		jww.ERROR.Panicf("Failed to set Message key fingerprint: first bit " +
+			"of provided data must be zero.")
+	}
+
+	copy(m.keyFP, fp.Bytes())
+}
+
+// GetMac gets the MAC.
+func (m Message) GetMac() []byte {
+	return copyByteSlice(m.mac)
+}
+
+// SetMac sets the MAC. Checks that the first bit of the MAC is 0, otherwise it
+// panics.
+func (m Message) SetMac(mac []byte) {
+	if len(mac) != MacLen {
+		jww.ERROR.Panicf("Failed to set Message MAC: length must be %d, "+
+			"length of received data is %d.", MacLen, len(mac))
+	}
+
+	if mac[0]>>7 != 0 {
+		jww.ERROR.Panicf("Failed to set Message MAC: first bit of provided " +
+			"data must be zero.")
+	}
+
+	copy(m.mac, mac)
 }
 
 // GetEphemeralRID returns the ephemeral recipient ID.
@@ -243,43 +280,6 @@ func (m Message) SetIdentityFP(identityFP []byte) {
 			IdentityFPLen, len(identityFP))
 	}
 	copy(m.identityFP, identityFP)
-}
-
-// GetKeyFP gets the key Fingerprint
-func (m Message) GetKeyFP() Fingerprint {
-	return NewFingerprint(m.keyFP)
-}
-
-// SetKeyFP sets the key Fingerprint. Checks that the first bit of the Key
-// Fingerprint is 0, otherwise it panics.
-func (m Message) SetKeyFP(fp Fingerprint) {
-	if fp[0]>>7 != 0 {
-		jww.ERROR.Panicf("Failed to set Message key fingerprint: first bit " +
-			"of provided data must be zero.")
-	}
-
-	copy(m.keyFP, fp[:])
-}
-
-// GetMac gets the MAC.
-func (m Message) GetMac() []byte {
-	return copyByteSlice(m.mac)
-}
-
-// SetMac sets the MAC. Checks that the first bit of the MAC is 0, otherwise it
-// panics.
-func (m Message) SetMac(mac []byte) {
-	if len(mac) != MacLen {
-		jww.ERROR.Panicf("Failed to set Message MAC: length must be %d, "+
-			"length of received data is %d.", MacLen, len(mac))
-	}
-
-	if mac[0]>>7 != 0 {
-		jww.ERROR.Panicf("Failed to set Message MAC: first bit of provided " +
-			"data must be zero.")
-	}
-
-	copy(m.mac, mac)
 }
 
 // copyByteSlice is a helper function to make a copy of a byte slice.
