@@ -69,8 +69,7 @@ func ValidateFact(fact Fact) error {
 		return nil
 	case Email:
 		// Check input of email inputted
-		err := validateEmail(fact.Fact)
-		if err != nil {
+		if err := validateEmail(fact.Fact); err != nil {
 			return err
 		}
 		return nil
@@ -95,8 +94,7 @@ func extractNumberInfo(fact string) (number, countryCode string) {
 // Validate the email input and check if the host is contact-able
 func validateEmail(email string) error {
 	// Check that the input is validly formatted
-	err := checkmail.ValidateFormat(email)
-	if err != nil {
+	if err := checkmail.ValidateFormat(email); err != nil {
 		return errors.Errorf("Could not validate format for email [%s]: %v", email, err)
 	}
 
