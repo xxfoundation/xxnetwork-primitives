@@ -100,11 +100,6 @@ func validateEmail(email string) error {
 		return errors.Errorf("Could not validate format for email [%s]: %v", email, err)
 	}
 
-	// Check that the domain is valid and reachable
-	err = checkmail.ValidateHost(email)
-	if err != nil {
-		return errors.Errorf("Could not validate host for email [%s]: %v", email, err)
-	}
 	return nil
 }
 

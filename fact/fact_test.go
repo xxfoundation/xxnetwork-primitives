@@ -88,18 +88,6 @@ func TestValidateFact_Email(t *testing.T) {
 	}
 
 	// Invalid Fact Host
-	invalidHost := Fact{
-		Fact: "test@912-wrong-domain902.com",
-		T:    Email,
-	}
-
-	// Should not be able to verify host gmail2
-	err = ValidateFact(invalidHost)
-	if err == nil {
-		t.Errorf("Expected error in error path: should not be able to verify host gmail2")
-	}
-
-	// Invalid Fact Host
 	invalidEmail := Fact{
 		Fact: "test@gmail@gmail.com",
 		T:    Email,
