@@ -23,6 +23,7 @@ func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
 }
 
+// Return ephemeral ID as an int64
 func (eid *Id) Int64() int64 {
 	ux := binary.BigEndian.Uint64(eid[:])
 	x := int64(ux >> 1)

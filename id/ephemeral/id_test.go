@@ -136,6 +136,7 @@ func TestId_UInt64(t *testing.T) {
 	}
 }
 
+// Test the int64 conversion from ephemeral ID
 func TestId_Int64(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
 	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
