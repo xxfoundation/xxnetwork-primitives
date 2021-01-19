@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
+	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
@@ -21,6 +22,10 @@ type Id [8]byte
 // Return ephemeral ID as a uint64
 func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
+}
+
+func (eid *Id) Int64() int64 {
+	return large.NewIntFromBytes(eid[:]).Int64()
 }
 
 // Clear an ID down to the correct size
