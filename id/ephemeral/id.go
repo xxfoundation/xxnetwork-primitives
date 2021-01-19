@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
-	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
@@ -25,7 +24,12 @@ func (eid *Id) UInt64() uint64 {
 }
 
 func (eid *Id) Int64() int64 {
-	return large.NewIntFromBytes(eid[:]).Int64()
+	ux := binary.BigEndian.Uint64(eid[:])
+	x := int64(ux >> 1)
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return x
 }
 
 // Clear an ID down to the correct size

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"gitlab.com/xx_network/crypto/csprng"
-	"gitlab.com/xx_network/crypto/large"
 	"gitlab.com/xx_network/primitives/id"
 	_ "golang.org/x/crypto/blake2b"
 	"math"
@@ -143,21 +142,21 @@ func TestId_Int64(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
-	ieid := eid.Int64()
-	newId := Id{}
-	copy(newId[:], large.NewInt(0).SetInt64(ieid).LeftpadBytes(uint64(len(Id{}))))
-	if bytes.Compare(newId[:], eid[:]) != 0 {
-		t.Errorf("Conversions failed to show consistency.  old: %+v, new: %+v", eid, newId)
+	eid, err = eid.Fill(16, csprng.NewSystemRNG())
+	if err != nil {
+		t.Errorf("Failed to fill ephemeral ID: %+v", err)
 	}
 	maxuint64Id := Id{}
 	binary.BigEndian.PutUint64(maxuint64Id[:], math.MaxUint64)
-	if maxuint64Id.Int64() != -1 {
+	if maxuint64Id.Int64() != math.MinInt64 {
 		t.Error("Did not properly convert from uint to int")
+		t.Error(maxuint64Id.Int64())
 	}
 
 	zerouint64Id := Id{}
 	binary.BigEndian.PutUint64(zerouint64Id[:], 0)
 	if zerouint64Id.Int64() != 0 {
 		t.Error("Did not properly convert a zero id to id and back")
+		t.Error(zerouint64Id.Int64())
 	}
 }
