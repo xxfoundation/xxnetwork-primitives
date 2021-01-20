@@ -173,10 +173,21 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to fill ephemeral ID: %+v", err)
 	}
-	var data [8]byte
-	copy(data[:], eid[:])
-	eid2 := Load(data)
+	eid2, err := Marshal(eid[:])
+	if err != nil {
+		t.Errorf("Failed to marshal id from bytes")
+	}
 	if bytes.Compare(eid[:], eid2[:]) != 0 {
 		t.Errorf("Failed to load ephermeral ID from bytes.  Original: %+v, Loaded: %+v", eid, eid2)
+	}
+
+	_, err = Marshal(nil)
+	if err == nil {
+		t.Error("nil data should return an error when marshaled")
+	}
+
+	_, err = Marshal([]byte("Test"))
+	if err == nil {
+		t.Error("Data < size 8 should return an error when marshalled")
 	}
 }
