@@ -163,7 +163,7 @@ func TestId_Int64(t *testing.T) {
 }
 
 // Unit test for ephemeral ID load function
-func TestLoad(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
 	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
 	if err != nil {
