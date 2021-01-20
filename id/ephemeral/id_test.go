@@ -161,3 +161,22 @@ func TestId_Int64(t *testing.T) {
 		t.Error(zerouint64Id.Int64())
 	}
 }
+
+// Unit test for ephemeral ID load function
+func TestLoad(t *testing.T) {
+	testId := id.NewIdFromString("zezima", id.User, t)
+	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
+	if err != nil {
+		t.Errorf("Failed to create ephemeral ID: %+v", err)
+	}
+	eid, err = eid.Fill(16, csprng.NewSystemRNG())
+	if err != nil {
+		t.Errorf("Failed to fill ephemeral ID: %+v", err)
+	}
+	var data [8]byte
+	copy(data[:], eid[:])
+	eid2 := Load(data)
+	if bytes.Compare(eid[:], eid2[:]) != 0 {
+		t.Errorf("Failed to load ephermeral ID from bytes.  Original: %+v, Loaded: %+v", eid, eid2)
+	}
+}
