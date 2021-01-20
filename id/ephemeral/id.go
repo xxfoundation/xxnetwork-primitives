@@ -57,6 +57,7 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 	return newId, nil
 }
 
+// Load an ephemeral ID from raw bytes
 func Load(data [8]byte) *Id {
 	eid := &Id{}
 	copy(eid[:], data[:])
