@@ -57,6 +57,12 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 	return newId, nil
 }
 
+func Load(data [8]byte) *Id {
+	eid := &Id{}
+	copy(eid[:], data[:])
+	return eid
+}
+
 // GetId returns ephemeral ID based on passed in ID
 func GetId(id *id.ID, size uint, timestamp uint64) (Id, error) {
 	iid, err := GetIntermediaryId(id)
