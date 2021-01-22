@@ -24,7 +24,7 @@ import (
 
 // NO_NDF is a string that the permissioning server responds with when a member
 // of the network requests an NDF from it but the NDF is not yet available.
-const NO_NDF = "Permissioning server does not have an ndf to give"
+const NO_NDF = "Contacted server does not have an ndf to give"
 
 // NetworkDefinition structure hold connection and network information. It
 // matches the JSON structure generated in Terraform.
@@ -70,8 +70,9 @@ type Notification struct {
 
 // UDB contains the ID and public key in PEM form for user discovery.
 type UDB struct {
-	ID        []byte `json:"Id"`
-	PubKeyPem string `json:"Public_key_PEM"`
+	ID      []byte `json:"Id"`
+	Cert    string `json:"Cert"`
+	Address string `json:"Address"`
 }
 
 // Group contains the information used to reconstruct a cyclic group.
@@ -79,6 +80,39 @@ type Group struct {
 	Prime      string
 	SmallPrime string `json:"Small_prime"`
 	Generator  string
+}
+
+func (g *Group) String() (string, error) {
+	data, err := json.Marshal(g)
+	if err != nil {
+		return "", errors.Errorf("Unable to marshal group: %+v", err)
+	}
+
+	return string(data), nil
+}
+
+// DecodeNDF decodes the given JSON string into the NetworkDefinition structure
+// and decodes the base 64 signature to a byte slice. The NDF string is expected
+// to have the JSON data on line 1 and its signature on line 2. Returns an error
+// if separating the lines fails or if the JSON unmarshal fails.
+func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
+	// Get JSON data and check if the separating failed
+	jsonData, signature := separate(ndf)
+
+	// Decode the signature form base 64 and check for errors
+	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Unmarshal the JSON string into a structure
+	networkDefinition := &NetworkDefinition{}
+	err = json.Unmarshal([]byte(jsonData), networkDefinition)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return networkDefinition, signatureBytes, nil
 }
 
 // StripNdf returns a stripped down copy of the NetworkDefinition to be used by
@@ -106,6 +140,88 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 	}
 }
 
+// separate splits the JSON data from the signature. The NDF string is expected
+// to have the JSON data starting on line 1 and its signature on the last line.
+// Returns JSON data and signature as separate strings. If the signature is not
+// present, it is returned as an empty string.
+func separate(ndf string) (string, string) {
+	var jsonLineEnd int
+	var signature string
+	lines := strings.Split(ndf, "\n")
+
+	// Determine which line the JSON ends and which line the signature is on
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			if strings.HasSuffix(line, "}") {
+				jsonLineEnd = i
+				break
+			} else {
+				signature = line
+			}
+		}
+	}
+
+	return strings.Join(lines[0:jsonLineEnd+1], "\n"), signature
+}
+
+// Serialize converts the NetworkDefinition into a byte slice.
+func (ndf *NetworkDefinition) Serialize() []byte {
+	b := make([]byte, 0)
+
+	// Convert timestamp to a byte slice
+	timeBytes, err := ndf.Timestamp.MarshalBinary()
+	if err != nil {
+		jww.FATAL.Panicf("Failed to marshal NetworkDefinition timestamp: %v", err)
+	}
+
+	b = append(b, timeBytes...)
+
+	// Convert Gateways slice to byte slice
+	for _, val := range ndf.Gateways {
+		b = append(b, val.ID...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Nodes slice to byte slice
+	for _, val := range ndf.Nodes {
+		b = append(b, val.ID...)
+		b = append(b, []byte(val.Address)...)
+		b = append(b, []byte(val.TlsCertificate)...)
+	}
+
+	// Convert Registration to byte slice
+	b = append(b, []byte(ndf.Registration.Address)...)
+	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
+
+	// Convert UDB to byte slice
+	b = append(b, ndf.UDB.ID...)
+	b = append(b, []byte(ndf.UDB.Cert)...)
+
+	// Convert E2E to byte slice
+	b = append(b, []byte(ndf.E2E.Prime)...)
+	b = append(b, []byte(ndf.E2E.Generator)...)
+	b = append(b, []byte(ndf.E2E.SmallPrime)...)
+
+	// Convert CMIX to byte slice
+	b = append(b, []byte(ndf.CMIX.Prime)...)
+	b = append(b, []byte(ndf.CMIX.Generator)...)
+	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
+
+	return b
+}
+
+// Marshal returns a json marshal of the ndf
+func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
+	ndfBytes, err := json.Marshal(ndf)
+	if err != nil {
+		return nil, err
+	}
+
+	return ndfBytes, nil
+}
+
 // GetNodeId unmarshalls the node's ID bytes into an id.ID and returns it.
 func (n *Node) GetNodeId() (*id.ID, error) {
 	return id.Unmarshal(n.ID)
@@ -114,11 +230,6 @@ func (n *Node) GetNodeId() (*id.ID, error) {
 // GetGatewayId unmarshalls the gateway's ID bytes into an id.ID and returns it.
 func (g *Gateway) GetGatewayId() (*id.ID, error) {
 	return id.Unmarshal(g.ID)
-}
-
-// GetGatewayId unmarshalls the UDB ID bytes into an id.ID and returns it.
-func (u *UDB) GetUdbId() (*id.ID, error) {
-	return id.Unmarshal(u.ID)
 }
 
 // NewTestNDF generates a sample NDF used for testing.

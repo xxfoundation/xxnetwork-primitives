@@ -13,8 +13,79 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 )
+
+// Tests that Marshal() returns the correct byte slice of an ID and that it is a
+// copy. This test ensures duplicates the test for Bytes() to ensure that
+// Marshal() uses Bytes().
+func TestID_Marshal(t *testing.T) {
+	// Test values
+	expectedBytes := newRandomBytes(ArrIDLen, t)
+	testID := NewIdFromBytes(expectedBytes, t)
+
+	// Check for the correct values
+	testVal := testID.Marshal()
+	if !bytes.Equal(expectedBytes, testVal) {
+		t.Errorf("Marshal() returned the incorrect byte slice of the ID"+
+			"\n\texpected: %+v\n\treceived: %+v", expectedBytes, testVal)
+	}
+
+	// Test if the returned bytes are copies
+	if &testID[0] == &testVal[0] {
+		t.Errorf("Marshal() did not return a copy when it should have."+
+			"\n\texpected: any value except %+v\n\treceived: %+v",
+			&testID[0], &testVal[0])
+	}
+}
+
+// Tests that Unmarshal() creates a new ID with the correct contents and does
+// not return an error.
+func TestUnmarshal(t *testing.T) {
+	// Test values
+	expectedBytes := newRandomBytes(ArrIDLen, t)
+
+	// Unmarshal the bytes into an ID
+	newID, err := Unmarshal(expectedBytes)
+
+	// Make sure no error occurred
+	if err != nil {
+		t.Errorf("Unmarshal() produced an unexpected error."+
+			"\n\texpected: %v\n\treceived: %v", nil, err)
+	}
+
+	// Make sure the ID contents are correct
+	if !bytes.Equal(expectedBytes, newID[:]) {
+		t.Errorf("Unmarshal() produced an ID with the incorrect bytes."+
+			"\n\texpected: %v\n\treceived: %v", expectedBytes, newID[:])
+	}
+}
+
+// Tests that Unmarshal() produces an error when the given data length is not
+// equal to the length of an ID and that the ID returned is nil.
+func TestUnmarshal_DataLengthError(t *testing.T) {
+	// Test values
+	expectedBytes := newRandomBytes(ArrIDLen+10, t)
+	expectedError := fmt.Errorf("could not marshal byte slice to ID: "+
+		"length of data must be %d, length received was %d",
+		ArrIDLen, len(expectedBytes))
+
+	// Unmarshal the bytes into an ID
+	newID, err := Unmarshal(expectedBytes)
+
+	// Make sure an error occurs
+	if err == nil {
+		t.Errorf("Unmarshal() did not product an expected error."+
+			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+	}
+
+	// Make sure the returned ID is nil
+	if newID != nil {
+		t.Errorf("Unmarshal() produced a non-nil ID on error."+
+			"\n\texpected: %v\n\treceived: %v", nil, newID)
+	}
+}
 
 // Tests that Bytes() returns the correct byte slice of an ID and that it is
 // a copy.
@@ -38,15 +109,32 @@ func TestID_Bytes(t *testing.T) {
 	}
 }
 
+// Tests that ID.Bytes panics when the ID is nil.
+func TestID_Bytes_NilError(t *testing.T) {
+	var id *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Bytes() failed to panic when the ID is nil.")
+		}
+	}()
+
+	_ = id.Bytes()
+}
+
 // Tests that Cmp() returns the correct value when comparing equal and unequal
 // IDs.
 func TestID_Cmp(t *testing.T) {
 	// Test values
 	randomBytes1 := newRandomBytes(ArrIDLen, t)
 	randomBytes2 := newRandomBytes(ArrIDLen, t)
+	randomBytes3 := make([]byte, ArrIDLen)
+	copy(randomBytes3, randomBytes2)
+	randomBytes3[ArrIDLen-1] = ^randomBytes3[ArrIDLen-1]
 	testID1 := NewIdFromBytes(randomBytes1, t)
 	testID2 := NewIdFromBytes(randomBytes1, t)
 	testID3 := NewIdFromBytes(randomBytes2, t)
+	testID4 := NewIdFromBytes(randomBytes3, t)
 
 	// Compare two equal IDs
 	testVal := testID1.Cmp(testID2)
@@ -61,6 +149,26 @@ func TestID_Cmp(t *testing.T) {
 		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
 			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
 	}
+
+	// Compare two almost equal IDs
+	testVal = testID3.Cmp(testID4)
+	if testVal {
+		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
+			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
+	}
+}
+
+// Tests that ID.Cmp panics when both IDs are nil.
+func TestID_Cmp_NilError(t *testing.T) {
+	var idA, idB *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Cmp() failed to panic when both IDs are nil.")
+		}
+	}()
+
+	_ = idA.Cmp(idB)
 }
 
 // Test that DeepCopy() returns a copy with the same contents as the original
@@ -82,6 +190,19 @@ func TestID_DeepCopy(t *testing.T) {
 			"\n\texpected: any value except %+v\n\treceived: %+v",
 			&expectedID[0], &testVal[0])
 	}
+}
+
+// Tests that ID.DeepCopy panics when the ID is nil.
+func TestID_DeepCopy_NilError(t *testing.T) {
+	var id *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("DeepCopy() failed to panic when the ID is nil.")
+		}
+	}()
+
+	_ = id.DeepCopy()
 }
 
 // Tests that the base64 encoded string returned by String() can be decoded into
@@ -134,6 +255,19 @@ func TestID_GetType(t *testing.T) {
 	}
 }
 
+// Tests that ID.GetType panics when the ID is nil.
+func TestID_GetType_NilError(t *testing.T) {
+	var id *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("GetType() failed to panic when the ID is nil.")
+		}
+	}()
+
+	_ = id.GetType()
+}
+
 // Tests that SetType() sets the type of the ID correctly by checking if the
 // ID's type changed after calling SetType().
 func TestID_SetType(t *testing.T) {
@@ -151,6 +285,78 @@ func TestID_SetType(t *testing.T) {
 	if expectedType != testVal {
 		t.Errorf("SetType() did not set the ID type correctly."+
 			"\n\texpected: %v\n\treceived: %v", expectedType, testVal)
+	}
+}
+
+// Tests that ID.SetType panics when the ID is nil.
+func TestID_SetType_NilError(t *testing.T) {
+	var id *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("SetType() failed to panic when the ID is nil.")
+		}
+	}()
+
+	id.SetType(Generic)
+}
+
+// Tests that NewRandomID returns the expected IDs for a given PRNG.
+func TestNewRandomID_Consistency(t *testing.T) {
+	prng := rand.New(rand.NewSource(42))
+	expectedIDs := []string{
+		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsB",
+		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8B",
+		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4D",
+		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQD",
+		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcID",
+		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOMD",
+		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kC",
+		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4D",
+		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoC",
+		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIB",
+	}
+
+	for i, expected := range expectedIDs {
+		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		if err != nil {
+			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
+		}
+
+		if testID.String() != expected {
+			t.Errorf("NewRandomID() did not generate the expected ID."+
+				"\nexpected: %s\nreceived: %s", expected, testID)
+		}
+	}
+}
+
+// Tests that NewRandomID returns unique IDs.
+func TestNewRandomID_Unique(t *testing.T) {
+	prng := rand.New(rand.NewSource(42))
+	ids := map[*ID]struct{}{}
+
+	for i := 0; i < 100; i++ {
+		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		if err != nil {
+			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
+		}
+
+		if _, exists := ids[testID]; exists {
+			t.Errorf("NewRandomID() did not generate a unique ID (%d).\nID: %s",
+				i, testID)
+		} else {
+			ids[testID] = struct{}{}
+		}
+	}
+}
+
+// Tests that NewRandomID returns an error when the io reader encounters an
+// error.
+func TestNewRandomID_ReaderError(t *testing.T) {
+	_, err := NewRandomID(strings.NewReader(""), Generic)
+	if err == nil {
+		t.Error("NewRandomID() failed to return an error when the reader " +
+			"failed.")
 	}
 }
 
@@ -322,76 +528,6 @@ func TestNewIdFromUInts_TestError(t *testing.T) {
 	newUint64s := [4]uint64{rand.Uint64(), rand.Uint64(),
 		rand.Uint64(), rand.Uint64()}
 	_ = NewIdFromUInts(newUint64s, Generic, nil)
-}
-
-// Tests that Marshal() returns the correct byte slice of an ID and that it is a
-// copy. This test ensures duplicates the test for Bytes() to ensure that
-// Marshal() uses Bytes().
-func TestID_Marshal(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen, t)
-	testID := NewIdFromBytes(expectedBytes, t)
-
-	// Check for the correct values
-	testVal := testID.Marshal()
-	if !bytes.Equal(expectedBytes, testVal) {
-		t.Errorf("Marshal() returned the incorrect byte slice of the ID"+
-			"\n\texpected: %+v\n\treceived: %+v", expectedBytes, testVal)
-	}
-
-	// Test if the returned bytes are copies
-	if &testID[0] == &testVal[0] {
-		t.Errorf("Marshal() did not return a copy when it should have."+
-			"\n\texpected: any value except %+v\n\treceived: %+v",
-			&testID[0], &testVal[0])
-	}
-}
-
-// Tests that Unmarshal() creates a new ID with the correct contents and does
-// not return an error.
-func TestUnmarshal(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen, t)
-
-	// Unmarshal the bytes into an ID
-	newID, err := Unmarshal(expectedBytes)
-
-	// Make sure no error occurred
-	if err != nil {
-		t.Errorf("Unmarshal() produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
-	}
-
-	// Make sure the ID contents are correct
-	if !bytes.Equal(expectedBytes, newID[:]) {
-		t.Errorf("Unmarshal() produced an ID with the incorrect bytes."+
-			"\n\texpected: %v\n\treceived: %v", expectedBytes, newID[:])
-	}
-}
-
-// Tests that Unmarshal() produces an error when the given data length is not
-// equal to the length of an ID and that the ID returned is nil.
-func TestUnmarshal_DataLengthError(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen+10, t)
-	expectedError := fmt.Errorf("could not marshal byte slice to ID: "+
-		"length of data must be %d, length received was %d",
-		ArrIDLen, len(expectedBytes))
-
-	// Unmarshal the bytes into an ID
-	newID, err := Unmarshal(expectedBytes)
-
-	// Make sure an error occurs
-	if err == nil {
-		t.Errorf("Unmarshal() did not product an expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
-	}
-
-	// Make sure the returned ID is nil
-	if newID != nil {
-		t.Errorf("Unmarshal() produced a non-nil ID on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
-	}
 }
 
 // Generates a byte slice of the specified length containing random numbers.
