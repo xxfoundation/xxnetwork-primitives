@@ -18,6 +18,12 @@ var nsPerOffset = period / numOffsets
 // Ephemeral ID type alias
 type Id [8]byte
 
+type EphemeralId struct {
+	id    Id
+	start time.Time
+	end   time.Time
+}
+
 // Return ephemeral ID as a uint64
 func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
@@ -66,6 +72,42 @@ func Marshal(data []byte) (*Id, error) {
 	eid := &Id{}
 	copy(eid[:], data)
 	return eid, nil
+}
+
+func GetIdByRange(id *id.ID, size uint, timestamp int64,
+	timeRange time.Duration) ([]EphemeralId, error) {
+
+	if size > 64 {
+		return []EphemeralId{}, errors.New("Cannot generate ID with size > 64")
+	}
+
+	iid, err := GetIntermediaryId(id)
+	if err != nil {
+		return []EphemeralId{}, err
+	}
+
+	idList := make([]EphemeralId, 0)
+
+	idsToGenerate := uint64(timeRange) / period
+
+	for i := uint64(0); i < idsToGenerate; i++ {
+		nextTimestamp := uint64(timestamp) + i*period
+		newId, start, end, err := GetIdFromIntermediary(iid, size, int64(nextTimestamp))
+		if err != nil {
+			return []EphemeralId{}, err
+		}
+
+		ephId := EphemeralId{
+			id:    newId,
+			start: start,
+			end:   end,
+		}
+
+		idList = append(idList, ephId)
+	}
+
+	return idList, nil
+
 }
 
 // GetId returns ephemeral ID based on passed in ID
