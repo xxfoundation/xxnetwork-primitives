@@ -97,8 +97,9 @@ func (u64b uint64Buff) copy(start, end int) uint64Buff {
 //   https://en.wikipedia.org/wiki/Material_conditional
 func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 	if len(u64b) != len(mask) {
+		jww.FATAL.Printf("REPORT THIS ERROR TO JONO ↓")
 		jww.FATAL.Panicf("Cannot imply two buffers of different lengths "+
-			"(%v and %v).", len(u64b), len(mask))
+			"(%v and %v).\nu64b: %064b\nmask: %064b", len(u64b), len(mask), u64b, mask)
 	}
 	result := make(uint64Buff, len(u64b))
 

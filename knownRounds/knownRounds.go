@@ -233,8 +233,12 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 	numChecked := 0
 
 	if mask.firstUnchecked != mask.lastChecked {
+		jww.DEBUG.Printf("mask (before Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
 		mask.Forward(kr.firstUnchecked)
 		subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
+		jww.DEBUG.Printf("mask (after Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
+		jww.DEBUG.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
+		jww.DEBUG.Printf("delta: %d", delta)
 		result := subSample.implies(mask.bitStream)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
