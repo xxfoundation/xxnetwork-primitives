@@ -21,9 +21,9 @@ type Id [8]byte
 // Ephemeral Id object which contains the ID
 // and the start and end time for the salt window
 type EphemeralId struct {
-	id    Id
-	start time.Time
-	end   time.Time
+	Id    Id
+	Start time.Time
+	End   time.Time
 }
 
 // Return ephemeral ID as a uint64
@@ -103,9 +103,9 @@ func GetIdByRange(id *id.ID, size uint, timestamp int64,
 		}
 
 		ephId := EphemeralId{
-			id:    newId,
-			start: start,
-			end:   end,
+			Id:    newId,
+			Start: start,
+			End:   end,
 		}
 
 		idList = append(idList, ephId)
