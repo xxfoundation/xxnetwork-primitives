@@ -17,6 +17,8 @@ import (
 	"math"
 )
 
+type RoundCheckFunc func(id id.Round) bool
+
 // KnownRounds structure tracks which rounds are known and which are unknown.
 // Each bit in bitStream corresponds to a round ID and if it is set, it means
 // the round has been checked. All rounds before firstUnchecked are known to be
@@ -227,18 +229,16 @@ func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
 	}
 }
 
-type roundCheckFunc func(id id.Round) bool
-
 // RangeUncheckedMasked masks the bit stream with the provided mask.
 func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
-	roundCheck roundCheckFunc, maxChecked int) {
+	roundCheck RoundCheckFunc, maxChecked int) {
 
 	kr.RangeUncheckedMaskedRange(mask, roundCheck, 0, math.MaxUint64, maxChecked)
 }
 
 // RangeUncheckedMaskedRange masks the bit stream with the provided mask.
 func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
-	roundCheck roundCheckFunc, start, end id.Round, maxChecked int) {
+	roundCheck RoundCheckFunc, start, end id.Round, maxChecked int) {
 
 	numChecked := 0
 
