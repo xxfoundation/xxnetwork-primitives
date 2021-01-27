@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
+	"math"
 )
 
 // KnownRounds structure tracks which rounds are known and which are unknown.
@@ -226,9 +227,18 @@ func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
 	}
 }
 
+type roundCheckFunc func(id id.Round) bool
+
 // RangeUncheckedMasked masks the bit stream with the provided mask.
 func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
-	roundCheck func(id id.Round) bool, maxChecked int) {
+	roundCheck roundCheckFunc, maxChecked int) {
+
+	kr.RangeUncheckedMaskedRange(mask, roundCheck, 0, math.MaxUint64, maxChecked)
+}
+
+// RangeUncheckedMaskedRange masks the bit stream with the provided mask.
+func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
+	roundCheck roundCheckFunc, start, end id.Round, maxChecked int) {
 
 	numChecked := 0
 
@@ -244,7 +254,15 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 		}
 	}
 
-	for i := kr.firstUnchecked; i < mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i+1, numChecked+1 {
+	if start < kr.firstUnchecked {
+		start = kr.firstUnchecked
+	}
+
+	if end > mask.firstUnchecked {
+		end = mask.firstUnchecked
+	}
+
+	for i := start; i < end && numChecked < maxChecked; i, numChecked = i+1, numChecked+1 {
 		if !kr.Checked(i) && roundCheck(i) {
 			kr.Check(i)
 		}
