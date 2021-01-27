@@ -25,17 +25,27 @@ func TestGetId(t *testing.T) {
 	t.Log(eid)
 }
 
-// Unit test for GetId
+// Unit test for GetIdByRange
 func TestGetIdByRange(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
 	eids, err := GetIdByRange(testId, 99, time.Now().UnixNano(), 25)
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	eids, err = GetIdByRange(testId, 16, time.Now().UnixNano(), 48*time.Hour)
+	duration := 48 * time.Hour
+
+	eids, err = GetIdByRange(testId, 16, time.Now().UnixNano(), duration)
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
+	expectedLength := int(uint64(duration) / period)
+
+	if len(eids) != expectedLength {
+		t.Errorf("Unexpected list of ephemeral IDs."+
+			"\n\tExpected: %d"+
+			"\n\tReceived: %d", expectedLength, len(eids))
+	}
+
 	t.Log(eids)
 }
 

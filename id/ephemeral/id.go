@@ -18,6 +18,8 @@ var nsPerOffset = period / numOffsets
 // Ephemeral ID type alias
 type Id [8]byte
 
+// Ephemeral Id object which contains the ID
+// and the start and end time for the salt window
 type EphemeralId struct {
 	id    Id
 	start time.Time
@@ -74,6 +76,9 @@ func Marshal(data []byte) (*Id, error) {
 	return eid, nil
 }
 
+// GetIdByRange returns ephemeral IDs based on passed in ID and a time range
+// Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
+// returns a list of ephemeral IDs
 func GetIdByRange(id *id.ID, size uint, timestamp int64,
 	timeRange time.Duration) ([]EphemeralId, error) {
 
@@ -88,11 +93,11 @@ func GetIdByRange(id *id.ID, size uint, timestamp int64,
 
 	idList := make([]EphemeralId, 0)
 
-	idsToGenerate := uint64(timeRange) / period
+	idsToGenerate := int64(timeRange) / int64(period)
 
-	for i := uint64(0); i < idsToGenerate; i++ {
-		nextTimestamp := uint64(timestamp) + i*period
-		newId, start, end, err := GetIdFromIntermediary(iid, size, int64(nextTimestamp))
+	for i := int64(0); i < idsToGenerate; i++ {
+		nextTimestamp := timestamp + i*int64(period)
+		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
 		if err != nil {
 			return []EphemeralId{}, err
 		}
