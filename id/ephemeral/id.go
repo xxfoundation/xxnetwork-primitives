@@ -58,11 +58,11 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 }
 
 // Load an ephemeral ID from raw bytes
-func Marshal(data []byte) (*Id, error) {
+func Marshal(data []byte) (Id, error) {
 	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return nil, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
+		return Id{}, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
 	}
-	eid := &Id{}
+	eid := Id{}
 	copy(eid[:], data)
 	return eid, nil
 }
