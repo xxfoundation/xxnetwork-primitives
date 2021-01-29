@@ -76,10 +76,10 @@ func Marshal(data []byte) (*Id, error) {
 	return eid, nil
 }
 
-// GetIdByRange returns ephemeral IDs based on passed in ID and a time range
+// GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
 // Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
 // returns a list of ephemeral IDs
-func GetIdByRange(id *id.ID, size uint, timestamp int64,
+func GetIdsByRange(id *id.ID, size uint, timestamp int64,
 	timeRange time.Duration) ([]EphemeralId, error) {
 
 	if size > 64 {
