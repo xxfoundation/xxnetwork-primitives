@@ -20,7 +20,7 @@ type Id [8]byte
 
 // Ephemeral Id object which contains the ID
 // and the start and end time for the salt window
-type EphemeralId struct {
+type ProtoIdentity struct {
 	Id    Id
 	Start time.Time
 	End   time.Time
@@ -80,18 +80,18 @@ func Marshal(data []byte) (*Id, error) {
 // Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
 // returns a list of ephemeral IDs
 func GetIdsByRange(id *id.ID, size uint, timestamp int64,
-	timeRange time.Duration) ([]EphemeralId, error) {
+	timeRange time.Duration) ([]ProtoIdentity, error) {
 
 	if size > 64 {
-		return []EphemeralId{}, errors.New("Cannot generate ID with size > 64")
+		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
 	}
 
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
-		return []EphemeralId{}, err
+		return []ProtoIdentity{}, err
 	}
 
-	idList := make([]EphemeralId, 0)
+	idList := make([]ProtoIdentity, 0)
 
 	idsToGenerate := int64(timeRange) / int64(period)
 
@@ -99,10 +99,10 @@ func GetIdsByRange(id *id.ID, size uint, timestamp int64,
 		nextTimestamp := timestamp + i*int64(period)
 		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
 		if err != nil {
-			return []EphemeralId{}, err
+			return []ProtoIdentity{}, err
 		}
 
-		ephId := EphemeralId{
+		ephId := ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
