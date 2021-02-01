@@ -80,18 +80,18 @@ func Marshal(data []byte) (*Id, error) {
 // Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
 // returns a list of ephemeral IDs
 func GetIdsByRange(id *id.ID, size uint, timestamp int64,
-	timeRange time.Duration) ([]ProtoIdentity, error) {
+	timeRange time.Duration) ([]*ProtoIdentity, error) {
 
 	if size > 64 {
-		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
+		return []*ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
 	}
 
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
-		return []ProtoIdentity{}, err
+		return []*ProtoIdentity{}, err
 	}
 
-	idList := make([]ProtoIdentity, 0)
+	idList := make([]*ProtoIdentity, 0)
 
 	idsToGenerate := int64(timeRange) / int64(period)
 
@@ -99,10 +99,10 @@ func GetIdsByRange(id *id.ID, size uint, timestamp int64,
 		nextTimestamp := timestamp + i*int64(period)
 		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
 		if err != nil {
-			return []ProtoIdentity{}, err
+			return []*ProtoIdentity{}, err
 		}
 
-		ephId := ProtoIdentity{
+		ephId := &ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
