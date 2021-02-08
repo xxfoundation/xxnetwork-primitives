@@ -19,6 +19,7 @@ const (
 	Username FactType = 0
 	Email    FactType = 1
 	Phone    FactType = 2
+	Nickname FactType = 3
 )
 
 func (t FactType) String() string {
@@ -29,6 +30,8 @@ func (t FactType) String() string {
 		return "Email"
 	case Phone:
 		return "Phone"
+	case Nickname:
+		return "Nickname"
 	default:
 		return fmt.Sprintf("Unknown Fact FactType: %d", t)
 	}
@@ -42,6 +45,8 @@ func (t FactType) Stringify() string {
 		return "E"
 	case Phone:
 		return "P"
+	case Nickname:
+		return "N"
 	}
 	jww.FATAL.Panicf("Unknown Fact FactType: %d", t)
 	return "error"
@@ -55,10 +60,12 @@ func UnstringifyFactType(s string) (FactType, error) {
 		return Email, nil
 	case "P":
 		return Phone, nil
+	case "N":
+		return Nickname, nil
 	}
 	return 3, errors.Errorf("Unknown Fact FactType: %s", s)
 }
 
 func (t FactType) IsValid() bool {
-	return t == Username || t == Email || t == Phone
+	return t == Username || t == Email || t == Phone || t == Nickname
 }
