@@ -33,14 +33,15 @@ const NO_NDF = "Contacted server does not have an ndf to give"
 // NetworkDefinition structure matches the JSON structure generated in
 // Terraform, which allows it to be decoded to Go.
 type NetworkDefinition struct {
-	Timestamp    time.Time
-	Gateways     []Gateway
-	Nodes        []Node
-	Registration Registration
-	Notification Notification
-	UDB          UDB   `json:"Udb"`
-	E2E          Group `json:"E2e"`
-	CMIX         Group `json:"Cmix"`
+	Timestamp        time.Time
+	Gateways         []Gateway
+	Nodes            []Node
+	Registration     Registration
+	Notification     Notification
+	UDB              UDB   `json:"Udb"`
+	E2E              Group `json:"E2e"`
+	CMIX             Group `json:"Cmix"`
+	AddressSpaceSize uint32
 }
 
 // Gateway is the structure for the gateways object in the JSON file.
