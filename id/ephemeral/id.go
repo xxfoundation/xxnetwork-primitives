@@ -18,6 +18,14 @@ var nsPerOffset = period / numOffsets
 // Ephemeral ID type alias
 type Id [8]byte
 
+// Ephemeral Id object which contains the ID
+// and the start and end time for the salt window
+type ProtoIdentity struct {
+	Id    Id
+	Start time.Time
+	End   time.Time
+}
+
 // Return ephemeral ID as a uint64
 func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
@@ -43,6 +51,7 @@ func (eid Id) Clear(size uint) Id {
 }
 
 // Fill cleared bits of an ID with random data from passed in rng
+// Accepts the size of the ID in bits & an RNG reader
 func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 	newId := Id{}
 	rand := Id{}
@@ -58,20 +67,61 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 }
 
 // Load an ephemeral ID from raw bytes
-func Marshal(data []byte) (*Id, error) {
+func Marshal(data []byte) (Id, error) {
 	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return nil, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
+		return Id{}, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
 	}
-	eid := &Id{}
+	eid := Id{}
 	copy(eid[:], data)
 	return eid, nil
 }
 
-// GetId returns ephemeral ID based on passed in ID
-func GetId(id *id.ID, size uint, timestamp uint64) (Id, error) {
+// GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
+// Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
+// returns a list of ephemeral IDs
+func GetIdsByRange(id *id.ID, size uint, timestamp int64,
+	timeRange time.Duration) ([]ProtoIdentity, error) {
+
+	if size > 64 {
+		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
+	}
+
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
-		return Id{}, err
+		return []ProtoIdentity{}, err
+	}
+
+	idList := make([]ProtoIdentity, 0)
+
+	idsToGenerate := int64(timeRange) / int64(period)
+
+	for i := int64(0); i < idsToGenerate; i++ {
+		nextTimestamp := timestamp + i*int64(period)
+		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
+		if err != nil {
+			return []ProtoIdentity{}, err
+		}
+
+		ephId := ProtoIdentity{
+			Id:    newId,
+			Start: start,
+			End:   end,
+		}
+
+		idList = append(idList, ephId)
+	}
+
+	return idList, nil
+
+}
+
+// GetId returns ephemeral ID based on passed in ID
+// Accepts an ID, ID size in bits, and timestamp in nanoseconds
+// returns ephemeral ID, start & end timestamps for salt window
+func GetId(id *id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
+	iid, err := GetIntermediaryId(id)
+	if err != nil {
+		return Id{}, time.Time{}, time.Time{}, err
 	}
 	return GetIdFromIntermediary(iid, size, timestamp)
 }
@@ -88,20 +138,22 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 }
 
 // GetIdFromIntermediary returns the ephemeral ID from intermediary (id hash)
-func GetIdFromIntermediary(iid []byte, size uint, timestamp uint64) (Id, error) {
+// Accepts an intermediary ephemeral ID, ID size in bits, and timestamp in nanoseconds
+// returns ephemeral ID, start & end timestamps for salt window
+func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 {
-		return Id{}, errors.New("Cannot generate ID with size > 64")
+		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
 	}
-	salt := getRotationSalt(iid, timestamp)
+	salt, start, end := getRotationSalt(iid, uint64(timestamp))
 
 	_, err := b2b.Write(iid)
 	if err != nil {
-		return Id{}, err
+		return Id{}, start, end, err
 	}
 	_, err = b2b.Write(salt)
 	if err != nil {
-		return Id{}, err
+		return Id{}, start, end, err
 	}
 	eid := Id{}
 	copy(eid[:], b2b.Sum(nil))
@@ -109,23 +161,27 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp uint64) (Id, error) 
 	cleared := eid.Clear(size)
 	copy(eid[:], cleared[:])
 
-	return eid, nil
+	return eid, start, end, nil
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
-func getRotationSalt(idHash []byte, timestamp uint64) []byte {
+func getRotationSalt(idHash []byte, timestamp uint64) ([]byte, time.Time, time.Time) {
 	hashNum := binary.BigEndian.Uint64(idHash)
 	offset := (hashNum % numOffsets) * nsPerOffset
-	fmt.Println(offset)
 	timestampPhase := timestamp % period
-	fmt.Println(timestampPhase)
+	var start, end uint64
+	timestampNum := timestamp / period
 	var saltNum uint64
 	if timestampPhase < offset {
+		start = (timestampNum-1)*period + offset
+		end = start + period
 		saltNum = (timestamp - period) / period
 	} else {
+		start = timestampNum*period + offset
+		end = start + period
 		saltNum = timestamp / period
 	}
 	salt := make([]byte, 8)
 	binary.BigEndian.PutUint64(salt, saltNum)
-	return salt
+	return salt, time.Unix(0, int64(start)), time.Unix(0, int64(end))
 }

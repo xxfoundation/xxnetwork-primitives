@@ -14,15 +14,39 @@ import (
 // Unit test for GetId
 func TestGetId(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eid, err := GetId(testId, 99, uint64(time.Now().UnixNano()))
+	eid, _, _, err := GetId(testId, 99, time.Now().UnixNano())
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	eid, err = GetId(testId, 16, uint64(time.Now().Unix()))
+	eid, _, _, err = GetId(testId, 16, time.Now().Unix())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
 	t.Log(eid)
+}
+
+// Unit test for GetIdsByRange
+func TestGetIdByRange(t *testing.T) {
+	testId := id.NewIdFromString("zezima", id.User, t)
+	eids, err := GetIdsByRange(testId, 99, time.Now().UnixNano(), 25)
+	if err == nil {
+		t.Error("Should error with size > 64")
+	}
+	duration := 48 * time.Hour
+
+	eids, err = GetIdsByRange(testId, 16, time.Now().UnixNano(), duration)
+	if err != nil {
+		t.Errorf("Failed to create ephemeral ID: %+v", err)
+	}
+	expectedLength := int(uint64(duration) / period)
+
+	if len(eids) != expectedLength {
+		t.Errorf("Unexpected list of ephemeral IDs."+
+			"\n\tExpected: %d"+
+			"\n\tReceived: %d", expectedLength, len(eids))
+	}
+
+	t.Log(eids)
 }
 
 func TestGetIntermediaryId(t *testing.T) {
@@ -42,7 +66,7 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get intermediary id: %+v", err)
 	}
-	eid, err := GetIdFromIntermediary(iid, 16, uint64(time.Now().UnixNano()))
+	eid, _, _, err := GetIdFromIntermediary(iid, 16, time.Now().UnixNano())
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
 	}
@@ -110,11 +134,11 @@ func TestGetRotationSalt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get intermediary id hash: %+v", err)
 	}
-	salt1 := getRotationSalt(idHash, uint64(ts))
+	salt1, _, _ := getRotationSalt(idHash, uint64(ts))
 	ts += (12 * time.Hour).Nanoseconds()
-	salt2 := getRotationSalt(idHash, uint64(ts))
+	salt2, _, _ := getRotationSalt(idHash, uint64(ts))
 	ts += (12 * time.Hour).Nanoseconds()
-	salt3 := getRotationSalt(idHash, uint64(ts))
+	salt3, _, _ := getRotationSalt(idHash, uint64(ts))
 	if bytes.Compare(salt1, salt2) == 0 && bytes.Compare(salt2, salt3) == 0 {
 		t.Error("Salt did not change as timestamp increased w/ period of one day")
 	}
@@ -124,7 +148,7 @@ func TestGetRotationSalt(t *testing.T) {
 // Unit test for UInt64 method on ephemeral ID
 func TestId_UInt64(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
+	eid, _, _, err := GetId(testId, 16, time.Now().Unix())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
@@ -139,7 +163,7 @@ func TestId_UInt64(t *testing.T) {
 // Test the int64 conversion from ephemeral ID
 func TestId_Int64(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
+	eid, _, _, err := GetId(testId, 16, time.Now().Unix())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
@@ -165,7 +189,7 @@ func TestId_Int64(t *testing.T) {
 // Unit test for ephemeral ID load function
 func TestMarshal(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eid, err := GetId(testId, 16, uint64(time.Now().Unix()))
+	eid, _, _, err := GetId(testId, 16, time.Now().Unix())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
