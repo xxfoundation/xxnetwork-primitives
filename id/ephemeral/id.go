@@ -18,6 +18,14 @@ var nsPerOffset = period / numOffsets
 // Ephemeral ID type alias
 type Id [8]byte
 
+// Ephemeral Id object which contains the ID
+// and the start and end time for the salt window
+type ProtoIdentity struct {
+	Id    Id
+	Start time.Time
+	End   time.Time
+}
+
 // Return ephemeral ID as a uint64
 func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
@@ -59,13 +67,52 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 }
 
 // Load an ephemeral ID from raw bytes
-func Marshal(data []byte) (*Id, error) {
+func Marshal(data []byte) (Id, error) {
 	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return nil, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
+		return Id{}, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
 	}
-	eid := &Id{}
+	eid := Id{}
 	copy(eid[:], data)
 	return eid, nil
+}
+
+// GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
+// Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
+// returns a list of ephemeral IDs
+func GetIdsByRange(id *id.ID, size uint, timestamp int64,
+	timeRange time.Duration) ([]ProtoIdentity, error) {
+
+	if size > 64 {
+		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
+	}
+
+	iid, err := GetIntermediaryId(id)
+	if err != nil {
+		return []ProtoIdentity{}, err
+	}
+
+	idList := make([]ProtoIdentity, 0)
+
+	idsToGenerate := int64(timeRange) / int64(period)
+
+	for i := int64(0); i < idsToGenerate; i++ {
+		nextTimestamp := timestamp + i*int64(period)
+		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
+		if err != nil {
+			return []ProtoIdentity{}, err
+		}
+
+		ephId := ProtoIdentity{
+			Id:    newId,
+			Start: start,
+			End:   end,
+		}
+
+		idList = append(idList, ephId)
+	}
+
+	return idList, nil
+
 }
 
 // GetId returns ephemeral ID based on passed in ID
