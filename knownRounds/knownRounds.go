@@ -14,7 +14,10 @@ import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
+	"math"
 )
+
+type RoundCheckFunc func(id id.Round) bool
 
 // KnownRounds structure tracks which rounds are known and which are unknown.
 // Each bit in bitStream corresponds to a round ID and if it is set, it means
@@ -228,7 +231,14 @@ func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.
 func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
-	roundCheck func(id id.Round) bool, maxChecked int) {
+	roundCheck RoundCheckFunc, maxChecked int) {
+
+	kr.RangeUncheckedMaskedRange(mask, roundCheck, 0, math.MaxUint64, maxChecked)
+}
+
+// RangeUncheckedMaskedRange masks the bit stream with the provided mask.
+func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
+	roundCheck RoundCheckFunc, start, end id.Round, maxChecked int) {
 
 	numChecked := 0
 
@@ -248,7 +258,15 @@ func (kr *KnownRounds) RangeUncheckedMasked(mask *KnownRounds,
 		}
 	}
 
-	for i := kr.firstUnchecked; i < mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i+1, numChecked+1 {
+	if start < kr.firstUnchecked {
+		start = kr.firstUnchecked
+	}
+
+	if end > mask.firstUnchecked {
+		end = mask.firstUnchecked
+	}
+
+	for i := start; i < end && numChecked < maxChecked; i, numChecked = i+1, numChecked+1 {
 		if !kr.Checked(i) && roundCheck(i) {
 			kr.Check(i)
 		}
