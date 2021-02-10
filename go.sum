@@ -76,6 +76,8 @@ gitlab.com/xx_network/primitives v0.0.4-0.20210121203635-8a771fc14f8a h1:ZDv8RHU
 gitlab.com/xx_network/primitives v0.0.4-0.20210121203635-8a771fc14f8a/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
 gitlab.com/xx_network/primitives v0.0.4-0.20210208204253-ed1a9ef0c75e h1:JW2QXZSaipTEyCbMcjvc9cbIwFqt9/12toYPyAzI7Go=
 gitlab.com/xx_network/primitives v0.0.4-0.20210208204253-ed1a9ef0c75e/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
+gitlab.com/xx_network/primitives v0.0.4-0.20210210215152-e4534abf3ae5 h1:skLonqleopw1osf3xBQTNX9NjTV/OQP6AM4HKpLNUdc=
+gitlab.com/xx_network/primitives v0.0.4-0.20210210215152-e4534abf3ae5/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
