@@ -131,14 +131,15 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 
 	// Create a new Ndf with the stripped information
 	return &NetworkDefinition{
-		Timestamp:    ndf.Timestamp,
-		Gateways:     ndf.Gateways,
-		Nodes:        strippedNodes,
-		Registration: ndf.Registration,
-		Notification: ndf.Notification,
-		UDB:          ndf.UDB,
-		E2E:          ndf.E2E,
-		CMIX:         ndf.CMIX,
+		Timestamp:        ndf.Timestamp,
+		Gateways:         ndf.Gateways,
+		Nodes:            strippedNodes,
+		Registration:     ndf.Registration,
+		Notification:     ndf.Notification,
+		UDB:              ndf.UDB,
+		E2E:              ndf.E2E,
+		CMIX:             ndf.CMIX,
+		AddressSpaceSize: ndf.AddressSpaceSize,
 	}
 }
 
