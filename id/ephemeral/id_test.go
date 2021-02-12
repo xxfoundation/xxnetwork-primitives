@@ -28,17 +28,17 @@ func TestGetId(t *testing.T) {
 // Unit test for GetIdsByRange
 func TestGetIdByRange(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eids, err := GetIdsByRange(testId, 99, time.Now().UnixNano(), 25)
+	eids, err := GetIdsByRange(testId, 99, time.Now(), 25)
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	duration := 48 * time.Hour
+	duration := 7 * 24 * time.Hour
 
-	eids, err = GetIdsByRange(testId, 16, time.Now().UnixNano(), duration)
+	eids, err = GetIdsByRange(testId, 16, time.Now(), duration)
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
-	expectedLength := int(uint64(duration) / period)
+	expectedLength := int(int64(duration)/period) + 1
 
 	if len(eids) != expectedLength {
 		t.Errorf("Unexpected list of ephemeral IDs."+
@@ -46,7 +46,20 @@ func TestGetIdByRange(t *testing.T) {
 			"\n\tReceived: %d", expectedLength, len(eids))
 	}
 
-	t.Log(eids)
+	//test that the time variances are correct
+	for i := 0; i < len(eids)-1; i++ {
+		next := i + 1
+		if eids[i].End != eids[next].Start {
+			t.Errorf("The next identity after %d does not start "+
+				"when the current identity ends: \n\t end: %s \n\t start: %s",
+				i, eids[i].End, eids[next].Start)
+		}
+		if int64(eids[i].End.Sub(eids[i].Start)) != period {
+			t.Errorf("Delta between start and end on %d does not equal the "+
+				"period: \n\t end: %s \n\t start: %s",
+				i, eids[i].End, eids[next].Start)
+		}
+	}
 }
 
 func TestGetIntermediaryId(t *testing.T) {
@@ -134,11 +147,11 @@ func TestGetRotationSalt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get intermediary id hash: %+v", err)
 	}
-	salt1, _, _ := getRotationSalt(idHash, uint64(ts))
+	salt1, _, _ := getRotationSalt(idHash, ts)
 	ts += (12 * time.Hour).Nanoseconds()
-	salt2, _, _ := getRotationSalt(idHash, uint64(ts))
+	salt2, _, _ := getRotationSalt(idHash, ts)
 	ts += (12 * time.Hour).Nanoseconds()
-	salt3, _, _ := getRotationSalt(idHash, uint64(ts))
+	salt3, _, _ := getRotationSalt(idHash, ts)
 	if bytes.Compare(salt1, salt2) == 0 && bytes.Compare(salt2, salt3) == 0 {
 		t.Error("Salt did not change as timestamp increased w/ period of one day")
 	}

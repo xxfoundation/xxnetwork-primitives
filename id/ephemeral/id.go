@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-var period = uint64(time.Hour * 24)
-var numOffsets uint64 = 1 << 16
+var period = int64(time.Hour * 24)
+var numOffsets int64 = 1 << 16
 var nsPerOffset = period / numOffsets
 
 // Ephemeral ID type alias
@@ -79,7 +79,7 @@ func Marshal(data []byte) (Id, error) {
 // GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
 // Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
 // returns a list of ephemeral IDs
-func GetIdsByRange(id *id.ID, size uint, timestamp int64,
+func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
 
 	if size > 64 {
@@ -93,10 +93,18 @@ func GetIdsByRange(id *id.ID, size uint, timestamp int64,
 
 	idList := make([]ProtoIdentity, 0)
 
-	idsToGenerate := int64(timeRange) / int64(period)
+	// dividing by period clamps down, so this gives the timestamp of the
+	// starting of the period the timestamp is in
+	timestampNS := timestamp.UnixNano()
+	timestampExpanded := (timestampNS / period) * period
+
+	//expand the time range
+	timeRange += time.Duration(timestampNS - timestampExpanded)
+
+	idsToGenerate := (int64(timeRange-time.Nanosecond) + period) / period
 
 	for i := int64(0); i < idsToGenerate; i++ {
-		nextTimestamp := timestamp + i*int64(period)
+		nextTimestamp := timestampExpanded + i*period
 		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
 		if err != nil {
 			return []ProtoIdentity{}, err
@@ -145,7 +153,7 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	if size > 64 {
 		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
 	}
-	salt, start, end := getRotationSalt(iid, uint64(timestamp))
+	salt, start, end := getRotationSalt(iid, timestamp)
 
 	_, err := b2b.Write(iid)
 	if err != nil {
@@ -165,23 +173,24 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
-func getRotationSalt(idHash []byte, timestamp uint64) ([]byte, time.Time, time.Time) {
+func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Time) {
 	hashNum := binary.BigEndian.Uint64(idHash)
-	offset := (hashNum % numOffsets) * nsPerOffset
+	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
 	timestampPhase := timestamp % period
-	var start, end uint64
+	var start, end int64
 	timestampNum := timestamp / period
 	var saltNum uint64
 	if timestampPhase < offset {
+
 		start = (timestampNum-1)*period + offset
 		end = start + period
-		saltNum = (timestamp - period) / period
+		saltNum = uint64((timestamp - period) / period)
 	} else {
 		start = timestampNum*period + offset
 		end = start + period
-		saltNum = timestamp / period
+		saltNum = uint64(timestamp / period)
 	}
 	salt := make([]byte, 8)
 	binary.BigEndian.PutUint64(salt, saltNum)
-	return salt, time.Unix(0, int64(start)), time.Unix(0, int64(end))
+	return salt, time.Unix(0, start), time.Unix(0, end)
 }
