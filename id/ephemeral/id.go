@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
@@ -81,46 +82,38 @@ func Marshal(data []byte) (Id, error) {
 // returns a list of ephemeral IDs
 func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
-
 	if size > 64 {
 		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
 	}
-
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return []ProtoIdentity{}, err
 	}
-
 	idList := make([]ProtoIdentity, 0)
-
 	// dividing by period clamps down, so this gives the timestamp of the
 	// starting of the period the timestamp is in
 	timestampNS := timestamp.UnixNano()
 	timestampExpanded := (timestampNS / period) * period
-
 	//expand the time range
 	timeRange += time.Duration(timestampNS - timestampExpanded)
-
 	idsToGenerate := (int64(timeRange-time.Nanosecond) + period) / period
-
+	jww.INFO.Printf("GetIdsByRange: id:%s, iid:%v timestampNS: %d, timestampExpanded: %d, timeRange: %s, idsToGenerate: %v, period: %d",
+		id, iid, timestampNS, timestampExpanded, timeRange, idsToGenerate, period)
 	for i := int64(0); i < idsToGenerate; i++ {
 		nextTimestamp := timestampExpanded + i*period
+		jww.INFO.Printf("\t iteration: %d, nextTimestamp: %d", i, nextTimestamp)
 		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
 		if err != nil {
 			return []ProtoIdentity{}, err
 		}
-
 		ephId := ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
 		}
-
 		idList = append(idList, ephId)
 	}
-
 	return idList, nil
-
 }
 
 // GetId returns ephemeral ID based on passed in ID
@@ -154,7 +147,6 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
-
 	_, err := b2b.Write(iid)
 	if err != nil {
 		return Id{}, start, end, err
@@ -165,10 +157,8 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	}
 	eid := Id{}
 	copy(eid[:], b2b.Sum(nil))
-
 	cleared := eid.Clear(size)
 	copy(eid[:], cleared[:])
-
 	return eid, start, end, nil
 }
 
@@ -181,7 +171,6 @@ func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Ti
 	timestampNum := timestamp / period
 	var saltNum uint64
 	if timestampPhase < offset {
-
 		start = (timestampNum-1)*period + offset
 		end = start + period
 		saltNum = uint64((timestamp - period) / period)
