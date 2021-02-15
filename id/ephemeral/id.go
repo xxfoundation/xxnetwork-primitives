@@ -89,29 +89,25 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	if err != nil {
 		return []ProtoIdentity{}, err
 	}
-	idList := make([]ProtoIdentity, 0)
-	// dividing by period clamps down, so this gives the timestamp of the
-	// starting of the period the timestamp is in
-	timestampNS := timestamp.UnixNano()
-	timestampExpanded := (timestampNS / period) * period
-	//expand the time range
-	timeRange += time.Duration(timestampNS - timestampExpanded)
-	idsToGenerate := (int64(timeRange-time.Nanosecond) + period) / period
-	jww.INFO.Printf("GetIdsByRange: id:%s, iid:%v timestampNS: %d, timestampExpanded: %d, timeRange: %s, idsToGenerate: %v, period: %d",
-		id, iid, timestampNS, timestampExpanded, timeRange, idsToGenerate, period)
-	for i := int64(0); i < idsToGenerate; i++ {
-		nextTimestamp := timestampExpanded + i*period
-		jww.INFO.Printf("\t iteration: %d, nextTimestamp: %d", i, nextTimestamp)
-		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
+	var idList []ProtoIdentity
+	timeStop := timestamp.Add(timeRange)
+	jww.INFO.Printf("GetIdsByRange: id:%s, iid:%v, firstTs: %s, stop: %s",
+		id, iid, timestamp, timeStop)
+	i := 0
+	for timeStop.After(timestamp) {
+		jww.INFO.Printf("\t iteration: %d, nextTimestamp: %v", i, timestamp)
+		i++
+		newId, start, end, err := GetIdFromIntermediary(iid, size, timestamp.UnixNano())
 		if err != nil {
 			return []ProtoIdentity{}, err
 		}
-		ephId := ProtoIdentity{
+		idList = append(idList, ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
-		}
-		idList = append(idList, ephId)
+		})
+		//make the timestamp into the next period
+		timestamp = end.Add(time.Nanosecond)
 	}
 	return idList, nil
 }
