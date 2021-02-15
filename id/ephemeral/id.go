@@ -91,36 +91,26 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 		return []ProtoIdentity{}, err
 	}
 
-	idList := make([]ProtoIdentity, 0)
+	var idList []ProtoIdentity
+	timeStop := timestamp.Add(timeRange)
 
-	// dividing by period clamps down, so this gives the timestamp of the
-	// starting of the period the timestamp is in
-	timestampNS := timestamp.UnixNano()
-	timestampExpanded := (timestampNS / period) * period
+	for timeStop.After(timestamp) {
 
-	//expand the time range
-	timeRange += time.Duration(timestampNS - timestampExpanded)
-
-	idsToGenerate := (int64(timeRange-time.Nanosecond) + period) / period
-
-	for i := int64(0); i < idsToGenerate; i++ {
-		nextTimestamp := timestampExpanded + i*period
-		newId, start, end, err := GetIdFromIntermediary(iid, size, nextTimestamp)
+		newId, start, end, err := GetIdFromIntermediary(iid, size, timestamp.UnixNano())
 		if err != nil {
 			return []ProtoIdentity{}, err
 		}
 
-		ephId := ProtoIdentity{
+		idList = append(idList, ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
-		}
+		})
 
-		idList = append(idList, ephId)
+		//make the timestamp into the next period
+		timestamp = end.Add(time.Nanosecond)
 	}
-
 	return idList, nil
-
 }
 
 // GetId returns ephemeral ID based on passed in ID
@@ -154,7 +144,6 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
-
 	_, err := b2b.Write(iid)
 	if err != nil {
 		return Id{}, start, end, err
@@ -165,10 +154,8 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	}
 	eid := Id{}
 	copy(eid[:], b2b.Sum(nil))
-
 	cleared := eid.Clear(size)
 	copy(eid[:], cleared[:])
-
 	return eid, start, end, nil
 }
 
@@ -181,7 +168,6 @@ func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Ti
 	timestampNum := timestamp / period
 	var saltNum uint64
 	if timestampPhase < offset {
-
 		start = (timestampNum-1)*period + offset
 		end = start + period
 		saltNum = uint64((timestamp - period) / period)
