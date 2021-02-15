@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
@@ -82,30 +81,32 @@ func Marshal(data []byte) (Id, error) {
 // returns a list of ephemeral IDs
 func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
+
 	if size > 64 {
 		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
 	}
+
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return []ProtoIdentity{}, err
 	}
+
 	var idList []ProtoIdentity
 	timeStop := timestamp.Add(timeRange)
-	jww.INFO.Printf("GetIdsByRange: id:%s, iid:%v, firstTs: %s, stop: %s",
-		id, iid, timestamp, timeStop)
-	i := 0
+
 	for timeStop.After(timestamp) {
-		jww.INFO.Printf("\t iteration: %d, nextTimestamp: %v", i, timestamp)
-		i++
+
 		newId, start, end, err := GetIdFromIntermediary(iid, size, timestamp.UnixNano())
 		if err != nil {
 			return []ProtoIdentity{}, err
 		}
+
 		idList = append(idList, ProtoIdentity{
 			Id:    newId,
 			Start: start,
 			End:   end,
 		})
+
 		//make the timestamp into the next period
 		timestamp = end.Add(time.Nanosecond)
 	}
