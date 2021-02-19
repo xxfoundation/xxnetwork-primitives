@@ -72,9 +72,10 @@ type Notification struct {
 
 // UDB is the structure for the UDB object in the JSON file.
 type UDB struct {
-	ID      []byte `json:"Id"`
-	Cert    string `json:"Cert"`
-	Address string `json:"Address"`
+	ID       []byte `json:"Id"`
+	Cert     string `json:"Cert"`
+	Address  string `json:"Address"`
+	DhPubKey []byte `json:"DhPubKey"`
 }
 
 // Group is the structure for a group in the JSON file; it is used for the E2E
@@ -201,6 +202,8 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
 	b = append(b, []byte(ndf.UDB.Cert)...)
+	b = append(b, ndf.UDB.Address...)
+	b = append(b, ndf.UDB.DhPubKey...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
