@@ -313,7 +313,6 @@ func Test_bitMaskRange(t *testing.T) {
 	}
 
 	for i, data := range testData {
-		fmt.Printf("round: %2d   start: %2d   end: %2d\n", i, data.start, data.end)
 		testMask := bitMaskRange(data.start, data.end)
 		if testMask != data.expectedMask {
 			t.Errorf("Generated mask for range %d to %d is incorrect (round %d)."+

@@ -8,6 +8,7 @@
 package fact
 
 import (
+	"fmt"
 	"github.com/badoux/checkmail"
 	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
@@ -62,22 +63,15 @@ func ValidateFact(fact Fact) error {
 	case Phone:
 		// Extract specific information for validating a number
 		number, code := extractNumberInfo(fact.Fact)
-		err := validateNumber(number, code)
-		if err != nil {
-			return err
-		}
-		return nil
+		return validateNumber(number, code)
 	case Email:
 		// Check input of email inputted
-		if err := validateEmail(fact.Fact); err != nil {
-			return err
-		}
-		return nil
+		return validateEmail(fact.Fact)
+	case Nickname:
+		return validateNickname(fact.Fact)
 	default:
 		return errors.Errorf("Unknown fact type: %v", fact.T)
-
 	}
-
 }
 
 // Numbers are assumed to have the 2 letter country code appended
@@ -110,6 +104,13 @@ func validateNumber(number, countryCode string) error {
 	}
 	if !phonenumbers.IsValidNumber(num) {
 		return errors.Errorf("Could not validate number [%s]: %v", number, err)
+	}
+	return nil
+}
+
+func validateNickname(nickname string) error {
+	if len(nickname) > 3 {
+		return errors.New(fmt.Sprintf("Could not validate nickname %s: too short (< 3 characters)", nickname))
 	}
 	return nil
 }
