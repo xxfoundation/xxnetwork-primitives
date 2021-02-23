@@ -615,6 +615,45 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 	msg.SetIdentityFP(make([]byte, IdentityFPLen*2))
 }
 
+// Tests that digests come out correctly and are diffrent
+func TestMessage_Digest(t *testing.T) {
+
+	expectedA := "0mavRePQa3DZ9S4t9DRB"
+	expectedB := "OVN1Ykbzc2BhAKUGjtYX"
+
+	msgA := NewMessage(MinimumPrimeSize)
+
+	contentsA := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+
+	msgA.SetContents(contentsA)
+
+	digestA := msgA.Digest()
+
+	if digestA != expectedA {
+		t.Errorf("Digest A does not match expected: "+
+			"DigestA: %s, Expected: %s", digestA, expectedA)
+	}
+
+	msgB := NewMessage(MinimumPrimeSize)
+
+	contentsB := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'b')
+
+	msgB.SetContents(contentsB)
+
+	digestB := msgB.Digest()
+
+	if digestB != expectedB {
+		t.Errorf("Digest B does not match expected: "+
+			"DigestB: %s, Expected: %s", digestB, expectedB)
+	}
+
+	if digestA == digestB {
+		t.Errorf("Digest A and Digest B are the same, they "+
+			"should be diferent; A: %s, B: %s", digestA, digestB)
+	}
+
+}
+
 // makeAndFillSlice creates a slice of the specified size filled with the
 // specified rune.
 func makeAndFillSlice(size int, r rune) []byte {

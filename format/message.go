@@ -7,6 +7,8 @@
 package format
 
 import (
+	"crypto/md5"
+	"encoding/base64"
 	jww "github.com/spf13/jwalterweatherman"
 )
 
@@ -280,6 +282,15 @@ func (m Message) SetIdentityFP(identityFP []byte) {
 			IdentityFPLen, len(identityFP))
 	}
 	copy(m.identityFP, identityFP)
+}
+
+// gets a digest of the message contents, primarily used for debugging
+func (m Message) Digest() string {
+	h := md5.New()
+	h.Write(m.GetContents())
+	d := h.Sum(nil)
+	digest := base64.StdEncoding.EncodeToString(d[:15])
+	return digest[:20]
 }
 
 // copyByteSlice is a helper function to make a copy of a byte slice.
