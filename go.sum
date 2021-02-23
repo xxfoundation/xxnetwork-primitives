@@ -80,6 +80,8 @@ gitlab.com/xx_network/primitives v0.0.4-0.20210210215152-e4534abf3ae5 h1:skLonql
 gitlab.com/xx_network/primitives v0.0.4-0.20210210215152-e4534abf3ae5/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
 gitlab.com/xx_network/primitives v0.0.4-0.20210215192713-e32335847d4f h1:0wFEYIHuPkWJuDkbDXNrwC5yGwkd7Mugt2BwcTqQbFY=
 gitlab.com/xx_network/primitives v0.0.4-0.20210215192713-e32335847d4f/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
+gitlab.com/xx_network/primitives v0.0.4-0.20210219231511-983054dbee36 h1:41qeW7XB9Rllsi6fe37+eaQCLjTGchpvcJqwEvZxeXE=
+gitlab.com/xx_network/primitives v0.0.4-0.20210219231511-983054dbee36/go.mod h1:9imZHvYwNFobxueSvVtHneZLk9wTK7HQTzxPm+zhFhE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
