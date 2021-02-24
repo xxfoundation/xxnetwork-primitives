@@ -1,6 +1,7 @@
 package ephemeral
 
 import (
+	"bytes"
 	"crypto"
 	"encoding/binary"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 var period = int64(time.Hour * 24)
 var numOffsets int64 = 1 << 16
 var nsPerOffset = period / numOffsets
+
+var ReservedIDs = []Id{{0, 0, 0, 0, 0, 0, 0, 0}}
 
 // Ephemeral ID type alias
 type Id [8]byte
@@ -155,21 +158,33 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
-	_, err := b2b.Write(iid)
-	if err != nil {
-		return Id{}, start, end, err
-	}
-	_, err = b2b.Write(salt)
-	if err != nil {
-		return Id{}, start, end, err
-	}
 	eid := Id{}
-	copy(eid[:], b2b.Sum(nil))
+	for reserved := true; reserved; reserved = IsReserved(eid) {
+		_, err := b2b.Write(iid)
+		if err != nil {
+			return Id{}, start, end, err
+		}
+		_, err = b2b.Write(salt)
+		if err != nil {
+			return Id{}, start, end, err
+		}
 
-	cleared := eid.Clear(size)
-	copy(eid[:], cleared[:])
+		copy(eid[:], b2b.Sum(nil))
+
+		cleared := eid.Clear(size)
+		copy(eid[:], cleared[:])
+	}
 
 	return eid, start, end, nil
+}
+
+func IsReserved(eid Id) bool {
+	for _, r := range ReservedIDs {
+		if bytes.Equal(eid[:], r[:]) {
+			return true
+		}
+	}
+	return false
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
