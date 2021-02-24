@@ -42,6 +42,7 @@ type NetworkDefinition struct {
 	E2E              Group `json:"E2e"`
 	CMIX             Group `json:"Cmix"`
 	AddressSpaceSize uint32
+	ClientVersion    string
 }
 
 // Gateway is the structure for the gateways object in the JSON file.
