@@ -16,6 +16,7 @@ var period = int64(time.Hour * 24)
 var numOffsets int64 = 1 << 16
 var nsPerOffset = period / numOffsets
 
+// Ephemeral Ids reserved for specific actions (e.g. payments)
 var ReservedIDs = []Id{{0, 0, 0, 0, 0, 0, 0, 0}}
 
 // Ephemeral ID type alias
@@ -148,6 +149,8 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
+	// Continually generate an ephemeral Id until we land on
+	// an id not within the reserved list of Ids
 	eid := Id{}
 	for reserved := true; reserved; reserved = IsReserved(eid) {
 		_, err := b2b.Write(iid)
@@ -167,6 +170,9 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	return eid, start, end, nil
 }
 
+// Checks if the Id passed in is  among
+// the reserved global reserved ID list.
+// Returns true if reserved, false if non-reserved
 func IsReserved(eid Id) bool {
 	for _, r := range ReservedIDs {
 		if bytes.Equal(eid[:], r[:]) {

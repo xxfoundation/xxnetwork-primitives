@@ -86,35 +86,39 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
 	}
-
-	t.Logf("EID outputted: %v", eid)
 	if eid[2] != 0 && eid[3] != 0 && eid[4] != 0 && eid[5] != 0 && eid[6] != 0 && eid[7] != 0 {
 		t.Errorf("Id was not cleared to proper size: %+v", eid)
 	}
 }
 
-// Check that given input
+// Check that given precomputed input that should generate a reserved
+// ephemeral ID, GetIdFromIntermediary does not generate a reserved Id
 func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 
 	// Hardcoded to ensure a collision with a reserved ID
 	hardcodedTimestamp := int64(1614199942358373731)
 	size := uint(4)
+	testId := id.NewIdFromString(strconv.Itoa(41), id.User, t)
 
 	// Intermediary ID expected to generate a reserved ephemeral ID
-	iid := FindReservedID(size, hardcodedTimestamp, t)
+	iid, err := GetIntermediaryId(testId)
+	if err != nil {
+		t.Errorf("Failed to get intermediary id: %+v", err)
+	}
 
-	expectedReservedEID, err := GetIdFromIntermediaryUnsafe(iid, size, hardcodedTimestamp)
+	// Generate an ephemeral Id given the input above using a testing facing call
+	expectedReservedEID, err := GetIdFromIntermediaryUnsafe(iid, size, hardcodedTimestamp, t)
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
 	}
 
-	// Check that the ephemeral id generated with hardcoded data is still a reserved ID
+	// Check that the ephemeral Id generated with hardcoded data is a reserved ID
 	if !IsReserved(expectedReservedEID) {
 		t.Errorf("Expected reserved eid is no longer reserved, " +
 			"\n\tmay need to find a new ID. Use FindReservedID in this case.")
 	}
 
-	// Generate an ephemeral ID which should not be reserver
+	// Generate an ephemeral ID which given the same input above with the production facing call
 	eid, _, _, err := GetIdFromIntermediary(iid, size, hardcodedTimestamp)
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
@@ -129,9 +133,20 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 
 }
 
-// Generates an ephemeral ID without checking if the ID is reserved.
+// Similar logic to GetIdFromIntermediary, but does not check if Id
+// returned is reserved. Allows for explicit check if given input
+// does in fact generate a reserved Id
 // Intended for testing purposes
-func GetIdFromIntermediaryUnsafe(iid []byte, size uint, timestamp int64) (Id, error) {
+func GetIdFromIntermediaryUnsafe(iid []byte, size uint,
+	timestamp int64, x interface{}) (Id, error) {
+	// Ensure that this function is only run in testing environments
+	switch x.(type) {
+	case *testing.T, *testing.M, *testing.B:
+		break
+	default:
+		panic("GetIdFromIntermediaryUnsafe() can only be used for testing.")
+	}
+
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 {
 		return Id{}, errors.New("Cannot generate ID with size > 64")
@@ -169,11 +184,8 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 			t.Errorf("Failed to get intermediary id: %+v", err)
 		}
 
-		// Increment the counter
-		counter++
-
 		// Generate an ephemeral ID
-		eid, err := GetIdFromIntermediaryUnsafe(iid, size, timestamp)
+		eid, err := GetIdFromIntermediaryUnsafe(iid, size, timestamp, t)
 		if err != nil {
 			t.Errorf("Failed to get id from intermediary: %+v", err)
 		}
@@ -182,6 +194,8 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 		if IsReserved(eid) {
 			return iid
 		}
+		// Increment the counter
+		counter++
 
 	}
 }
