@@ -9,6 +9,7 @@ package knownRounds
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"gitlab.com/xx_network/primitives/id"
 	"math"
@@ -42,8 +43,11 @@ func TestKnownRounds_Marshal(t *testing.T) {
 		lastChecked:    150,
 		fuPos:          75,
 	}
-	expectedData := fmt.Sprintf("{\"BitStream\":[%d,%d],\"FirstUnchecked"+
-		"\":%d,\"LastChecked\":%d}", testKR.bitStream[1], testKR.bitStream[2],
+	startBlock, _ := testKR.bitStream.convertLoc(testKR.getBitStreamPos(testKR.firstUnchecked))
+	endBlock, _ := testKR.bitStream.convertLoc(testKR.getBitStreamPos(testKR.lastChecked))
+
+	expectedData := fmt.Sprintf("{\"BitStream\":\"%s\",\"FirstUnchecked"+
+		"\":%d,\"LastChecked\":%d}", base64.StdEncoding.EncodeToString(testKR.bitStream[startBlock:endBlock+1].marshal()),
 		testKR.firstUnchecked, testKR.lastChecked)
 
 	data, err := testKR.Marshal()
@@ -78,7 +82,7 @@ func TestKnownRounds_Unmarshal(t *testing.T) {
 	err = newKR.Unmarshal(data)
 	if err != nil {
 		t.Errorf("Unmarshal() produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
+			"\n\texpected: %+v\n\treceived: %+v", nil, err)
 	}
 
 	if !reflect.DeepEqual(newKR, testKR) {

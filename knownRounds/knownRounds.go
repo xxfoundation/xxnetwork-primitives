@@ -33,7 +33,7 @@ type KnownRounds struct {
 // DiskKnownRounds structure is used to as an intermediary to marshal and
 // unmarshal KnownRounds.
 type DiskKnownRounds struct {
-	BitStream                   []uint64
+	BitStream                   []byte
 	FirstUnchecked, LastChecked uint64
 }
 
@@ -59,16 +59,19 @@ func (kr *KnownRounds) Marshal() ([]byte, error) {
 
 	// Generate DiskKnownRounds with bit stream of the correct size
 	dkr := DiskKnownRounds{
-		BitStream:      make([]uint64, length),
+		BitStream:      []byte{},
 		FirstUnchecked: uint64(kr.firstUnchecked),
 		LastChecked:    uint64(kr.lastChecked),
 	}
 
 	// Copy only the blocks between firstUnchecked and lastChecked to the stream
 	startBlock, _ := kr.bitStream.convertLoc(startPos)
+	bitStream := make(uint64Buff, length)
 	for i := 0; i < length; i++ {
-		dkr.BitStream[i] = kr.bitStream[(i+startBlock)%len(kr.bitStream)]
+		bitStream[i] = kr.bitStream[(i+startBlock)%len(kr.bitStream)]
 	}
+
+	dkr.BitStream = bitStream.marshal()
 
 	return json.Marshal(dkr)
 }
@@ -84,25 +87,27 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 		return err
 	}
 
+	bitStream := unmarshal(dkr.BitStream)
+
 	// Handle the copying in of the bit stream
 	if len(kr.bitStream) == 0 {
 		// If there is no bitstream, like in the wire representations, then make
 		// the size equal to what is coming in
-		kr.bitStream = dkr.BitStream
-	} else if len(kr.bitStream) >= len(dkr.BitStream) {
+		kr.bitStream = bitStream
+	} else if len(kr.bitStream) >= len(bitStream) {
 		// If a size already exists and the data fits within it, then copy it
 		// into the beginning of the buffer
-		copy(kr.bitStream, dkr.BitStream)
+		copy(kr.bitStream, bitStream)
 	} else {
 		// If the passed in data is larger then the internal buffer, then return
 		// an error
 		return errors.Errorf("KnownRounds bitStream size of %d is too small "+
 			"for passed in bit stream of size %d.",
-			len(kr.bitStream), len(dkr.BitStream))
+			len(kr.bitStream), len(bitStream))
 	}
 
 	// Copy values over
-	copy(kr.bitStream, dkr.BitStream)
+	copy(kr.bitStream, bitStream)
 	kr.firstUnchecked = id.Round(dkr.FirstUnchecked)
 	kr.lastChecked = id.Round(dkr.LastChecked)
 	kr.fuPos = int(dkr.FirstUnchecked % 64)

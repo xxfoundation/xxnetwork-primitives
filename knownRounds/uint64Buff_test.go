@@ -9,13 +9,10 @@ package knownRounds
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"reflect"
 	"testing"
 )
-
-const max = math.MaxUint64
 
 // Happy path of get().
 func Test_uint64Buff_get(t *testing.T) {
@@ -29,7 +26,7 @@ func Test_uint64Buff_get(t *testing.T) {
 		{319, false},
 		{320, false},
 	}
-	u64b := uint64Buff{0, max, 0, max, 0}
+	u64b := uint64Buff{0, ones, 0, ones, 0}
 
 	for i, data := range testData {
 		value := u64b.get(data.pos)
@@ -47,14 +44,14 @@ func Test_uint64Buff_set(t *testing.T) {
 		pos  int
 		buff uint64Buff
 	}{
-		{0, uint64Buff{0x8000000000000000, max, 0, max, 0}},
-		{64, uint64Buff{0, max, 0, max, 0}},
-		{320, uint64Buff{0x8000000000000000, max, 0, max, 0}},
-		{15, uint64Buff{0x1000000000000, max, 0, max, 0}},
+		{0, uint64Buff{0x8000000000000000, ones, 0, ones, 0}},
+		{64, uint64Buff{0, ones, 0, ones, 0}},
+		{320, uint64Buff{0x8000000000000000, ones, 0, ones, 0}},
+		{15, uint64Buff{0x1000000000000, ones, 0, ones, 0}},
 	}
 
 	for i, data := range testData {
-		u64b := uint64Buff{0, max, 0, max, 0}
+		u64b := uint64Buff{0, ones, 0, ones, 0}
 		u64b.set(data.pos)
 		if !reflect.DeepEqual(u64b, data.buff) {
 			t.Errorf("Resulting buffer after setting bit at position %d (round %d)."+
@@ -74,9 +71,9 @@ func Test_uint64Buff_clearRange(t *testing.T) {
 		start, end int
 		buff       uint64Buff
 	}{
-		{0, 63, uint64Buff{1, max, max, max, max}},
-		{0, 64, uint64Buff{0, max, max, max, max}},
-		{0, 65, uint64Buff{0, 0x7FFFFFFFFFFFFFFF, max, max, max}},
+		{0, 63, uint64Buff{1, ones, ones, ones, ones}},
+		{0, 64, uint64Buff{0, ones, ones, ones, ones}},
+		{0, 65, uint64Buff{0, 0x7FFFFFFFFFFFFFFF, ones, ones, ones}},
 		{0, 319, uint64Buff{0, 0, 0, 0, 1}},
 		{0, 320, uint64Buff{0, 0, 0, 0, 0}},
 		{1, 318, uint64Buff{0x8000000000000000, 0, 0, 0, 3}},
@@ -84,15 +81,15 @@ func Test_uint64Buff_clearRange(t *testing.T) {
 		{0, 1200, uint64Buff{0, 0, 0, 0, 0}},
 		{0, 400, uint64Buff{0, 0, 0, 0, 0}},
 		{36, 354, uint64Buff{0x30000000, 0, 0, 0, 0}},
-		{0, 0, uint64Buff{max, max, max, max, max}},
-		{0, 1, uint64Buff{0x7FFFFFFFFFFFFFFF, max, max, max, max}},
-		{5, 27, uint64Buff{0xF800001FFFFFFFFF, max, max, max, max}},
-		{5, 110, uint64Buff{0xF800000000000000, 0x3FFFF, max, max, max}},
-		{310, 5, uint64Buff{0x7FFFFFFFFFFFFFF, max, max, max, 0xFFFFFFFFFFFFFC00}},
+		{0, 0, uint64Buff{ones, ones, ones, ones, ones}},
+		{0, 1, uint64Buff{0x7FFFFFFFFFFFFFFF, ones, ones, ones, ones}},
+		{5, 27, uint64Buff{0xF800001FFFFFFFFF, ones, ones, ones, ones}},
+		{5, 110, uint64Buff{0xF800000000000000, 0x3FFFF, ones, ones, ones}},
+		{310, 5, uint64Buff{0x7FFFFFFFFFFFFFF, ones, ones, ones, 0xFFFFFFFFFFFFFC00}},
 	}
 
 	for i, data := range testData {
-		u64b := uint64Buff{max, max, max, max, max}
+		u64b := uint64Buff{ones, ones, ones, ones, ones}
 		u64b.clearRange(data.start, data.end)
 		if !reflect.DeepEqual(u64b, data.buff) {
 			t.Errorf("Resulting buffer after clearing range %d to %d is incorrect (round %d)."+
@@ -280,7 +277,7 @@ func Test_uint64Buff_delta(t *testing.T) {
 		{310, 65, 3},
 	}
 
-	u64b := uint64Buff{max, max, max, max, max}
+	u64b := uint64Buff{ones, ones, ones, ones, ones}
 
 	for i, data := range testData {
 		delta := u64b.delta(data.start, data.end)
@@ -320,6 +317,38 @@ func Test_bitMaskRange(t *testing.T) {
 				"\n              0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n              0         1         2         3         4         5         6",
 				data.start, data.end, i, data.expectedMask, testMask)
+		}
+	}
+}
+
+// Happy path.
+func TestUint64Buff_marshal_unmarshal(t *testing.T) {
+	testData := []struct {
+		buff uint64Buff
+	}{
+		{uint64Buff{1, ones, ones, ones, ones}},
+		{uint64Buff{0, ones, ones, ones, ones}},
+		{uint64Buff{0, 0x7FFFFFFFFFFFFFFF, ones, ones, ones}},
+		{uint64Buff{0, 0, 0, 0, 1}},
+		{uint64Buff{0, 0, 0, 0, 0}},
+		{uint64Buff{0x8000000000000000, 0, 0, 0, 3}},
+		{uint64Buff{0, 0, 0, 0, 0}},
+		{uint64Buff{0, 0, 0, 0, 0}},
+		{uint64Buff{0, 0, 0, 0, 0}},
+		{uint64Buff{0x30000000, 0, 0, 0, 0}},
+		{uint64Buff{ones, ones, ones, ones, ones}},
+		{uint64Buff{0x7FFFFFFFFFFFFFFF, ones, ones, ones, ones, 0x13324AFB434FF, zeroes, zeroes, zeroes, 0x5}},
+		{uint64Buff{0xF800001FFFFFFFFF, ones, ones, ones, ones}},
+		{uint64Buff{0xF800000000000000, 0x3FFFF, ones, ones, ones}},
+		{uint64Buff{0x7FFFFFFFFFFFFFF, ones, ones, ones, 0xFFFFFFFFFFFFFC00}},
+	}
+
+	for i, data := range testData {
+		buff := data.buff.marshal()
+		u64b := unmarshal(buff)
+		if !reflect.DeepEqual(data.buff, u64b) {
+			t.Errorf("Failed to marshal and unmarshal buffer (%d)."+
+				"\n\texpected: %X\n\treceived: %X", i, data.buff, u64b)
 		}
 	}
 }
