@@ -161,8 +161,20 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
 func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Time) {
-	hashNum := binary.BigEndian.Uint64(idHash)
+	offset := GetOffset(idHash)
+	start, end, saltNum := GetOffsetBounds(offset, timestamp)
+	salt := make([]byte, 8)
+	binary.BigEndian.PutUint64(salt, saltNum)
+	return salt, start, end
+}
+
+func GetOffset(intermediaryId []byte) int64 {
+	hashNum := binary.BigEndian.Uint64(intermediaryId)
 	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
+	return offset
+}
+
+func GetOffsetBounds(offset, timestamp int64) (time.Time, time.Time, uint64) {
 	timestampPhase := timestamp % period
 	var start, end int64
 	timestampNum := timestamp / period
@@ -176,27 +188,5 @@ func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Ti
 		end = start + period
 		saltNum = uint64(timestamp / period)
 	}
-	salt := make([]byte, 8)
-	binary.BigEndian.PutUint64(salt, saltNum)
-	return salt, time.Unix(0, start), time.Unix(0, end)
-}
-
-func GetOffset(intermediaryId []byte) int64 {
-	hashNum := binary.BigEndian.Uint64(intermediaryId)
-	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
-	return offset
-}
-
-func GetNextRotation(offset, timestamp int64) time.Time {
-	timestampPhase := timestamp % period
-	var start, end int64
-	timestampNum := timestamp / period
-	if timestampPhase < offset {
-		start = (timestampNum-1)*period + offset
-		end = start + period
-	} else {
-		start = timestampNum*period + offset
-		end = start + period
-	}
-	return time.Unix(0, end)
+	return time.Unix(0, start), time.Unix(0, end), saltNum
 }
