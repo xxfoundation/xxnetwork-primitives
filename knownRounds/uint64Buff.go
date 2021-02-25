@@ -8,8 +8,16 @@
 package knownRounds
 
 import (
+	"bytes"
+	"encoding/binary"
 	jww "github.com/spf13/jwalterweatherman"
+	"io"
 	"math"
+)
+
+const (
+	ones   = math.MaxUint64
+	zeroes = 0
 )
 
 type uint64Buff []uint64
@@ -173,4 +181,77 @@ func getInvert(b bool) uint64 {
 	default:
 		return 0
 	}
+}
+
+// TODO: fix licensing for code below. Code below is derived from github.com/tj/go-rle
+
+// marshal encodes the buffer into a byte slice and compresses the data using
+// run-length encoding on the integer level. For this implementation, run
+// lengths are only included after one or more consecutive integers of all 1s or
+// all 0s. All other data is kept in its original form.
+func (u64b uint64Buff) marshal() []byte {
+	size := len(u64b)
+
+	if size == 0 {
+		return nil
+	}
+
+	var b = make([]byte, binary.MaxVarintLen64)
+	var buf bytes.Buffer
+	var cur = u64b[0]
+	var run uint64
+
+	for _, next := range u64b {
+		if cur != next {
+			n := binary.PutUvarint(b, cur)
+			buf.Write(b[:n])
+			if run > 0 {
+				n := binary.PutUvarint(b, run)
+				buf.Write(b[:n])
+				run = 0
+			}
+		}
+		if next == zeroes || next == ones {
+			run++
+		}
+		cur = next
+	}
+
+	n := binary.PutUvarint(b, cur)
+	buf.Write(b[:n])
+	if run > 0 {
+		n := binary.PutUvarint(b, run)
+		buf.Write(b[:n])
+	}
+
+	return buf.Bytes()
+}
+
+// unmarshal decodes the run-length encoded buffer.
+func unmarshal(b []byte) uint64Buff {
+	buf := bytes.NewBuffer(b)
+	buff := uint64Buff{}
+
+	// Reach each uint out of the buffer
+	num, err := binary.ReadUvarint(buf)
+	for ; err == nil; num, err = binary.ReadUvarint(buf) {
+		if num == zeroes || num == ones {
+			run, err := binary.ReadUvarint(buf)
+			if err != nil {
+				jww.FATAL.Panicf("Failed to unmarshal run-length encoded buffer run: %+v", err)
+				return nil
+			}
+			for i := uint64(0); i < run; i++ {
+				buff = append(buff, num)
+			}
+		} else {
+			buff = append(buff, num)
+		}
+	}
+
+	if err != io.EOF {
+		jww.FATAL.Panicf("Failed to unmarshal run-length encoded buffer: %+v", err)
+	}
+
+	return buff
 }
