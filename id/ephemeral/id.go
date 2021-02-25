@@ -180,3 +180,23 @@ func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Ti
 	binary.BigEndian.PutUint64(salt, saltNum)
 	return salt, time.Unix(0, start), time.Unix(0, end)
 }
+
+func GetOffset(intermediaryId []byte) int64 {
+	hashNum := binary.BigEndian.Uint64(intermediaryId)
+	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
+	return offset
+}
+
+func GetNextRotation(offset, timestamp int64) time.Time {
+	timestampPhase := timestamp % period
+	var start, end int64
+	timestampNum := timestamp / period
+	if timestampPhase < offset {
+		start = (timestampNum-1)*period + offset
+		end = start + period
+	} else {
+		start = timestampNum*period + offset
+		end = start + period
+	}
+	return time.Unix(0, end)
+}
