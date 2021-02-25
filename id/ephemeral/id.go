@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
+	"hash"
 	"io"
 	"math"
 	"time"
@@ -152,22 +153,35 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	// Continually generate an ephemeral Id until we land on
 	// an id not within the reserved list of Ids
 	eid := Id{}
+	var err error
 	for reserved := true; reserved; reserved = IsReserved(eid) {
-		_, err := b2b.Write(iid)
+		eid, err = getIdFromIntermediaryHelper(b2b, iid, salt, size)
 		if err != nil {
 			return Id{}, start, end, err
 		}
-		_, err = b2b.Write(salt)
-		if err != nil {
-			return Id{}, start, end, err
-		}
-
-		copy(eid[:], b2b.Sum(nil))
-
-		cleared := eid.Clear(size)
-		copy(eid[:], cleared[:])
 	}
 	return eid, start, end, nil
+}
+
+// Helper function which generates a single ephemeral Id
+func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
+	eid := Id{}
+
+	_, err := b2b.Write(iid)
+	if err != nil {
+		return Id{}, err
+	}
+	_, err = b2b.Write(salt)
+	if err != nil {
+		return Id{}, err
+	}
+
+	copy(eid[:], b2b.Sum(nil))
+
+	cleared := eid.Clear(size)
+	copy(eid[:], cleared[:])
+
+	return eid, err
 }
 
 // Checks if the Id passed in is  among

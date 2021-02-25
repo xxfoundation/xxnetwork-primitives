@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/binary"
-	"errors"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/primitives/id"
 	_ "golang.org/x/crypto/blake2b"
@@ -105,9 +104,11 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get intermediary id: %+v", err)
 	}
-
-	// Generate an ephemeral Id given the input above using a testing facing call
-	expectedReservedEID, err := GetIdFromIntermediaryUnsafe(iid, size, hardcodedTimestamp, t)
+	// Generate an ephemeral Id given the input above. This specific
+	// call does not check if the outputted Id is reserved
+	salt, _, _ := getRotationSalt(iid, hardcodedTimestamp)
+	b2b := crypto.BLAKE2b_256.New()
+	expectedReservedEID, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
 	}
@@ -133,48 +134,11 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 
 }
 
-// Similar logic to GetIdFromIntermediary, but does not check if Id
-// returned is reserved. Allows for explicit check if given input
-// does in fact generate a reserved Id
-// Intended for testing purposes
-func GetIdFromIntermediaryUnsafe(iid []byte, size uint,
-	timestamp int64, x interface{}) (Id, error) {
-	// Ensure that this function is only run in testing environments
-	switch x.(type) {
-	case *testing.T, *testing.M, *testing.B:
-		break
-	default:
-		panic("GetIdFromIntermediaryUnsafe() can only be used for testing.")
-	}
-
-	b2b := crypto.BLAKE2b_256.New()
-	if size > 64 {
-		return Id{}, errors.New("Cannot generate ID with size > 64")
-	}
-	salt, _, _ := getRotationSalt(iid, timestamp)
-
-	eid := Id{}
-	_, err := b2b.Write(iid)
-	if err != nil {
-		return Id{}, err
-	}
-	_, err = b2b.Write(salt)
-	if err != nil {
-		return Id{}, err
-	}
-
-	copy(eid[:], b2b.Sum(nil))
-
-	cleared := eid.Clear(size)
-	copy(eid[:], cleared[:])
-
-	return eid, nil
-
-}
-
 // Will find a reserved ephemeral ID and returns the
 // associated intermediary ID
 func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
+	b2b := crypto.BLAKE2b_256.New()
+
 	// Loops through until a reserved ID is found
 	counter := 0
 	for {
@@ -185,18 +149,25 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 		}
 
 		// Generate an ephemeral ID
-		eid, err := GetIdFromIntermediaryUnsafe(iid, size, timestamp, t)
+		salt, _, _ := getRotationSalt(iid, timestamp)
+		eid, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
 		if err != nil {
 			t.Errorf("Failed to get id from intermediary: %+v", err)
 		}
 
 		// Check if ephemeral ID is reserved exit
 		if IsReserved(eid) {
+			t.Logf("Found input which generates a reserved id. Input as follows."+
+				"\n\tSize: %d"+
+				"\n\tTimestamp: %d"+
+				"\n\tTestID: %v"+
+				"\n\tTestID generated using the following line of code: "+
+				"\n\t\ttestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
+				size, timestamp, testId, counter)
 			return iid
 		}
 		// Increment the counter
 		counter++
-
 	}
 }
 
