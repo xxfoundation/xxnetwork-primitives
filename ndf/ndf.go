@@ -29,14 +29,15 @@ const NO_NDF = "Contacted server does not have an ndf to give"
 // NetworkDefinition structure hold connection and network information. It
 // matches the JSON structure generated in Terraform.
 type NetworkDefinition struct {
-	Timestamp    time.Time
-	Gateways     []Gateway
-	Nodes        []Node
-	Registration Registration
-	Notification Notification
-	UDB          UDB   `json:"Udb"`
-	E2E          Group `json:"E2e"`
-	CMIX         Group `json:"Cmix"`
+	Timestamp        time.Time
+	Gateways         []Gateway
+	Nodes            []Node
+	Registration     Registration
+	Notification     Notification
+	UDB              UDB   `json:"Udb"`
+	E2E              Group `json:"E2e"`
+	CMIX             Group `json:"Cmix"`
+	AddressSpaceSize uint32
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -70,9 +71,10 @@ type Notification struct {
 
 // UDB contains the ID and public key in PEM form for user discovery.
 type UDB struct {
-	ID      []byte `json:"Id"`
-	Cert    string `json:"Cert"`
-	Address string `json:"Address"`
+	ID       []byte `json:"Id"`
+	Cert     string `json:"Cert"`
+	Address  string `json:"Address"`
+	DhPubKey []byte `json:"DhPubKey"`
 }
 
 // Group contains the information used to reconstruct a cyclic group.
@@ -129,14 +131,15 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 
 	// Create a new NetworkDefinition with the stripped information
 	return &NetworkDefinition{
-		Timestamp:    ndf.Timestamp,
-		Gateways:     ndf.Gateways,
-		Nodes:        strippedNodes,
-		Registration: ndf.Registration,
-		Notification: ndf.Notification,
-		UDB:          ndf.UDB,
-		E2E:          ndf.E2E,
-		CMIX:         ndf.CMIX,
+		Timestamp:        ndf.Timestamp,
+		Gateways:         ndf.Gateways,
+		Nodes:            strippedNodes,
+		Registration:     ndf.Registration,
+		Notification:     ndf.Notification,
+		UDB:              ndf.UDB,
+		E2E:              ndf.E2E,
+		CMIX:             ndf.CMIX,
+		AddressSpaceSize: ndf.AddressSpaceSize,
 	}
 }
 
@@ -198,6 +201,8 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
 	b = append(b, []byte(ndf.UDB.Cert)...)
+	b = append(b, ndf.UDB.Address...)
+	b = append(b, ndf.UDB.DhPubKey...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
