@@ -248,16 +248,16 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 	numChecked := 0
 
 	if mask.firstUnchecked != mask.lastChecked {
-		jww.DEBUG.Printf("mask (before Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
+		jww.TRACE.Printf("mask (before Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
 		mask.Forward(kr.firstUnchecked)
 		subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
 		// FIXME: it is inefficient to make a copy of the mask here.
 		maskSubSample, _ := mask.subSample(mask.firstUnchecked, mask.lastChecked)
-		jww.DEBUG.Printf("mask (after Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
-		jww.DEBUG.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
-		jww.DEBUG.Printf("delta: %d", delta)
-		jww.DEBUG.Printf("subSample:     %064b", subSample)
-		jww.DEBUG.Printf("maskSubSample: %064b", maskSubSample)
+		jww.TRACE.Printf("mask (after Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
+		jww.TRACE.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
+		jww.TRACE.Printf("delta: %d", delta)
+		jww.TRACE.Printf("subSample:     %064b", subSample)
+		jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
 		result := subSample.implies(maskSubSample)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
