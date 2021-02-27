@@ -493,113 +493,111 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
 }
 
-// // Test happy path of KnownRounds.RangeUncheckedMasked().
-// func TestKnownRounds_RangeUncheckedMasked_3(t *testing.T) {
-// 	expectedKR := KnownRounds{
-// 		bitStream:      make(uint64Buff, 245),
-// 		firstUnchecked: 30,
-// 		lastChecked:    57,
-// 		fuPos:          30,
-// 	}
-// 	expectedKR.bitStream[0] = 0b1111111111010000000000000000000000000000000000000000000000000000
-// 	kr := KnownRounds{
-// 		bitStream:      make(uint64Buff, 245),
-// 		firstUnchecked: 9,
-// 		lastChecked:    9,
-// 		fuPos:          9,
-// 	}
-// 	kr.bitStream[0] = 0b1111111111000000000000000000000000000000000000000000000000000000
-//
-// 	mask := &KnownRounds{
-// 		bitStream:      uint64Buff{0b1111111101111111111111111111111111111111111111111111111111111111, 0b1111100000000000000000000000000000000000000000000000000000000000},
-// 		firstUnchecked: 8,
-// 		lastChecked:    68,
-// 		fuPos:          8,
-// 	}
-//
-// 	roundCheck := func(id id.Round) bool {
-// 		return id%2 == 1
-// 	}
-//
-// 	kr.RangeUncheckedMasked(mask, roundCheck, 5)
-// 	if !reflect.DeepEqual(expectedKR, kr) {
-// 		t.Errorf("RangeUncheckedMasked() incorrect modified KnownRounds."+
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedKR, kr)
-// 	}
-// 	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
-// }
+// Test happy path of KnownRounds.RangeUncheckedMasked().
+func TestKnownRounds_RangeUncheckedMasked_3(t *testing.T) {
+	expectedKR := KnownRounds{
+		bitStream:      make(uint64Buff, 245),
+		firstUnchecked: 30,
+		lastChecked:    57,
+		fuPos:          30,
+	}
+	expectedKR.bitStream[0] = 0b1111111111010000000000000000000000000000000000000000000000000000
+	kr := KnownRounds{
+		bitStream:      make(uint64Buff, 245),
+		firstUnchecked: 9,
+		lastChecked:    9,
+		fuPos:          9,
+	}
+	kr.bitStream[0] = 0b1111111111000000000000000000000000000000000000000000000000000000
 
-//
-// // Tests that KnownRounds.subSample() produces the correct buffer for a new
-// // KnownRounds.
-// func TestKnownRounds_subSample(t *testing.T) {
-// 	kr := NewKnownRound(1)
-// 	expectedU64b := make(uint64Buff, 3)
-//
-// 	fmt.Printf("kr: %+v\n", kr)
-//
-// 	u64b, length := kr.subSample(5, 189)
-// 	if !reflect.DeepEqual(expectedU64b, u64b) {
-// 		t.Errorf("subSample() returned incorrect buffer." +
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
-// 	}
-//
-// 	if len(expectedU64b) != length {
-// 		t.Errorf("subSample() returned incorrect buffer length." +
-// 			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
-// 	}
-// }
-//
-// // Tests that KnownRounds.subSample() produces the correct buffer for a new
-// // KnownRounds.
-// func TestKnownRounds_subSample2(t *testing.T) {
-// 	kr := &KnownRounds{
-// 		bitStream:      make(uint64Buff, 15626),
-// 		firstUnchecked: 23,
-// 		lastChecked:    22,
-// 		fuPos:          23,
-// 	}
-// 	mask := &KnownRounds{
-// 		bitStream:      make(uint64Buff, 1),
-// 		firstUnchecked: 0,
-// 		lastChecked:    1,
-// 		fuPos:          0,
-// 	}
-// 	fmt.Printf("mask: %+v\n", mask)
-// 	mask.Forward(kr.firstUnchecked)
-// 	fmt.Printf("mask: %+v\n", mask)
-// 	expectedU64b := make(uint64Buff, 3)
-//
-//
-// 	u64b, length := kr.subSample(mask.firstUnchecked, mask.lastChecked)
-// 	if !reflect.DeepEqual(expectedU64b, u64b) {
-// 		t.Errorf("subSample() returned incorrect buffer." +
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
-// 	}
-//
-// 	if len(expectedU64b) != length {
-// 		t.Errorf("subSample() returned incorrect buffer length." +
-// 			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
-// 	}
-// }
-//
-// func TestKnownRounds_RangeUncheckedMasked2(t *testing.T) {
-// 	kr := &KnownRounds{
-// 		bitStream:      make(uint64Buff, 15626),
-// 		firstUnchecked: 23,
-// 		lastChecked:    22,
-// 		fuPos:          23,
-// 	}
-// 	mask := &KnownRounds{
-// 		bitStream:      make(uint64Buff, 1),
-// 		firstUnchecked: 0,
-// 		lastChecked:    1,
-// 		fuPos:          0,
-// 	}
-//
-// 	roundCheck := func(id id.Round) bool {
-// 		return id%2 == 1
-// 	}
-//
-// 	kr.RangeUncheckedMasked(mask, roundCheck, 500)
-// }
+	mask := &KnownRounds{
+		bitStream:      uint64Buff{0b1111111101111111111111111111111111111111111111111111111111111111, 0b1111100000000000000000000000000000000000000000000000000000000000},
+		firstUnchecked: 8,
+		lastChecked:    68,
+		fuPos:          8,
+	}
+
+	roundCheck := func(id id.Round) bool {
+		return id%2 == 1
+	}
+
+	kr.RangeUncheckedMasked(mask, roundCheck, 5)
+	if !reflect.DeepEqual(expectedKR, kr) {
+		t.Errorf("RangeUncheckedMasked() incorrect modified KnownRounds."+
+			"\n\texpected: %064b\n\treceived: %064b", expectedKR, kr)
+	}
+	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
+}
+
+// Tests that KnownRounds.subSample() produces the correct buffer for a new
+// KnownRounds.
+func TestKnownRounds_subSample(t *testing.T) {
+	kr := NewKnownRound(1)
+	expectedU64b := make(uint64Buff, 3)
+
+	fmt.Printf("kr: %+v\n", kr)
+
+	u64b, length := kr.subSample(5, 189)
+	if !reflect.DeepEqual(expectedU64b, u64b) {
+		t.Errorf("subSample() returned incorrect buffer."+
+			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
+	}
+
+	if len(expectedU64b) != length {
+		t.Errorf("subSample() returned incorrect buffer length."+
+			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
+	}
+}
+
+// Tests that KnownRounds.subSample() produces the correct buffer for a new
+// KnownRounds.
+func TestKnownRounds_subSample2(t *testing.T) {
+	kr := &KnownRounds{
+		bitStream:      make(uint64Buff, 15626),
+		firstUnchecked: 23,
+		lastChecked:    22,
+		fuPos:          23,
+	}
+	mask := &KnownRounds{
+		bitStream:      make(uint64Buff, 1),
+		firstUnchecked: 0,
+		lastChecked:    1,
+		fuPos:          0,
+	}
+	fmt.Printf("mask: %+v\n", mask)
+	mask.Forward(kr.firstUnchecked)
+	fmt.Printf("mask: %+v\n", mask)
+	expectedU64b := make(uint64Buff, 3)
+
+	u64b, length := kr.subSample(mask.firstUnchecked, mask.lastChecked)
+	if !reflect.DeepEqual(expectedU64b, u64b) {
+		t.Errorf("subSample() returned incorrect buffer."+
+			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
+	}
+
+	if len(expectedU64b) != length {
+		t.Errorf("subSample() returned incorrect buffer length."+
+			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
+	}
+}
+
+func TestKnownRounds_RangeUncheckedMasked2(t *testing.T) {
+	kr := &KnownRounds{
+		bitStream:      make(uint64Buff, 15626),
+		firstUnchecked: 23,
+		lastChecked:    22,
+		fuPos:          23,
+	}
+	mask := &KnownRounds{
+		bitStream:      make(uint64Buff, 1),
+		firstUnchecked: 0,
+		lastChecked:    1,
+		fuPos:          0,
+	}
+
+	roundCheck := func(id id.Round) bool {
+		return id%2 == 1
+	}
+
+	kr.RangeUncheckedMasked(mask, roundCheck, 500)
+}

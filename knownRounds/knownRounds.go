@@ -11,6 +11,7 @@ package knownRounds
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
@@ -41,7 +42,7 @@ type DiskKnownRounds struct {
 // bit stream that can hold the given number of rounds.
 func NewKnownRound(roundCapacity int) *KnownRounds {
 	return &KnownRounds{
-		bitStream:      make(uint64Buff, (roundCapacity+64)/64),
+		bitStream:      make(uint64Buff, (roundCapacity+63)/64),
 		firstUnchecked: 0,
 		lastChecked:    0,
 		fuPos:          0,
@@ -247,18 +248,24 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 
 	numChecked := 0
 
+	// Check the area that overlaps
 	if mask.firstUnchecked != mask.lastChecked {
 		jww.TRACE.Printf("mask (before Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
+
+		fmt.Println(mask.lastChecked)
+		fmt.Println(mask.firstUnchecked)
+		fmt.Println(kr.firstUnchecked)
+
 		mask.Forward(kr.firstUnchecked)
 		subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
 		// FIXME: it is inefficient to make a copy of the mask here.
-		maskSubSample, _ := mask.subSample(mask.firstUnchecked, mask.lastChecked)
+		//maskSubSample, _ := mask.subSample(mask.firstUnchecked, mask.lastChecked)
 		jww.TRACE.Printf("mask (after Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
 		jww.TRACE.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
 		jww.TRACE.Printf("delta: %d", delta)
 		jww.TRACE.Printf("subSample:     %064b", subSample)
-		jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
-		result := subSample.implies(maskSubSample)
+		//jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
+		result := subSample.implies(mask.bitStream)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
 			if !result.get(int(i-mask.firstUnchecked)) && roundCheck(i) {
@@ -267,6 +274,7 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 		}
 	}
 
+	//checks the region of unknown rounds which are before the mask
 	if start < kr.firstUnchecked {
 		start = kr.firstUnchecked
 	}
@@ -287,7 +295,7 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	// Get the number of blocks spanned by the range
 	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start),
-		kr.getBitStreamPos(end))
+		kr.getBitStreamPos(end+1))
 
 	if start > kr.lastChecked {
 		return make(uint64Buff, numBlocks), numBlocks
