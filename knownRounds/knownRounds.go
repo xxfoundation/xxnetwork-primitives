@@ -41,7 +41,7 @@ type DiskKnownRounds struct {
 // bit stream that can hold the given number of rounds.
 func NewKnownRound(roundCapacity int) *KnownRounds {
 	return &KnownRounds{
-		bitStream:      make(uint64Buff, (roundCapacity+64)/64),
+		bitStream:      make(uint64Buff, (roundCapacity+63)/64),
 		firstUnchecked: 0,
 		lastChecked:    0,
 		fuPos:          0,
@@ -269,13 +269,13 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 		mask.Forward(kr.firstUnchecked)
 		subSample, delta := kr.subSample(mask.firstUnchecked, mask.lastChecked)
 		// FIXME: it is inefficient to make a copy of the mask here.
-		maskSubSample, _ := mask.subSample(mask.firstUnchecked, mask.lastChecked)
+
 		jww.TRACE.Printf("mask (after Forward()) {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", mask.bitStream, mask.firstUnchecked, mask.lastChecked, mask.fuPos)
 		jww.TRACE.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
 		jww.TRACE.Printf("delta: %d", delta)
 		jww.TRACE.Printf("subSample:     %064b", subSample)
-		jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
-		result := subSample.implies(maskSubSample)
+		//jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
+		result := subSample.implies(mask.bitStream)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
 			if !result.get(int(i-mask.firstUnchecked)) && roundCheck(i) {
