@@ -358,12 +358,14 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
-		newestRound, expectedLastChecked id.Round
-		expectedBitStream                uint64Buff
+		newestRound, expected id.Round
 	}{
-		{256, 255, uint64Buff{6148914691236517205, 6148914691236517205, 6148914691236517205, 6148914691236517205, 0}},
-		{170, 169, uint64Buff{6148914691236517205, 6148914691236517205, 6148914691235119104, 0, 0}},
-		{63, 63, uint64Buff{6148914691236517205, 0, 0, 0, 0}},
+		{55, 55},
+		{65, 65},
+		{75, 75},
+		{85, 85},
+		{191, 191},
+		{192, 192},
 	}
 	roundCheck := func(id id.Round) bool {
 		return id%2 == 1
@@ -372,18 +374,12 @@ func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	for i, data := range testData {
 		kr := NewKnownRound(310)
 
-		kr.RangeUnchecked(data.newestRound, 5000, roundCheck)
+		oldestUnknown := kr.RangeUnchecked(data.newestRound, 5000, roundCheck)
 
-		if !reflect.DeepEqual(data.expectedBitStream, kr.bitStream) {
-			t.Errorf("RangeUnchecked() did not correctly modify the bit stream (round %d)."+
-				"\n\texpected: %064b\n\treceived: %064b",
-				i, data.expectedBitStream, kr.bitStream)
-		}
-
-		if data.expectedLastChecked != kr.lastChecked {
-			t.Errorf("RangeUnchecked() did not correctly modify lastChecked (round %d)."+
+		if oldestUnknown != data.expected {
+			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
 				"\n\texpected: %d\n\treceived: %d",
-				i, data.expectedLastChecked, kr.lastChecked)
+				i, data.expected, oldestUnknown)
 		}
 	}
 }
