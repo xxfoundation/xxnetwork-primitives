@@ -233,14 +233,14 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 		return oldestUnknown
 	}
 
+	// Check all the rounds after the last checked round
 	newestRound := kr.firstUnchecked
 	if oldestUnknown > kr.firstUnchecked {
 		newestRound = oldestUnknown
 	}
 
-	// Check all the rounds after the last checked round
-	if newestRound >= kr.lastChecked {
-		for i := kr.lastChecked; i <= newestRound; i++ {
+	if newestRound >= kr.firstUnchecked {
+		for i := newestRound; i <= kr.lastChecked; i++ {
 			if !kr.Checked(i) {
 				continue
 			}
@@ -254,7 +254,7 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 
 	//check the unknown region before buffer
 	if oldestUnknown < kr.firstUnchecked {
-		for i := kr.firstUnchecked; i >= oldestUnknown; i-- {
+		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
 			if numChecked == maxChecked {
 				return i
 			}
