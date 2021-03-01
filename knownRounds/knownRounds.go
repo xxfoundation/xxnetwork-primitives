@@ -221,34 +221,50 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 	}
 }
 
-// RangeUnchecked runs the passed function over the range all unchecked round
-// IDs up to the passed newestRound to determine if they should be checked.
-func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
-	roundCheck func(id id.Round) bool) {
+// RangeUnchecked runs the passed function over all rounds starting with oldest
+// unknown and ending with
+func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
+	roundCheck func(id id.Round) bool) id.Round {
+
+	numChecked := uint(0)
 
 	// If the newest round is in the range of known rounds, then skip checking
-	if newestRound < kr.firstUnchecked {
-		return
+	if oldestUnknown >= kr.lastChecked {
+		return oldestUnknown
 	}
-	internalEnd := kr.lastChecked
+
+	newestRound := kr.firstUnchecked
+	if oldestUnknown > kr.firstUnchecked {
+		newestRound = oldestUnknown
+	}
 
 	// Check all the rounds after the last checked round
 	if newestRound >= kr.lastChecked {
 		for i := kr.lastChecked; i <= newestRound; i++ {
-			if roundCheck(i) {
-				kr.Check(i)
+			if !kr.Checked(i) {
+				continue
 			}
+			if numChecked == maxChecked {
+				return i
+			}
+			roundCheck(i)
+			numChecked++
 		}
-	} else {
-		internalEnd = newestRound
 	}
 
-	// Check all unknown rounds between first unchecked and last checked
-	for i := kr.firstUnchecked; i < internalEnd; i++ {
-		if !kr.Checked(i) && roundCheck(i) {
-			kr.Check(i)
+	//check the unknown region before buffer
+	if oldestUnknown < kr.firstUnchecked {
+		for i := kr.firstUnchecked; i >= oldestUnknown; i-- {
+			if numChecked == maxChecked {
+				return i
+			}
+			roundCheck(i)
+			numChecked++
 		}
 	}
+
+	return kr.lastChecked + 1
+
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.
