@@ -227,6 +227,7 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	roundCheck func(id id.Round) bool) id.Round {
 
 	numChecked := uint(0)
+	returnedID := id.Round(math.MaxUint64)
 
 	// If the newest round is in the range of known rounds, then skip checking
 	if oldestUnknown >= kr.lastChecked {
@@ -239,31 +240,45 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 		newestRound = oldestUnknown
 	}
 
+	//check the unknown region before buffer
+	if oldestUnknown < kr.firstUnchecked {
+		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
+			if numChecked == maxChecked {
+				if i < returnedID {
+					returnedID = i
+				}
+				return returnedID
+			}
+			if !roundCheck(i) && i < returnedID {
+				returnedID = i
+			}
+			numChecked++
+		}
+	}
+
 	if newestRound >= kr.firstUnchecked {
 		for i := newestRound; i <= kr.lastChecked; i++ {
 			if !kr.Checked(i) {
 				continue
 			}
 			if numChecked == maxChecked {
-				return i
+				if i < returnedID {
+					returnedID = i
+				}
+				return returnedID
 			}
-			roundCheck(i)
+			if !roundCheck(i) && i < returnedID {
+				returnedID = i
+			}
 			numChecked++
 		}
 	}
 
-	//check the unknown region before buffer
-	if oldestUnknown < kr.firstUnchecked {
-		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
-			if numChecked == maxChecked {
-				return i
-			}
-			roundCheck(i)
-			numChecked++
-		}
+	if kr.lastChecked+1 < returnedID {
+		returnedID = kr.lastChecked + 1
 	}
 
-	return kr.lastChecked + 1
+	return returnedID
 
 }
 
