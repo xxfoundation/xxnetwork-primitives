@@ -230,7 +230,7 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	returnedID := id.Round(math.MaxUint64)
 
 	// If the newest round is in the range of known rounds, then skip checking
-	if oldestUnknown >= kr.lastChecked {
+	if oldestUnknown > kr.lastChecked {
 		return oldestUnknown
 	}
 
@@ -240,10 +240,10 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 		newestRound = oldestUnknown
 	}
 
-	//check the unknown region before buffer
+	// Check the unknown region before buffer
 	if oldestUnknown < kr.firstUnchecked {
 		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
-			if numChecked == maxChecked {
+			if numChecked >= maxChecked {
 				if i < returnedID {
 					returnedID = i
 				}
@@ -259,9 +259,13 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	if newestRound >= kr.firstUnchecked {
 		for i := newestRound; i <= kr.lastChecked; i++ {
 			if !kr.Checked(i) {
+				if i < returnedID {
+					returnedID = i
+				}
 				continue
 			}
-			if numChecked == maxChecked {
+
+			if numChecked >= maxChecked {
 				if i < returnedID {
 					returnedID = i
 				}
@@ -279,7 +283,6 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	}
 
 	return returnedID
-
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.
@@ -305,7 +308,7 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 		jww.TRACE.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
 		jww.TRACE.Printf("delta: %d", delta)
 		jww.TRACE.Printf("subSample:     %064b", subSample)
-		//jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
+		// jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
 		result := subSample.implies(mask.bitStream)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
