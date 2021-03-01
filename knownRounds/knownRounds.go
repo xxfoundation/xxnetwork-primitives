@@ -221,34 +221,68 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 	}
 }
 
-// RangeUnchecked runs the passed function over the range all unchecked round
-// IDs up to the passed newestRound to determine if they should be checked.
-func (kr *KnownRounds) RangeUnchecked(newestRound id.Round,
-	roundCheck func(id id.Round) bool) {
+// RangeUnchecked runs the passed function over all rounds starting with oldest
+// unknown and ending with
+func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
+	roundCheck func(id id.Round) bool) id.Round {
+
+	numChecked := uint(0)
+	returnedID := id.Round(math.MaxUint64)
 
 	// If the newest round is in the range of known rounds, then skip checking
-	if newestRound < kr.firstUnchecked {
-		return
+	if oldestUnknown > kr.lastChecked {
+		return oldestUnknown
 	}
-	internalEnd := kr.lastChecked
 
 	// Check all the rounds after the last checked round
-	if newestRound >= kr.lastChecked {
-		for i := kr.lastChecked; i <= newestRound; i++ {
-			if roundCheck(i) {
-				kr.Check(i)
-			}
-		}
-	} else {
-		internalEnd = newestRound
+	newestRound := kr.firstUnchecked
+	if oldestUnknown > kr.firstUnchecked {
+		newestRound = oldestUnknown
 	}
 
-	// Check all unknown rounds between first unchecked and last checked
-	for i := kr.firstUnchecked; i < internalEnd; i++ {
-		if !kr.Checked(i) && roundCheck(i) {
-			kr.Check(i)
+	// Check the unknown region before buffer
+	if oldestUnknown < kr.firstUnchecked {
+		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
+			if numChecked >= maxChecked {
+				if i < returnedID {
+					returnedID = i
+				}
+				return returnedID
+			}
+			if !roundCheck(i) && i < returnedID {
+				returnedID = i
+			}
+			numChecked++
 		}
 	}
+
+	if newestRound >= kr.firstUnchecked {
+		for i := newestRound; i <= kr.lastChecked; i++ {
+			if !kr.Checked(i) {
+				if i < returnedID {
+					returnedID = i
+				}
+				continue
+			}
+
+			if numChecked >= maxChecked {
+				if i < returnedID {
+					returnedID = i
+				}
+				return returnedID
+			}
+			if !roundCheck(i) && i < returnedID {
+				returnedID = i
+			}
+			numChecked++
+		}
+	}
+
+	if kr.lastChecked+1 < returnedID {
+		returnedID = kr.lastChecked + 1
+	}
+
+	return returnedID
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.
@@ -274,7 +308,7 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 		jww.TRACE.Printf("kr {\n\tbitStream:      %064b\n\tfirstUnchecked: %d\n\tlastChecked:    %d\n\tfuPos:          %d\n}", kr.bitStream, kr.firstUnchecked, kr.lastChecked, kr.fuPos)
 		jww.TRACE.Printf("delta: %d", delta)
 		jww.TRACE.Printf("subSample:     %064b", subSample)
-		//jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
+		// jww.TRACE.Printf("maskSubSample: %064b", maskSubSample)
 		result := subSample.implies(mask.bitStream)
 
 		for i := mask.firstUnchecked + id.Round(delta) - 1; i >= mask.firstUnchecked && numChecked < maxChecked; i, numChecked = i-1, numChecked+1 {
