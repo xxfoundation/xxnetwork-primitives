@@ -122,7 +122,7 @@ func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
 	// The created buffer is all zeroes per go spec
 	ext := make(uint64Buff, numBlocks)
-	copy(ext[:len(u64b)], u64b)
+	copy(ext[:], u64b[:len(ext)])
 	return ext
 }
 
