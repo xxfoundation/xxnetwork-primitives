@@ -227,7 +227,7 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	roundCheck func(id id.Round) bool) id.Round {
 
 	numChecked := uint(0)
-	returnedID := id.Round(math.MaxUint64)
+	earliestChecked := id.Round(math.MaxUint64)
 
 	// If the newest round is in the range of known rounds, then skip checking
 	if oldestUnknown > kr.lastChecked {
@@ -244,13 +244,13 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	if oldestUnknown < kr.firstUnchecked {
 		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
 			if numChecked >= maxChecked {
-				if i < returnedID {
-					returnedID = i
+				if i < earliestChecked {
+					earliestChecked = i
 				}
-				return returnedID
+				return earliestChecked
 			}
-			if !roundCheck(i) && i < returnedID {
-				returnedID = i
+			if !roundCheck(i) && i < earliestChecked {
+				earliestChecked = i
 			}
 			numChecked++
 		}
@@ -258,31 +258,33 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 
 	if newestRound >= kr.firstUnchecked {
 		for i := newestRound; i <= kr.lastChecked; i++ {
+			if numChecked >= maxChecked {
+				if i < earliestChecked {
+					earliestChecked = i
+				}
+				return earliestChecked
+			}
+
 			if !kr.Checked(i) {
-				if i < returnedID {
-					returnedID = i
+				if i < earliestChecked {
+					earliestChecked = i
 				}
 				continue
 			}
 
-			if numChecked >= maxChecked {
-				if i < returnedID {
-					returnedID = i
-				}
-				return returnedID
-			}
-			if !roundCheck(i) && i < returnedID {
-				returnedID = i
+			if !roundCheck(i) && i < earliestChecked {
+				earliestChecked = i
 			}
 			numChecked++
 		}
 	}
 
-	if kr.lastChecked+1 < returnedID {
-		returnedID = kr.lastChecked + 1
+	if kr.lastChecked+1 < earliestChecked {
+		earliestChecked = kr.lastChecked
 	}
 
-	return returnedID
+	//return the next round
+	return earliestChecked + 1
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.

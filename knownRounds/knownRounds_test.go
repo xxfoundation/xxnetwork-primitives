@@ -325,11 +325,11 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 	testData := []struct {
 		newestRound, expected id.Round
 	}{
-		{55, 128},
-		{65, 128},
-		{75, 128},
-		{85, 128},
-		{191, 191},
+		{55, 129},
+		{65, 129},
+		{75, 129},
+		{85, 129},
+		{191, 192},
 		{192, 192},
 	}
 	roundCheck := func(id id.Round) bool {
