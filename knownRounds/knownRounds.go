@@ -266,8 +266,8 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 			}
 
 			if !kr.Checked(i) {
-				if i < earliestChecked {
-					earliestChecked = i
+				if i-1 < earliestChecked {
+					earliestChecked = i - 1
 				}
 				continue
 			}
