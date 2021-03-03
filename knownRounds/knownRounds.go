@@ -227,64 +227,51 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
 	roundCheck func(id id.Round) bool) id.Round {
 
 	numChecked := uint(0)
-	earliestChecked := id.Round(math.MaxUint64)
+	firstUnchecked := id.Round(math.MaxUint64)
 
 	// If the newest round is in the range of known rounds, then skip checking
 	if oldestUnknown > kr.lastChecked {
 		return oldestUnknown
 	}
 
-	// Check all the rounds after the last checked round
-	newestRound := kr.firstUnchecked
-	if oldestUnknown > kr.firstUnchecked {
-		newestRound = oldestUnknown
-	}
-
-	// Check the unknown region before buffer
-	if oldestUnknown < kr.firstUnchecked {
-		for i := oldestUnknown; i < kr.firstUnchecked; i++ {
-			if numChecked >= maxChecked {
-				if i < earliestChecked {
-					earliestChecked = i
-				}
-				return earliestChecked
+	//loop through all rounds from the oldest unknown to the last checked round
+	for i := oldestUnknown; i <= kr.lastChecked; i++ {
+		//if we have checked too many rounds, bail
+		if numChecked >= maxChecked {
+			if i < firstUnchecked {
+				firstUnchecked = i
 			}
-			if !roundCheck(i) && i < earliestChecked {
-				earliestChecked = i
-			}
-			numChecked++
+			return firstUnchecked
 		}
-	}
 
-	if newestRound >= kr.firstUnchecked {
-		for i := newestRound; i <= kr.lastChecked; i++ {
-			if numChecked >= maxChecked {
-				if i < earliestChecked {
-					earliestChecked = i
-				}
-				return earliestChecked
+		// if the source does not know about the round, set that round as
+		// unknown if it makes sense, and dont check it
+		if !kr.Checked(i) {
+			if i < firstUnchecked {
+				firstUnchecked = i
 			}
-
-			if !kr.Checked(i) {
-				if i-1 < earliestChecked {
-					earliestChecked = i - 1
-				}
-				continue
-			}
-
-			if !roundCheck(i) && i < earliestChecked {
-				earliestChecked = i
-			}
-			numChecked++
+			continue
 		}
+
+		// check the round
+		checkingComplete := roundCheck(i)
+
+		// if checking is not coomplete and the round is earlier than the
+		// earliest round, set it to the earliest round
+		if !checkingComplete && i < firstUnchecked {
+			firstUnchecked = i
+		}
+		numChecked++
 	}
 
-	if kr.lastChecked+1 < earliestChecked {
-		earliestChecked = kr.lastChecked
+	// if no round was set as the earliest round, set the earliest round to the
+	// round after the last checked
+	if firstUnchecked > kr.lastChecked {
+		firstUnchecked = kr.lastChecked + 1
 	}
 
 	//return the next round
-	return earliestChecked + 1
+	return firstUnchecked
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.
