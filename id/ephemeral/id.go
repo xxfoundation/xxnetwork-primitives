@@ -20,8 +20,10 @@ var nsPerOffset = period / numOffsets
 // Ephemeral Ids reserved for specific actions:
 // All zero's denote a dummy ID
 // All one's denote a payment
-var ReservedIDs = []Id{{0, 0, 0, 0, 0, 0, 0, 0},
-	{1, 1, 1, 1, 1, 1, 1, 1}}
+var ReservedIDs = []Id{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1, 1, 1, 1},
+}
 
 // Ephemeral ID type alias
 type Id [8]byte
