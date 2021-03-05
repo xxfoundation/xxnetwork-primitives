@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-var Period = int64(time.Hour * 24)
-var NumOffsets int64 = 1 << 16
-var NsPerOffset = Period / NumOffsets
+const Period = int64(time.Hour * 24)
+const NumOffsets int64 = 1 << 16
+const NsPerOffset = Period / NumOffsets
 
 // Ephemeral ID type alias
 type Id [8]byte
