@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-var period = int64(time.Hour * 24)
-var numOffsets int64 = 1 << 16
-var nsPerOffset = period / numOffsets
+var Period = int64(time.Hour * 24)
+var NumOffsets int64 = 1 << 16
+var NsPerOffset = Period / NumOffsets
 
 // Ephemeral ID type alias
 type Id [8]byte
@@ -107,7 +107,7 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 			End:   end,
 		})
 
-		//make the timestamp into the next period
+		//make the timestamp into the next Period
 		timestamp = end.Add(time.Nanosecond)
 	}
 	return idList, nil
@@ -170,23 +170,23 @@ func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Ti
 
 func GetOffset(intermediaryId []byte) int64 {
 	hashNum := binary.BigEndian.Uint64(intermediaryId)
-	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
+	offset := int64((hashNum % uint64(NumOffsets)) * uint64(NsPerOffset))
 	return offset
 }
 
 func GetOffsetBounds(offset, timestamp int64) (time.Time, time.Time, uint64) {
-	timestampPhase := timestamp % period
+	timestampPhase := timestamp % Period
 	var start, end int64
-	timestampNum := timestamp / period
+	timestampNum := timestamp / Period
 	var saltNum uint64
 	if timestampPhase < offset {
-		start = (timestampNum-1)*period + offset
-		end = start + period
-		saltNum = uint64((timestamp - period) / period)
+		start = (timestampNum-1)*Period + offset
+		end = start + Period
+		saltNum = uint64((timestamp - Period) / Period)
 	} else {
-		start = timestampNum*period + offset
-		end = start + period
-		saltNum = uint64(timestamp / period)
+		start = timestampNum*Period + offset
+		end = start + Period
+		saltNum = uint64(timestamp / Period)
 	}
 	return time.Unix(0, start), time.Unix(0, end), saltNum
 }
