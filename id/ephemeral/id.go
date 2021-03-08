@@ -17,8 +17,13 @@ var period = int64(time.Hour * 24)
 var numOffsets int64 = 1 << 16
 var nsPerOffset = period / numOffsets
 
-// Ephemeral Ids reserved for specific actions (e.g. payments)
-var ReservedIDs = []Id{{0, 0, 0, 0, 0, 0, 0, 0}}
+// Ephemeral Ids reserved for specific actions:
+// All zero's denote a dummy ID
+// All one's denote a payment
+var ReservedIDs = []Id{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1, 1, 1, 1},
+}
 
 // Ephemeral ID type alias
 type Id [8]byte
