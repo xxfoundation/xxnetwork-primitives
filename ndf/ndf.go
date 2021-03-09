@@ -34,6 +34,7 @@ type NetworkDefinition struct {
 	E2E              Group `json:"E2e"`
 	CMIX             Group `json:"Cmix"`
 	AddressSpaceSize uint32
+	ClientVersion    string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
