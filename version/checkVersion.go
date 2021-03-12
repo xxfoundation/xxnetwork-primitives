@@ -1,8 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 Privategrity Corporation                                   /
-//                                                                             /
-// All rights reserved.                                                        /
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                          //
+//                                                                           //
+// Use of this source code is governed by a license that can be found in the //
+// LICENSE file                                                              //
+///////////////////////////////////////////////////////////////////////////////
 
 // The version for an entity is composed of a major version , minor version, and
 // patch. The major and minor version numbers are both integers and dictate the
@@ -26,65 +27,113 @@ type Version struct {
 	patch string
 }
 
+// New returns a new Version with the given major, minor and patch.
+func New(major, minor int, patch string) Version {
+	return Version{
+		major: major,
+		minor: minor,
+		patch: patch,
+	}
+}
+
+// Major returns the major integer of the Version.
+func (v Version) Major() int {
+	return v.major
+}
+
+// Minor returns the minor integer of the Version.
+func (v Version) Minor() int {
+	return v.minor
+}
+
+// Patch returns the patch string of the Version.
+func (v Version) Patch() string {
+	return v.patch
+}
+
+// FIXME: make String operate on value not address
 // String prints the Version in a string format of the form "major.minor.path".
 func (v *Version) String() string {
 	return strconv.Itoa(v.major) + delimiter + strconv.Itoa(v.minor) +
 		delimiter + v.patch
 }
 
-// ParseVersion creates a Version object based on a string. If the passed string
-// is invalid, en error is returned. For a string to be valid, it must have a
-// major integer, a minor integer, and a patch string separated by a period.
+// ParseVersion parses a string into a Version object. An error is returned for
+// invalid version string. To be valid, a string must contain a major integer,
+// a minor integer, and a patch string separated by a period.
 func ParseVersion(versionString string) (Version, error) {
-	versions := strings.Split(versionString, delimiter)
+	// Separate string into the three parts
+	versionParts := strings.SplitN(versionString, delimiter, 3)
 
 	// Check that the string has three parts
-	if len(versions) != 3 {
-		return Version{}, errors.Errorf("Version string must contain a "+
-			"major, minor, and patch version separated by %#v.", delimiter)
+	if len(versionParts) != 3 {
+		return Version{}, errors.Errorf("version string must contain 3 parts: "+
+			"a major, minor, and patch separated by \"%s\". Received string "+
+			"with %d part(s).", delimiter, len(versionParts))
 	}
 
+	version := Version{}
+	var err error
+
 	// Check that the major version is an integer
-	major, err := strconv.Atoi(versions[0])
+	version.major, err = strconv.Atoi(versionParts[0])
 	if err != nil {
-		return Version{}, errors.New("Major version could not be parsed as " +
-			"an integer.")
+		return Version{}, errors.Errorf("expected integer for major version: %+v", err)
 	}
 
 	// Check that the minor version is an integer
-	minor, err := strconv.Atoi(versions[1])
+	version.minor, err = strconv.Atoi(versionParts[1])
 	if err != nil {
-		return Version{}, errors.New("Minor version could not be parsed as " +
-			"an integer.")
+		return Version{}, errors.Errorf("expected integer for minor version: %+v", err)
 	}
 
 	// Check that the patch is not empty
-	patch := versions[2]
-	if patch == "" {
-		return Version{}, errors.New("Patch cannot be empty.")
+	if versionParts[2] == "" {
+		return Version{}, errors.New("patch cannot be empty.")
 	}
+	version.patch = versionParts[2]
 
-	return Version{
-		major: major,
-		minor: minor,
-		patch: patch,
-	}, nil
+	return version, nil
 }
 
-// IsCompatible determines if the present version is compatible with the
-// required version. They are compatible when the present major version is equal
-// to the required version and the present minor version is greater than or
-// equal to the required version. The patches do not need to match.
-func IsCompatible(required, present Version) bool {
+// IsCompatible determines if the current Version is compatible with the
+// required Version. Version are compatible when the major versions are equal
+// and the current minor version is greater than or equal to the required
+// version. The patches do not need to match.
+func IsCompatible(required, current Version) bool {
 	// Compare major versions
-	if required.major != present.major {
+	if required.major != current.major {
 		return false
 	}
 
 	// Compare minor versions
-	if required.minor > present.minor {
+	if required.minor > current.minor {
 		return false
 	}
 
 	return true
+}
+
+// Equal determines if two Version objects are equal. They are equal when major,
+// minor, and patch are all the same
+func Equal(a, b Version) bool {
+	return a.major == b.major && a.minor == b.minor && a.patch == b.patch
+}
+
+// Cmp compares two Versions. Return 1 if a is greater than b, -1 if a is less
+// than b, and 0 if they are equal. A Version
+func Cmp(a, b Version) int {
+	if a.major > b.major {
+		return 1
+	} else if a.major < b.major {
+		return -1
+	}
+
+	if a.minor > b.minor {
+		return 1
+	} else if a.minor < b.minor {
+		return -1
+	}
+
+	return 0
 }

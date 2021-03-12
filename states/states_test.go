@@ -18,7 +18,7 @@ func TestActivity_String(t *testing.T) {
 	for st := PENDING; st <= NUM_STATES; st++ {
 		if st.String() != expectedStateStringer[st] {
 			t.Errorf("Round %d did not string correctly: expected: %s,"+
-				"recieved: %s", uint8(st), expectedStateStringer[st], st.String())
+				"received: %s", uint8(st), expectedStateStringer[st], st.String())
 		}
 	}
 }
