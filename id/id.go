@@ -16,6 +16,7 @@ import (
 	"encoding/binary"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
+	"io"
 	"testing"
 )
 
@@ -27,100 +28,113 @@ const (
 	ArrIDLen = dataLen + 1
 )
 
-// ID is an array holding the generic identifier. The first 32 bytes hold the ID
-// data and the last byte holds the ID type.
+// ID is a fixed-length array containing data that services as an identifier for
+// entities. The first 32 bytes hold the ID data while the last byte holds the
+// type, which describes the type of entity the ID belongs to.
 type ID [ArrIDLen]byte
 
-// Marshal takes an ID and copies the data into the wire format.
-func (i *ID) Marshal() []byte {
-	return i.Bytes()
+// Marshal returns the ID bytes in wire format.
+func (id *ID) Marshal() []byte {
+	return id.Bytes()
 }
 
-// Unmarshal takes in the ID wire format and copies the data into an ID.
+// Unmarshal unmarshalls the ID wire format into an ID object.
 func Unmarshal(data []byte) (*ID, error) {
-	// Return an error if the length of data is incorrect
+	// Return an error if the provided data is not the correct length
 	if len(data) != ArrIDLen {
-		return nil, errors.Errorf("Could not unmarshal byte slice to ID: "+
-			"length of data must be %d, length received was %d",
-			ArrIDLen, len(data))
+		return nil, errors.Errorf("Failed to unmarshal ID: length of data "+
+			"must be %d, length received is %d", ArrIDLen, len(data))
 	}
 
-	newID := new(ID)
-	copy(newID[:], data)
-
-	return newID, nil
+	return copyID(data), nil
 }
 
 // Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
 // Marshal() and any changes made here will affect how Marshal() functions.
-func (i *ID) Bytes() []byte {
-	if i == nil {
-		jww.FATAL.Panicf("cannot get bytes of a nil ID")
+func (id *ID) Bytes() []byte {
+	if id == nil {
+		jww.FATAL.Panicf("Failed to get bytes of ID: ID is nil.")
 	}
+
 	newBytes := make([]byte, ArrIDLen)
-	copy(newBytes, i[:])
+	copy(newBytes, id[:])
 
 	return newBytes
 }
 
-// Cmp determines whether two IDs are the same. Returns true if they are equal
-// and false otherwise.
-func (i *ID) Cmp(y *ID) bool {
-	if i == nil || y == nil {
-		jww.FATAL.Panicf("cannot compare nil IDs")
+// Cmp determines whether two IDs are equal. Returns true if they are equal and
+// false otherwise.
+func (id *ID) Cmp(y *ID) bool {
+	if id == nil || y == nil {
+		jww.FATAL.Panicf("Failed to compare IDs: one or both IDs are nil.")
 	}
-	return *i == *y
+
+	return *id == *y
 }
 
-// DeepCopy creates a new copy of an ID.
-func (i *ID) DeepCopy() *ID {
-	if i == nil {
-		jww.FATAL.Panicf("cannot deep copy a nil ID")
+// DeepCopy creates a copy of an ID.
+func (id *ID) DeepCopy() *ID {
+	if id == nil {
+		jww.FATAL.Panicf("Failed to create a copy of ID: ID is nil.")
 	}
-	newID := new(ID)
-	copy(newID[:], i[:])
 
-	return newID
+	return copyID(id.Bytes())
 }
 
 // String converts an ID to a string via base64 encoding.
-func (i *ID) String() string {
-	return base64.StdEncoding.EncodeToString(i.Bytes())
+func (id *ID) String() string {
+	return base64.StdEncoding.EncodeToString(id.Bytes())
 }
 
 // GetType returns the ID's type. It is the last byte of the array.
-func (i *ID) GetType() Type {
-	if i == nil {
-		jww.FATAL.Panicf("cannot get the type of a nil ID")
+func (id *ID) GetType() Type {
+	if id == nil {
+		jww.FATAL.Panicf("Failed to get ID type: ID is nil.")
 	}
-	return Type(i[ArrIDLen-1])
+
+	return Type(id[ArrIDLen-1])
 }
 
 // SetType changes the ID type by setting the last byte to the specified type.
-func (i *ID) SetType(idType Type) {
-	if i == nil {
-		jww.FATAL.Panicf("cannot set the type of a nil ID")
+func (id *ID) SetType(idType Type) {
+	if id == nil {
+		jww.FATAL.Panicf("Failed to set ID type: ID is nil.")
 	}
-	i[ArrIDLen-1] = byte(idType)
+
+	id[ArrIDLen-1] = byte(idType)
 }
 
-// NewIdFromBytes creates a new ID from a copy of the data. It is similar to
-// Unmarshal() but does not do any error checking. If the data is longer than
+func NewRandomID(r io.Reader, t Type) (*ID, error) {
+	// Generate random bytes
+	idBytes := make([]byte, ArrIDLen)
+	if _, err := r.Read(idBytes); err != nil {
+		return nil, errors.Errorf("failed to generate random bytes for new "+
+			"ID: %+v", err)
+	}
+
+	// Create ID from bytes
+	id := copyID(idBytes)
+
+	// Set new ID type
+	id.SetType(t)
+
+	return id, nil
+}
+
+// NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
+// to Unmarshal() but does not do any error checking. If the data is longer than
 // ArrIDLen, then it is truncated. If it is shorter, then the remaining bytes
 // are filled with zeroes. This function is for testing purposes only.
 func NewIdFromBytes(data []byte, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
 	switch x.(type) {
-	case *testing.T, *testing.M:
+	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
 		panic("NewIdFromBytes() can only be used for testing.")
 	}
 
-	newID := new(ID)
-	copy(newID[:], data[:])
-
-	return newID
+	return copyID(data)
 }
 
 // NewIdFromString creates a new ID from the given string and type. If the
@@ -130,7 +144,7 @@ func NewIdFromBytes(data []byte, x interface{}) *ID {
 func NewIdFromString(idString string, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
 	switch x.(type) {
-	case *testing.T, *testing.M:
+	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
 		panic("NewIdFromString() can only be used for testing.")
@@ -151,7 +165,7 @@ func NewIdFromString(idString string, idType Type, x interface{}) *ID {
 func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
 	switch x.(type) {
-	case *testing.T, *testing.M:
+	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
 		panic("NewIdFromUInt() can only be used for testing.")
@@ -176,10 +190,10 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
 	// Ensure that this function is only run in testing environments
 	switch x.(type) {
-	case *testing.T, *testing.M:
+	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromUInt() can only be used for testing.")
+		panic("NewIdFromUInts() can only be used for testing.")
 	}
 
 	// Create the new ID
@@ -193,5 +207,12 @@ func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
 	// Set the ID's type
 	newID.SetType(idType)
 
+	return newID
+}
+
+// copyID copies the bytes into a new ID.
+func copyID(buff []byte) *ID {
+	newID := new(ID)
+	copy(newID[:], buff)
 	return newID
 }
