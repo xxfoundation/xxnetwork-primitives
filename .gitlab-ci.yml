@@ -6,12 +6,6 @@ cache:
   paths:
     - vendor/
 
-variables:
-  REPO_DIR: gitlab.com/elixxir
-  REPO_NAME: primitives
-  DOCKER_IMAGE: elixxirlabs/cuda-go:latest
-  MIN_CODE_COVERAGE: "80.0"
-
 before_script:
   - go version || echo "Go executable not found."
   - echo $CI_BUILD_REF
@@ -32,7 +26,7 @@ stages:
 
 build:
   stage: build
-  image: $DOCKER_IMAGE
+  image: elixxirlabs/cuda-go:go1.13-cuda11.1
   script:
     - git clean -ffdx
     - go mod vendor -v
@@ -58,12 +52,11 @@ build:
       - testdata/
       - release/
 
-trigger:
+trigger_integration:
   stage: trigger_integration
-  script:
-    # client
-    - "curl -X POST -F token=$CLIENT_TRIGGER_KEY -F ref=master https://gitlab.com/api/v4/projects/5454785/trigger/pipeline"
-    # server
-    - "curl -X POST -F token=$SERVER_TRIGGER_KEY -F ref=master https://gitlab.com/api/v4/projects/5014439/trigger/pipeline"
+  trigger:
+    project: elixxir/integration
+    branch: $CI_COMMIT_REF_NAME
   only:
+    - release
     - master
