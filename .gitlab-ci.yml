@@ -18,7 +18,7 @@ before_script:
   - ssh-keyscan -t rsa $GITLAB_SERVER > ~/.ssh/known_hosts
   - git config --global url."git@$GITLAB_SERVER:".insteadOf "https://gitlab.com/"
   - export PATH=$HOME/go/bin:$PATH
-  - export GOPRIVATE=gitlab.com/elixxir/*
+  - export GOPRIVATE=gitlab.com/elixxir/*,gitlab.com/xx_network/*
 
 stages:
   - build
