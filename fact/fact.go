@@ -115,7 +115,7 @@ func validateNumber(number, countryCode string) error {
 }
 
 func validateNickname(nickname string) error {
-	if len(nickname) > 3 {
+	if len(nickname) < 3 {
 		return errors.New(fmt.Sprintf("Could not validate nickname %s: too short (< 3 characters)", nickname))
 	}
 	return nil
