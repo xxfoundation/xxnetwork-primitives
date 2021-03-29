@@ -6,7 +6,8 @@
 
 // Package utils contains general utility functions used by our system.
 // They are generic and perform basic tasks. As of writing, it mostly contains
-// file IO functions to make our system be able file IO independent of platform.
+// file IO functions to make our system be able file IO independent of platform
+// as well as domain and IP validation.
 
 package utils
 
@@ -76,6 +77,13 @@ func MakeDirs(path string, perm os.FileMode) error {
 	return mkdirAll(path, perm)
 }
 
+// WriteFileDef creates any directories in the path that do not exists and write
+// the specified data to the file using the default file and directory
+// permissions.
+func WriteFileDef(path string, data []byte, filePerm, dirPerm os.FileMode) error {
+	return WriteFile(path, data, FilePerms, DirPerms)
+}
+
 // WriteFile creates any directories in the path that do not exists and write
 // the specified data to the file.
 func WriteFile(path string, data []byte, filePerm, dirPerm os.FileMode) error {
@@ -142,7 +150,7 @@ func DirExists(path string) bool {
 	return exists && info.IsDir()
 }
 
-// exist checks if a file or directory exists at the specified path and also
+// exists checks if a file or directory exists at the specified path and also
 // returns the file's FileInfo.
 func exists(path string) (os.FileInfo, bool) {
 	// Expand '~' to user's home directory and clean the path
@@ -160,8 +168,8 @@ func exists(path string) (os.FileInfo, bool) {
 
 // SearchDefaultLocations searches for a file path in a default directory in
 // a number of hard-coded paths, including the user's home folder and /etc/. If
-// the file is found, its full path is returned. Otherwise, the path is blank
-// and an error is returned.
+// the file is found, then its full path is returned. Otherwise, the path is
+// blank and an error is returned.
 //
 // Note that defaultDirectory MUST be a relative path. By default, when checking
 // the home directory a "." is prepended the to defaultDirectory.
