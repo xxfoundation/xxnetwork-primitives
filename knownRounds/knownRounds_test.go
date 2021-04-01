@@ -323,20 +323,27 @@ func TestKnownRounds_Forward_NewKR(t *testing.T) {
 func TestKnownRounds_RangeUnchecked(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
-		newestRound, expected id.Round
+		oldestUnknown, expected id.Round
+		has, unknown            []id.Round
 	}{
-		{55, 128},
-		{65, 128},
-		{75, 128},
-		{85, 128},
-		{191, 191},
-		{192, 192},
-		{292, 292},
+		{55, 141, makeRange(55, 127), makeRange(128, 140)},
+		{65, 141, makeRange(65, 127), makeRange(128, 140)},
+		{75, 141, makeRange(75, 127), makeRange(128, 140)},
+		{85, 141, makeRange(85, 127), makeRange(128, 140)},
+		{191, 191, nil, nil},
+		{192, 192, nil, nil},
+		{292, 292, nil, nil},
 	}
 	roundCheck := func(id id.Round) bool {
 		return true
 	}
 
+	// Bitstream = 0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000
+	//                            ^ firstUnchecked, fuPos (position 75)
+	//                                                   ^ lastChecked (position 191)
+	//                                       ^-^ unknown (position 128 - 140)
+	//                           ^-----^ has (position 64 - 127)
+	//                     xx also has (position 55 - 63), outside defined buffer
 	for i, data := range testData {
 		kr := KnownRounds{
 			bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
@@ -345,12 +352,24 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 			fuPos:          75,
 		}
 
-		oldestUnknown := kr.RangeUnchecked(data.newestRound, 5000, roundCheck)
+		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
 
-		if oldestUnknown != data.expected {
+		if earliestRound != data.expected {
 			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
 				"\n\texpected: %d\n\treceived: %d",
-				i, data.expected, oldestUnknown)
+				i, data.expected, earliestRound)
+		}
+
+		if !reflect.DeepEqual(data.has, has) {
+			t.Errorf("RangeUnchecked() did not return the correct has list (%d)."+
+				"\n\texpected: %v\n\treceived: %v",
+				i, data.has, has)
+		}
+
+		if !reflect.DeepEqual(data.unknown, unknown) {
+			t.Errorf("RangeUnchecked() did not return the correct unknown list (%d)."+
+				"\n\texpected: %v\n\treceived: %v",
+				i, data.unknown, unknown)
 		}
 	}
 }
@@ -359,14 +378,16 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
-		newestRound, expected id.Round
+		oldestUnknown, expected id.Round
+		has, unknown            []id.Round
 	}{
-		{55, 55},
-		{65, 65},
-		{75, 75},
-		{85, 85},
-		{191, 191},
-		{192, 192},
+		{55, 55, nil, nil},
+		{65, 65, nil, nil},
+		{75, 75, nil, nil},
+		{85, 85, nil, nil},
+		{191, 191, nil, nil},
+		{192, 192, nil, nil},
+		{292, 292, nil, nil},
 	}
 	roundCheck := func(id id.Round) bool {
 		return id%2 == 1
@@ -375,12 +396,24 @@ func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	for i, data := range testData {
 		kr := NewKnownRound(310)
 
-		oldestUnknown := kr.RangeUnchecked(data.newestRound, 5000, roundCheck)
+		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
 
-		if oldestUnknown != data.expected {
+		if earliestRound != data.expected {
 			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
 				"\n\texpected: %d\n\treceived: %d",
-				i, data.expected, oldestUnknown)
+				i, data.expected, earliestRound)
+		}
+
+		if !reflect.DeepEqual(data.has, has) {
+			t.Errorf("RangeUnchecked() did not return the correct has list (%d)."+
+				"\n\texpected: %v\n\treceived: %v",
+				i, data.has, has)
+		}
+
+		if !reflect.DeepEqual(data.unknown, unknown) {
+			t.Errorf("RangeUnchecked() did not return the correct unknown list (%d)."+
+				"\n\texpected: %v\n\treceived: %v",
+				i, data.unknown, unknown)
 		}
 	}
 }
@@ -596,3 +629,11 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 //
 // 	kr.RangeUncheckedMasked(mask, roundCheck, 500)
 // }
+
+func makeRange(min, max int) []id.Round {
+	a := make([]id.Round, max-min+1)
+	for i := range a {
+		a[i] = id.Round(min + i)
+	}
+	return a
+}
