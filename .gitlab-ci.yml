@@ -7,7 +7,7 @@ cache:
     - vendor/
 
 before_script:
-  - apt install -y pciutils lshw
+  - apt install -y pciutils lshw dmidecode
   - go version || echo "Go executable not found."
   - echo $CI_BUILD_REF
   - echo $CI_PROJECT_DIR
