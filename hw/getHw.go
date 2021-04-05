@@ -52,12 +52,14 @@ func LogHardware() error {
     }
 	jww.INFO.Printf("[HWINFO] DISK HW INFO:\r\n%s", out)
 
+	/* requires root :(
 	// RAM info
 	out, err = exec.Command("dmidecode", "--type", "17").Output()
     if err != nil {
         return errors.New(fmt.Sprintf("dmidecode: %s", err))
     }
 	jww.INFO.Printf("[HWINFO] RAM HW INFO:\r\n%s", out)
+	*/
 
 	// RAM usage
 	out, err = exec.Command("free", "-mt").Output()
