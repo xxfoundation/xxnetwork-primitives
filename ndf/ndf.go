@@ -35,6 +35,7 @@ type NetworkDefinition struct {
 	CMIX             Group `json:"Cmix"`
 	AddressSpaceSize uint32
 	ClientVersion    string
+	EcPublicKey      []byte
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -123,6 +124,7 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 		E2E:              ndf.E2E,
 		CMIX:             ndf.CMIX,
 		AddressSpaceSize: ndf.AddressSpaceSize,
+		EcPublicKey: ndf.EcPublicKey,
 	}
 }
 
