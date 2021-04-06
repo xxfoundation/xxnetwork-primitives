@@ -35,7 +35,7 @@ type NetworkDefinition struct {
 	CMIX             Group `json:"Cmix"`
 	AddressSpaceSize uint32
 	ClientVersion    string
-	EcPublicKey      []byte
+	EcPublicKey      EcPublicKey
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -80,6 +80,12 @@ type Group struct {
 	Prime      string
 	SmallPrime string `json:"Small_prime"`
 	Generator  string
+}
+
+// EcPublicKey contains key information for the (optional) EDDSA signing
+// of the NDF
+type EcPublicKey struct {
+	TlsCertificate string `json:"Tls_certificate"`
 }
 
 func (g *Group) String() (string, error) {
