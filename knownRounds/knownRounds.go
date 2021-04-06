@@ -115,6 +115,10 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	return nil
 }
 
+func (kr KnownRounds) GetLastChecked() id.Round {
+	return kr.lastChecked
+}
+
 // Checked determines if the round has been checked.
 func (kr *KnownRounds) Checked(rid id.Round) bool {
 	if rid < kr.firstUnchecked {
