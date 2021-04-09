@@ -67,8 +67,10 @@ func ValidateFact(fact Fact) error {
 		return nil
 	case Phone:
 		// Extract specific information for validating a number
-		number, code := extractNumberInfo(fact.Fact)
-		return validateNumber(number, code)
+		//TO-DO: removes phone validation entierly. It is not used right now anyhow
+		//number, code := extractNumberInfo(fact.Fact)
+		//return validateNumber(number, code)
+		return nil
 	case Email:
 		// Check input of email inputted
 		return validateEmail(fact.Fact)
