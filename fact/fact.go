@@ -109,14 +109,30 @@ func validateEmail(email string) error {
 // Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
-	num, err := phonenumbers.Parse(number, countryCode)
-	if err != nil {
-		return errors.Errorf("Could not parse number [%s]: %v", number, err)
-	}
-	if !phonenumbers.IsValidNumber(num) {
-		return errors.Errorf("Could not validate number [%s]: %v", number, err)
-	}
-	return nil
+	errCh := make(chan error)
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errCh <- errors.Errorf("Crash occured on phone "+
+					"validation of: number: %s, country code: %s", number,
+					countryCode)
+			}
+		}()
+
+		if len(number) == 0 || len(countryCode) == 0 {
+			errCh <- errors.New("Number or input are of length 0")
+		}
+		num, err := phonenumbers.Parse(number, countryCode)
+		if err != nil || num == nil {
+			errCh <- errors.Errorf("Could not parse number [%s]: %v", number, err)
+		}
+		if !phonenumbers.IsValidNumber(num) {
+			errCh <- errors.Errorf("Could not validate number [%s]: %v", number, err)
+		}
+		errCh <- nil
+	}()
+	return <-errCh
 }
 
 func validateNickname(nickname string) error {
