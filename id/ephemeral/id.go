@@ -89,7 +89,7 @@ func Marshal(data []byte) (Id, error) {
 // GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
 // Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
 // returns a list of ephemeral IDs
-func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
+func GetIdsByRange(id id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
 
 	if size > 64 {
@@ -126,7 +126,7 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 // GetId returns ephemeral ID based on passed in ID
 // Accepts an ID, ID size in bits, and timestamp in nanoseconds
 // returns ephemeral ID, start & end timestamps for salt window
-func GetId(id *id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
+func GetId(id id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
 		return Id{}, time.Time{}, time.Time{}, err
@@ -135,7 +135,7 @@ func GetId(id *id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, err
 }
 
 // GetIntermediaryId returns an intermediary ID for ephemeral ID creation (ID hash)
-func GetIntermediaryId(id *id.ID) ([]byte, error) {
+func GetIntermediaryId(id id.ID) ([]byte, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	_, err := b2b.Write(id.Marshal())
 	if err != nil {

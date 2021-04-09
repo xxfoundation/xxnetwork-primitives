@@ -233,7 +233,7 @@ func TestUnloadIDF(t *testing.T) {
 	}
 
 	// Check if returned IdBytes is correct
-	if !expectedID.Cmp(newID) {
+	if expectedID != newID {
 		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
 			"\n\texpected: %v\n\treceived: %v",
 			expectedID.Bytes(), newID.Bytes())
@@ -262,9 +262,9 @@ func TestUnloadIDF_FilePathError(t *testing.T) {
 	}
 
 	// Check that the returned IdBytes is nil
-	if newID != nil {
+	if newID != (id.ID{}) {
 		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
+			"\n\texpected: %v\n\treceived: %v", id.ID{}, newID)
 	}
 }
 
@@ -308,9 +308,9 @@ func TestUnloadIDF_InvalidJsonError(t *testing.T) {
 	}
 
 	// Check that the returned IdBytes is nil
-	if newID != nil {
+	if newID != (id.ID{}) {
 		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
+			"\n\texpected: %v\n\treceived: %v", id.ID{}, newID)
 	}
 }
 
@@ -427,7 +427,7 @@ func TestIDF_LoadUnload(t *testing.T) {
 	}
 
 	// Check if returned IdBytes is correct
-	if !expectedID.Cmp(newID) {
+	if expectedID != newID {
 		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
 			"\n\texpected: %v\n\treceived: %v",
 			expectedID.Bytes(), newID.Bytes())

@@ -37,18 +37,18 @@ type IdFile struct {
 //
 // Errors are returned when there is a failure to read the IDF, unmarshall the
 // JSON, or unmarshalling the ID.
-func UnloadIDF(filePath string) ([]byte, *id.ID, error) {
+func UnloadIDF(filePath string) ([]byte, id.ID, error) {
 	// Read the contents from the file
 	jsonBytes, err := utils.ReadFile(filePath)
 	if err != nil {
-		return nil, nil, errors.Errorf("Could not read IDF file %s: %v",
+		return nil, id.ID{}, errors.Errorf("Could not read IDF file %s: %v",
 			filePath, err)
 	}
 
 	// Create empty IdFile and unmarshal the data into it
 	idf, err := newIdfFromJSON(jsonBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, id.ID{}, err
 	}
 
 	// Unmarshal ID bytes into ID
@@ -73,7 +73,7 @@ func newIdfFromJSON(jsonBytes []byte) (*IdFile, error) {
 
 // MarshalIdfToJSON creates an IdFile object with the provided values and
 // marshals it into JSON bytes ready to be written to a file.
-func LoadIDF(filePath string, salt []byte, genID *id.ID) error {
+func LoadIDF(filePath string, salt []byte, genID id.ID) error {
 	// Generate new IdFile object
 	idf, err := newIDF(salt, genID)
 	if err != nil {
@@ -95,7 +95,7 @@ func LoadIDF(filePath string, salt []byte, genID *id.ID) error {
 // newIDF creates a pointer to a new IdFile object using the given ID and salt.
 // The salt and marshaled ID are copied into the IdFile and the type is set from
 // the ID. An error is returned if the salt is of the incorrect length.
-func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
+func newIDF(salt []byte, genID id.ID) (*IdFile, error) {
 	// Check that the salt is of the correct length
 	if len(salt) != saltLen {
 		return nil, errors.Errorf("Salt length must be %d, length "+

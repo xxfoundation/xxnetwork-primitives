@@ -6,9 +6,8 @@
 
 package id
 
-// Stored here are global hard coded IDs. The last byte should be set to the
-// correct ID type.
-
+// Stores the global hard coded IDs. The last byte should be set to the correct
+// ID type.
 // Note: When adding or removing a hard coded ID, make sure to update
 // GetHardCodedIDs() with the changes.
 
@@ -37,23 +36,22 @@ var UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 
 // GetHardCodedIDs returns an array of all the hard coded IDs.
-func GetHardCodedIDs() (ids []*ID) {
-	ids = append(ids, &Permissioning)
-	ids = append(ids, &NotificationBot)
-	ids = append(ids, &TempGateway)
-	ids = append(ids, &ZeroUser)
-	ids = append(ids, &DummyUser)
-	ids = append(ids, &UDB)
-
-	return
+func GetHardCodedIDs() (ids []ID) {
+	return []ID{
+		Permissioning,
+		NotificationBot,
+		TempGateway, ZeroUser,
+		DummyUser,
+		UDB,
+	}
 }
 
 // CollidesWithHardCodedID searches if the given ID collides with any hard coded
 // IDs. If it collides, then the function returns true. Otherwise, it returns
 // false.
-func CollidesWithHardCodedID(testID *ID) bool {
+func CollidesWithHardCodedID(testID ID) bool {
 	for _, hardCodedID := range GetHardCodedIDs() {
-		if testID.Cmp(hardCodedID) {
+		if testID == hardCodedID {
 			return true
 		}
 	}
