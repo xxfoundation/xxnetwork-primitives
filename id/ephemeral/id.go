@@ -216,6 +216,10 @@ func GetOffset(intermediaryId []byte) int64 {
 	return offset
 }
 
+func GetOffsetNum(offset int64) int64 {
+	return offset / NsPerOffset
+}
+
 func GetOffsetBounds(offset, timestamp int64) (time.Time, time.Time, uint64) {
 	timestampPhase := timestamp % Period
 	var start, end int64
