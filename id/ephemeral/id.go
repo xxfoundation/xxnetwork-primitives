@@ -236,3 +236,9 @@ func GetOffsetBounds(offset, timestamp int64) (time.Time, time.Time, uint64) {
 	}
 	return time.Unix(0, start), time.Unix(0, end), saltNum
 }
+
+func HandleQuantization(start time.Time) (int64, int32) {
+	currentOffset := (start.UnixNano() / NsPerOffset) % NumOffsets
+	epoch := start.UnixNano() / NsPerOffset
+	return currentOffset, int32(epoch)
+}
