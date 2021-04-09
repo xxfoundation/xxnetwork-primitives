@@ -1,11 +1,13 @@
 package ephemeral
 
 import (
+	"bytes"
 	"crypto"
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
+	"hash"
 	"io"
 	"math"
 	"time"
@@ -14,6 +16,14 @@ import (
 const Period = int64(time.Hour * 24)
 const NumOffsets int64 = 1 << 16
 const NsPerOffset = Period / NumOffsets
+
+// Ephemeral Ids reserved for specific actions:
+// All zero's denote a dummy ID
+// All one's denote a payment
+var ReservedIDs = []Id{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1, 1, 1, 1},
+}
 
 // Ephemeral ID type alias
 type Id [8]byte
@@ -144,19 +154,51 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
+
+	// Continually generate an ephemeral Id until we land on
+	// an id not within the reserved list of Ids
+	eid := Id{}
+	var err error
+	for reserved := true; reserved; reserved = IsReserved(eid) {
+		eid, err = getIdFromIntermediaryHelper(b2b, iid, salt, size)
+		if err != nil {
+			return Id{}, start, end, err
+		}
+	}
+	return eid, start, end, nil
+}
+
+// Helper function which generates a single ephemeral Id
+func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
+	eid := Id{}
+
 	_, err := b2b.Write(iid)
 	if err != nil {
-		return Id{}, start, end, err
+		return Id{}, err
 	}
 	_, err = b2b.Write(salt)
 	if err != nil {
-		return Id{}, start, end, err
+		return Id{}, err
 	}
-	eid := Id{}
+
 	copy(eid[:], b2b.Sum(nil))
+
 	cleared := eid.Clear(size)
 	copy(eid[:], cleared[:])
-	return eid, start, end, nil
+
+	return eid, err
+}
+
+// Checks if the Id passed in is  among
+// the reserved global reserved ID list.
+// Returns true if reserved, false if non-reserved
+func IsReserved(eid Id) bool {
+	for _, r := range ReservedIDs {
+		if bytes.Equal(eid[:], r[:]) {
+			return true
+		}
+	}
+	return false
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp

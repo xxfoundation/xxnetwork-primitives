@@ -2,11 +2,13 @@ package ephemeral
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/binary"
 	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/primitives/id"
 	_ "golang.org/x/crypto/blake2b"
 	"math"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -85,6 +87,87 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	}
 	if eid[2] != 0 && eid[3] != 0 && eid[4] != 0 && eid[5] != 0 && eid[6] != 0 && eid[7] != 0 {
 		t.Errorf("Id was not cleared to proper size: %+v", eid)
+	}
+}
+
+// Check that given precomputed input that should generate a reserved
+// ephemeral ID, GetIdFromIntermediary does not generate a reserved Id
+func TestGetIdFromIntermediary_Reserved(t *testing.T) {
+
+	// Hardcoded to ensure a collision with a reserved ID
+	hardcodedTimestamp := int64(1614199942358373731)
+	size := uint(4)
+	testId := id.NewIdFromString(strconv.Itoa(41), id.User, t)
+
+	// Intermediary ID expected to generate a reserved ephemeral ID
+	iid, err := GetIntermediaryId(testId)
+	if err != nil {
+		t.Errorf("Failed to get intermediary id: %+v", err)
+	}
+	// Generate an ephemeral Id given the input above. This specific
+	// call does not check if the outputted Id is reserved
+	salt, _, _ := getRotationSalt(iid, hardcodedTimestamp)
+	b2b := crypto.BLAKE2b_256.New()
+	expectedReservedEID, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
+	if err != nil {
+		t.Errorf("Failed to get id from intermediary: %+v", err)
+	}
+
+	// Check that the ephemeral Id generated with hardcoded data is a reserved ID
+	if !IsReserved(expectedReservedEID) {
+		t.Errorf("Expected reserved eid is no longer reserved, " +
+			"\n\tmay need to find a new ID. Use FindReservedID in this case.")
+	}
+
+	// Generate an ephemeral ID which given the same input above with the production facing call
+	eid, _, _, err := GetIdFromIntermediary(iid, size, hardcodedTimestamp)
+	if err != nil {
+		t.Errorf("Failed to get id from intermediary: %+v", err)
+	}
+
+	// Check that the ephemeralID generated is not reserved.
+	if IsReserved(eid) {
+		t.Errorf("Ephemeral ID generated should not be reserved!"+
+			"\n\tReserved IDs: %v"+
+			"\n\tGenerated ID: %v", ReservedIDs, eid)
+	}
+
+}
+
+// Will find a reserved ephemeral ID and returns the
+// associated intermediary ID
+func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
+	b2b := crypto.BLAKE2b_256.New()
+
+	// Loops through until a reserved ID is found
+	counter := 0
+	for {
+		testId := id.NewIdFromString(strconv.Itoa(counter), id.User, t)
+		iid, err := GetIntermediaryId(testId)
+		if err != nil {
+			t.Errorf("Failed to get intermediary id: %+v", err)
+		}
+
+		// Generate an ephemeral ID
+		salt, _, _ := getRotationSalt(iid, timestamp)
+		eid, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
+		if err != nil {
+			t.Errorf("Failed to get id from intermediary: %+v", err)
+		}
+
+		// Check if ephemeral ID is reserved exit
+		if IsReserved(eid) {
+			t.Logf("Found input which generates a reserved id. Input as follows."+
+				"\n\tSize: %d"+
+				"\n\tTimestamp: %d"+
+				"\n\tTestID: %v"+
+				"\n\tTestID generated using the following line of code: "+
+				"\n\t\ttestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
+				size, timestamp, testId, counter)
+			return iid
+		}
+		// Increment the counter
+		counter++
 	}
 }
 
