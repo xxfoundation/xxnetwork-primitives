@@ -10,7 +10,6 @@ package fact
 import (
 	"fmt"
 	"github.com/badoux/checkmail"
-	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
 )
 
@@ -108,7 +107,7 @@ func validateEmail(email string) error {
 	return nil
 }
 
-// Checks if the number and country code passed in is parse-able
+/*/ Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
 	errCh := make(chan error)
@@ -135,7 +134,7 @@ func validateNumber(number, countryCode string) error {
 		errCh <- nil
 	}()
 	return <-errCh
-}
+}*/
 
 func validateNickname(nickname string) error {
 	if len(nickname) < 3 {
