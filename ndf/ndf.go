@@ -176,11 +176,11 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 }
 
 // GetNodeId unmarshalls the Node's ID bytes into an id.ID and returns it.
-func (n *Node) GetNodeId() (*id.ID, error) {
+func (n *Node) GetNodeId() (id.ID, error) {
 	return id.Unmarshal(n.ID)
 }
 
 // GetGatewayId unmarshalls the Gateway's ID bytes into an id.ID and returns it.
-func (g *Gateway) GetGatewayId() (*id.ID, error) {
+func (g *Gateway) GetGatewayId() (id.ID, error) {
 	return id.Unmarshal(g.ID)
 }
