@@ -42,10 +42,15 @@ func (f Fact) Stringify() string {
 
 func UnstringifyFact(s string) (Fact, error) {
 	if len(s) < 1 {
-		return Fact{}, errors.New("stringified facts must at least have a type at the start")
+		return Fact{}, errors.New("stringified facts must at least " +
+			"have a type at the start")
 	}
 	T := s[:1]
 	fact := s[1:]
+	if len(fact) == 0 {
+		return Fact{}, errors.New("stringified facts must be at " +
+			"least 1 character long")
+	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
 		return Fact{}, err
