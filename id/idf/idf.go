@@ -20,114 +20,100 @@ import (
 // The length of the salt byte array
 const saltLen = 32
 
-// IdFile structure matches the JSON structure used to save IDs and salts. The
-// ID and ID type are saved as strings to make the file easy to read; they are
-// never used or processed.
+const (
+	ioReadErr    = "failed to read IDF %s: %v"
+	unmarshalErr = "failed to unmarshal IDF JSON: %v"
+	marshalErr   = "failed to JSON marshal the IDF: %v"
+	writeErr     = "failed to write IDF: %v"
+	saltSizeErr  = "length of salt is %d != %d expected"
+)
+
+// IdFile describes the information and structure for saving an ID and Salt to
+// a JSON file that is both human readable and used for processing.
 type IdFile struct {
-	ID      string            `json:"id"`
+	ID      id.ID             `json:"id"`
 	Type    string            `json:"type"`
 	Salt    [saltLen]byte     `json:"salt"`
 	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
 }
 
-// UnloadIDF reads the contents of the IDF at the given path and returns the
-// salt and ID stored in it. It does so by unmarshalling the JSON in the file
-// into an IdFile object. The ID bytes from the object are unmarshalled into an
-// ID object and it is returned along with the salt.
-//
-// Errors are returned when there is a failure to read the IDF, unmarshall the
-// JSON, or unmarshalling the ID.
-func UnloadIDF(filePath string) ([]byte, id.ID, error) {
+// newIDF creates a a new IdFile with the given 32-byte salt and id.ID. An error
+// is returned if the salt is not of the correct length.
+func newIDF(salt []byte, genID id.ID) (IdFile, error) {
+	// Check that the salt is of the correct length
+	if len(salt) != saltLen {
+		return IdFile{}, errors.Errorf(saltSizeErr, len(salt), saltLen)
+	}
+
+	// Create new IdFile with the ID
+	newIDF := IdFile{
+		ID:      genID,
+		Type:    genID.GetType().String(),
+		Salt:    [32]byte{},
+		IdBytes: genID,
+	}
+
+	// Copy salt into the IdFile
+	copy(newIDF.Salt[:], salt)
+
+	return newIDF, nil
+}
+
+// UnloadIDF unmarshal the JSON encoded IdFile at the given file path and
+// returns its 32-byte salt and id.ID.
+func UnloadIDF(path string) ([]byte, id.ID, error) {
 	// Read the contents from the file
-	jsonBytes, err := utils.ReadFile(filePath)
+	jsonBytes, err := utils.ReadFile(path)
 	if err != nil {
-		return nil, id.ID{}, errors.Errorf("Could not read IDF file %s: %v",
-			filePath, err)
+		return nil, id.ID{}, errors.Errorf(ioReadErr, path, err)
 	}
 
+	return unloadIDF(jsonBytes)
+}
+
+// unloadIDF unmarshalls the JSON data into an IdFile and returns the id.ID and
+// a 32-byte salt.
+func unloadIDF(data []byte) ([]byte, id.ID, error) {
 	// Create empty IdFile and unmarshal the data into it
-	idf, err := newIdfFromJSON(jsonBytes)
-	if err != nil {
-		return nil, id.ID{}, err
-	}
-
-	// Unmarshal ID bytes into ID
-	newID, err := id.Unmarshal(idf.IdBytes[:])
-
-	return idf.Salt[:], newID, err
-}
-
-// Create empty IdFile, unmarshal the data into it, and return it.
-func newIdfFromJSON(jsonBytes []byte) (*IdFile, error) {
-	// Create new and empty IdFile object
 	var idf *IdFile
-
-	// Unmarshal JSON bytes into IdFile
-	err := json.Unmarshal(jsonBytes, &idf)
-	if err != nil {
-		return nil, errors.Errorf("Failed to unmarshal IDF JSON: %v", err)
+	if err := json.Unmarshal(data, &idf); err != nil {
+		return nil, id.ID{}, errors.Errorf(unmarshalErr, err)
 	}
 
-	return idf, nil
+	return idf.Salt[:], idf.ID, nil
 }
 
-// MarshalIdfToJSON creates an IdFile object with the provided values and
-// marshals it into JSON bytes ready to be written to a file.
+// LoadIDF saves a JSON encoded IdFile containing the salt and generated ID.
 func LoadIDF(filePath string, salt []byte, genID id.ID) error {
+	// Marshal the IDF into JSON bytes
+	idfJSON, err := loadIDF(salt, genID)
+	if err != nil {
+		return err
+	}
+
+	// Create new ID file
+	err = utils.WriteFile(filePath, idfJSON, utils.FilePerms, utils.DirPerms)
+	if err != nil {
+		return errors.Errorf(writeErr, err)
+	}
+
+	return err
+}
+
+// loadIDF creates an IdFile from the salt and id.ID and returns it JSON
+// encoded.
+func loadIDF(salt []byte, genID id.ID) ([]byte, error) {
 	// Generate new IdFile object
 	idf, err := newIDF(salt, genID)
 	if err != nil {
-		return errors.Errorf("Failed to create new IDF: %v", err)
+		return nil, err
 	}
 
 	// Marshal the IDF into JSON bytes
 	idfJSON, err := json.Marshal(idf)
 	if err != nil {
-		return errors.Errorf("Failed to marshal the IDF: %v", err)
+		return nil, errors.Errorf(marshalErr, err)
 	}
 
-	// Create new ID file
-	err = writeIDF(filePath, idfJSON)
-
-	return err
-}
-
-// newIDF creates a pointer to a new IdFile object using the given ID and salt.
-// The salt and marshaled ID are copied into the IdFile and the type is set from
-// the ID. An error is returned if the salt is of the incorrect length.
-func newIDF(salt []byte, genID id.ID) (*IdFile, error) {
-	// Check that the salt is of the correct length
-	if len(salt) != saltLen {
-		return nil, errors.Errorf("Salt length must be %d, length "+
-			"received was %d", saltLen, len(salt))
-	}
-
-	// Create the new, empty IDF
-	newIDF := &IdFile{}
-
-	// Copy salt byte slice into IDF salt array
-	copy(newIDF.Salt[:], salt)
-
-	// Copy marshaled ID byte slice into IDF ID array
-	copy(newIDF.IdBytes[:], genID.Marshal())
-
-	// Set the IDF type
-	newIDF.Type = genID.GetType().String()
-
-	// Set the ID string
-	newIDF.ID = genID.String()
-
-	return newIDF, nil
-}
-
-// writeIDF creates an ID file (IDF) at the given path with the given JSON data.
-// Errors are returned if an error occurs making directories or files.
-func writeIDF(filePath string, jsonData []byte) error {
-	// Create new ID file
-	err := utils.WriteFile(filePath, jsonData, utils.FilePerms, utils.DirPerms)
-	if err != nil {
-		return errors.Errorf("Failed to create IDF: %v", err)
-	}
-
-	return nil
+	return idfJSON, err
 }
