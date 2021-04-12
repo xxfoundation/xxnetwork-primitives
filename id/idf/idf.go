@@ -49,7 +49,7 @@ func newIDF(salt []byte, genID id.ID) (IdFile, error) {
 	newIDF := IdFile{
 		ID:      genID,
 		Type:    genID.GetType().String(),
-		Salt:    [32]byte{},
+		Salt:    [saltLen]byte{},
 		IdBytes: genID,
 	}
 
