@@ -56,9 +56,9 @@ type Node struct {
 // Registration contains the connection information for the permissioning
 // server.
 type Registration struct {
-	Address             string
-	TlsCertificate      string `json:"Tls_certificate"`
-	EllipticCertificate string `json:"Elliptic_certificate"`
+	Address        string
+	TlsCertificate string `json:"Tls_certificate"`
+	EllipticPubKey string
 }
 
 // Notification contains the connection information for the notification bot.
