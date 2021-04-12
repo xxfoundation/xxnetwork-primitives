@@ -14,6 +14,7 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"io"
 	"testing"
@@ -90,6 +91,30 @@ func NewRandomID(r io.Reader, t Type) (ID, error) {
 	id := makeID(idBytes).SetType(t)
 
 	return id, nil
+}
+
+// UnmarshalJSON is part of the json.Unmarshaler interface and allows IDs to be
+// marshaled into JSON.
+func (id *ID) UnmarshalJSON(b []byte) error {
+	var buff []byte
+	if err := json.Unmarshal(b, &buff); err != nil {
+		return err
+	}
+
+	newID, err := Unmarshal(buff)
+	if err != nil {
+		return err
+	}
+
+	*id = newID
+
+	return nil
+}
+
+// MarshalJSON is part of the json.Marshaler interface and allows IDs to be
+// marshaled into JSON.
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(id.Marshal())
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar

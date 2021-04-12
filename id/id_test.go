@@ -9,6 +9,7 @@ package id
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -229,6 +230,27 @@ func TestNewIdFromBytes(t *testing.T) {
 	if !bytes.Equal(expectedBytes, testID[:]) {
 		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
 			"\nexpected: %v\nreceived: %v", expectedBytes, testID[:])
+	}
+}
+
+// Tests that an ID can be JSON marshaled and unmarshaled.
+func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
+	testID := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
+
+	jsonData, err := json.Marshal(testID)
+	if err != nil {
+		t.Errorf("json.Marshal() returned an error: %+v", err)
+	}
+
+	newID := &ID{}
+	err = json.Unmarshal(jsonData, newID)
+	if err != nil {
+		t.Errorf("json.Unmarshal() returned an error: %+v", err)
+	}
+
+	if testID != *newID {
+		t.Errorf("Failed the JSON marshal and unmarshal ID."+
+			"\noriginal ID: %s\nreceived ID: %s", testID, *newID)
 	}
 }
 
