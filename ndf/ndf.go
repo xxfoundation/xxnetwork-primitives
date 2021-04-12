@@ -40,7 +40,7 @@ type NetworkDefinition struct {
 // Gateway contains the connection and identity information of a gateway on the
 // network.
 type Gateway struct {
-	ID             []byte `json:"Id"`
+	ID             id.ID `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -48,7 +48,7 @@ type Gateway struct {
 // Node contains the connection and identity information of a node on the
 // network.
 type Node struct {
-	ID             []byte `json:"Id"`
+	ID             id.ID `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -68,7 +68,7 @@ type Notification struct {
 
 // UDB contains the ID and public key in PEM form for user discovery.
 type UDB struct {
-	ID       []byte `json:"Id"`
+	ID       id.ID  `json:"Id"`
 	Cert     string `json:"Cert"`
 	Address  string `json:"Address"`
 	DhPubKey []byte `json:"DhPubKey"`
@@ -140,14 +140,14 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 
 	// Convert Gateways slice to byte slice
 	for _, val := range ndf.Gateways {
-		b = append(b, val.ID...)
+		b = append(b, val.ID.Bytes()...)
 		b = append(b, []byte(val.Address)...)
 		b = append(b, []byte(val.TlsCertificate)...)
 	}
 
 	// Convert Nodes slice to byte slice
 	for _, val := range ndf.Nodes {
-		b = append(b, val.ID...)
+		b = append(b, val.ID.Bytes()...)
 		b = append(b, []byte(val.Address)...)
 		b = append(b, []byte(val.TlsCertificate)...)
 	}
@@ -157,7 +157,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
 
 	// Convert UDB to byte slice
-	b = append(b, ndf.UDB.ID...)
+	b = append(b, ndf.UDB.ID.Bytes()...)
 	b = append(b, []byte(ndf.UDB.Cert)...)
 	b = append(b, ndf.UDB.Address...)
 	b = append(b, ndf.UDB.DhPubKey...)
@@ -176,11 +176,11 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 }
 
 // GetNodeId unmarshalls the Node's ID bytes into an id.ID and returns it.
-func (n *Node) GetNodeId() (id.ID, error) {
-	return id.Unmarshal(n.ID)
+func (n *Node) GetNodeId() id.ID {
+	return n.ID
 }
 
 // GetGatewayId unmarshalls the Gateway's ID bytes into an id.ID and returns it.
-func (g *Gateway) GetGatewayId() (id.ID, error) {
-	return id.Unmarshal(g.ID)
+func (g *Gateway) GetGatewayId() id.ID {
+	return g.ID
 }
