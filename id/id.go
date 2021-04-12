@@ -62,7 +62,8 @@ func (id ID) Bytes() []byte {
 	return id[:]
 }
 
-// String converts an ID to a string via base64 encoding.
+// String returns the base 64 string encoding of an ID. This functions satisfies
+// the fmt.Stringer interface.
 func (id ID) String() string {
 	return base64.StdEncoding.EncodeToString(id.Bytes())
 }

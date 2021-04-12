@@ -24,7 +24,8 @@ const (
 
 const noIDTypeErr = "unknown ID type: "
 
-// String is a stringer to get the name of the ID type.
+// String returns the name of the ID type. This functions satisfies the
+// fmt.Stringer interface.
 func (t Type) String() string {
 	switch t {
 	case Generic:
