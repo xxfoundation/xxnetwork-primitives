@@ -241,6 +241,7 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Errorf("json.Marshal() returned an error: %+v", err)
 	}
+	t.Logf("%s", jsonData)
 
 	newID := &ID{}
 	err = json.Unmarshal(jsonData, newID)
@@ -251,6 +252,29 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	if testID != *newID {
 		t.Errorf("Failed the JSON marshal and unmarshal ID."+
 			"\noriginal ID: %s\nreceived ID: %s", testID, *newID)
+	}
+}
+
+// Error path: supplied data is invalid JSON.
+func TestID_UnmarshalJSON_JsonUnmarshalError(t *testing.T) {
+	expectedErr := "invalid character"
+	id := ID{}
+	err := id.UnmarshalJSON([]byte("invalid JSON"))
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("UnmarshalJSON() failed to return the expected error for "+
+			"invalid JSON.\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
+}
+
+// Error path: supplied data is valid JSON but an invalid ID.
+func TestID_UnmarshalJSON_IdUnmarshalError(t *testing.T) {
+	expectedErr := fmt.Sprintf(unmarshalLenErr, 0, ArrIDLen)
+	id := ID{}
+	err := id.UnmarshalJSON([]byte("\"\""))
+	t.Log(err)
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("UnmarshalJSON() failed to return the expected error for "+
+			"invalid ID.\nexpected: %s\nreceived: %+v", expectedErr, err)
 	}
 }
 
