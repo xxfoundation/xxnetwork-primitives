@@ -121,7 +121,6 @@ func TestID_String(t *testing.T) {
 
 	for i, expected := range expectedIDs {
 		testID := NewIdFromBytes(rngBytes(ArrIDLen, int64(i+42), t), t)
-		fmt.Printf("\"%s\",\n", testID.String())
 
 		if testID.String() != expected {
 			t.Errorf("String() did not output the expected value for ID %d."+
