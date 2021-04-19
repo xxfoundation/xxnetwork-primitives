@@ -150,8 +150,8 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 // returns ephemeral ID, start & end timestamps for salt window
 func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
-	if size > 64 {
-		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
+	if size > 64 || size < 1 {
+		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID, size must be between 1 and 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
