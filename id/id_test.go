@@ -228,10 +228,39 @@ func TestID_String(t *testing.T) {
 	}
 }
 
+// Consistency test of ID.Uint64.
+func TestID_Uint64(t *testing.T) {
+	prng := rand.New(rand.NewSource(42))
+	expectedUints := []uint64{
+		6020327087085502235, 15536096509863616890, 7049107292124618228,
+		16777666234173758699, 9807576268660574786, 6581750266813352976,
+		14004606548037413232, 1068691311864817891, 11424879378872802557,
+		9610947320483401382, 11112343373381637958, 11164933455093240345,
+		10564602820898369897, 2966362218586995809, 11465285714822830055,
+		1035179779221541826, 15379813874850427381, 3082236478891563044,
+		13728929171036357500, 2471528869402355150, 1746190530241212646,
+		12798395708876268482, 1283244699869910677, 13657266803464005779,
+		18297472811136226673, 3361998289790150690, 13121693569869338136,
+	}
+
+	for i, expected := range expectedUints {
+		id, err := NewRandomID(prng, User)
+		if err != nil {
+			t.Errorf("Failed to create new random ID (%d): %+v", i, err)
+		}
+
+		uintID := id.Uint64()
+		if expected != uintID {
+			t.Errorf("Uint64() did not return the expected uint64 for ID %s (%d)."+
+				"\nexpected: %d\nreceived: %d", id, i, expected, uintID)
+		}
+	}
+}
+
 // Tests that GetType() returns the correct type for each ID type.
 func TestID_GetType(t *testing.T) {
 	// Test values
-	testTypes := []Type{Generic, Gateway, Node, User, NumTypes, 6}
+	testTypes := []Type{Generic, Gateway, Node, User, Group, NumTypes, 6}
 	randomBytes := [][]byte{
 		newRandomBytes(ArrIDLen-1, t), newRandomBytes(ArrIDLen-1, t),
 		newRandomBytes(ArrIDLen-1, t), newRandomBytes(ArrIDLen-1, t),
@@ -305,16 +334,16 @@ func TestID_SetType_NilError(t *testing.T) {
 func TestNewRandomID_Consistency(t *testing.T) {
 	prng := rand.New(rand.NewSource(42))
 	expectedIDs := []string{
-		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsB",
-		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8B",
-		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4D",
-		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQD",
-		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcID",
-		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOMD",
-		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kC",
-		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4D",
-		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoC",
-		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIB",
+		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsA",
+		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8C",
+		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4A",
+		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQA",
+		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcIA",
+		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOME",
+		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kD",
+		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4A",
+		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoE",
+		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIE",
 	}
 
 	for i, expected := range expectedIDs {

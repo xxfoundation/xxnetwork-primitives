@@ -33,6 +33,7 @@ func TestCollidesWithHardCodedID_HappyPath(t *testing.T) {
 		NewIdFromString("Test2", Gateway, t),
 		NewIdFromString("Test3", Node, t),
 		NewIdFromString("Test4", User, t),
+		NewIdFromString("Test5", Group, t),
 	}
 
 	for _, testID := range testIDs {

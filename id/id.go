@@ -86,6 +86,11 @@ func (id *ID) String() string {
 	return base64.StdEncoding.EncodeToString(id.Bytes())
 }
 
+// Uint64 returns the top 8 bytes of the ID as a uint64.
+func (id *ID) Uint64() uint64 {
+	return binary.BigEndian.Uint64(id[:8])
+}
+
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
