@@ -115,6 +115,10 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	return nil
 }
 
+func (kr KnownRounds) GetLastChecked() id.Round {
+	return kr.lastChecked
+}
+
 // Checked determines if the round has been checked.
 func (kr *KnownRounds) Checked(rid id.Round) bool {
 	if rid < kr.firstUnchecked {
@@ -223,55 +227,57 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 
 // RangeUnchecked runs the passed function over all rounds starting with oldest
 // unknown and ending with
-func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, maxChecked uint,
-	roundCheck func(id id.Round) bool) id.Round {
+func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
+	roundCheck func(id id.Round) bool) (id.Round, []id.Round, []id.Round) {
 
-	numChecked := uint(0)
-	firstUnchecked := id.Round(math.MaxUint64)
+	newestRound := kr.lastChecked
 
-	// If the newest round is in the range of known rounds, then skip checking
-	if oldestUnknown > kr.lastChecked {
-		return oldestUnknown
+	// Calculate how far back we should go back to check rounds
+	// If the newest round is smaller than the threshold, then our oldest round
+	// is zero. But the earliest round ID is 1.
+	oldestPossibleEarliestRound := id.Round(1)
+	if newestRound > id.Round(threshold) {
+		oldestPossibleEarliestRound = newestRound - id.Round(threshold)
 	}
 
-	//loop through all rounds from the oldest unknown to the last checked round
+	earliestRound := kr.lastChecked + 1
+	var has, unknown []id.Round
+
+	// If the oldest unknown round is outside the range we attempting to check,
+	// then skip checking
+	if oldestUnknown > kr.lastChecked {
+		jww.TRACE.Printf("RangeUnchecked: oldestUnknown (%d) > kr.lastChecked (%d)",
+			oldestUnknown, kr.lastChecked)
+		return oldestUnknown, nil, nil
+	}
+
+	// loop through all rounds from the oldest unknown to the last checked round
+	// and check them, if possible
 	for i := oldestUnknown; i <= kr.lastChecked; i++ {
-		//if we have checked too many rounds, bail
-		if numChecked >= maxChecked {
-			if i < firstUnchecked {
-				firstUnchecked = i
-			}
-			return firstUnchecked
-		}
 
 		// if the source does not know about the round, set that round as
-		// unknown if it makes sense, and dont check it
+		// unknown and don't check it
 		if !kr.Checked(i) {
-			if i < firstUnchecked {
-				firstUnchecked = i
+			if i < oldestPossibleEarliestRound {
+				unknown = append(unknown, i)
+			} else if i < earliestRound {
+				earliestRound = i
 			}
 			continue
 		}
 
 		// check the round
-		checkingComplete := roundCheck(i)
+		hasRound := roundCheck(i)
 
-		// if checking is not coomplete and the round is earlier than the
-		// earliest round, set it to the earliest round
-		if !checkingComplete && i < firstUnchecked {
-			firstUnchecked = i
+		// if checking is not complete and the round is earlier than the
+		// earliest round, then set it to the earliest round
+		if hasRound {
+			has = append(has, i)
 		}
-		numChecked++
 	}
 
-	// if no round was set as the earliest round, set the earliest round to the
-	// round after the last checked
-	if firstUnchecked > kr.lastChecked {
-		firstUnchecked = kr.lastChecked + 1
-	}
-
-	//return the next round
-	return firstUnchecked
+	// return the next round
+	return earliestRound, has, unknown
 }
 
 // RangeUncheckedMasked masks the bit stream with the provided mask.

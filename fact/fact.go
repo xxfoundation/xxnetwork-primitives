@@ -10,7 +10,6 @@ package fact
 import (
 	"fmt"
 	"github.com/badoux/checkmail"
-	"github.com/nyaruka/phonenumbers"
 	"github.com/pkg/errors"
 )
 
@@ -42,10 +41,15 @@ func (f Fact) Stringify() string {
 
 func UnstringifyFact(s string) (Fact, error) {
 	if len(s) < 1 {
-		return Fact{}, errors.New("stringified facts must at least have a type at the start")
+		return Fact{}, errors.New("stringified facts must at least " +
+			"have a type at the start")
 	}
 	T := s[:1]
 	fact := s[1:]
+	if len(fact) == 0 {
+		return Fact{}, errors.New("stringified facts must be at " +
+			"least 1 character long")
+	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
 		return Fact{}, err
@@ -62,8 +66,10 @@ func ValidateFact(fact Fact) error {
 		return nil
 	case Phone:
 		// Extract specific information for validating a number
-		number, code := extractNumberInfo(fact.Fact)
-		return validateNumber(number, code)
+		// TODO: removes phone validation entirely. It is not used right now anyhow
+		// number, code := extractNumberInfo(fact.Fact)
+		// return validateNumber(number, code)
+		return nil
 	case Email:
 		// Check input of email inputted
 		return validateEmail(fact.Fact)
@@ -101,21 +107,37 @@ func validateEmail(email string) error {
 	return nil
 }
 
-// Checks if the number and country code passed in is parse-able
+/*/ Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
-	num, err := phonenumbers.Parse(number, countryCode)
-	if err != nil {
-		return errors.Errorf("Could not parse number [%s]: %v", number, err)
-	}
-	if !phonenumbers.IsValidNumber(num) {
-		return errors.Errorf("Could not validate number [%s]: %v", number, err)
-	}
-	return nil
-}
+	errCh := make(chan error)
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errCh <- errors.Errorf("Crash occured on phone "+
+					"validation of: number: %s, country code: %s", number,
+					countryCode)
+			}
+		}()
+
+		if len(number) == 0 || len(countryCode) == 0 {
+			errCh <- errors.New("Number or input are of length 0")
+		}
+		num, err := phonenumbers.Parse(number, countryCode)
+		if err != nil || num == nil {
+			errCh <- errors.Errorf("Could not parse number [%s]: %v", number, err)
+		}
+		if !phonenumbers.IsValidNumber(num) {
+			errCh <- errors.Errorf("Could not validate number [%s]: %v", number, err)
+		}
+		errCh <- nil
+	}()
+	return <-errCh
+}*/
 
 func validateNickname(nickname string) error {
-	if len(nickname) > 3 {
+	if len(nickname) < 3 {
 		return errors.New(fmt.Sprintf("Could not validate nickname %s: too short (< 3 characters)", nickname))
 	}
 	return nil
