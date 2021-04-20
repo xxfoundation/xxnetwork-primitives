@@ -115,8 +115,8 @@ func TestValidateFact_Email(t *testing.T) {
 // Unit test for input validation of emails
 func TestValidateFact_PhoneNumber(t *testing.T) {
 	USCountryCode := "US"
-	UKCountryCode := "UK"
-	InvalidNumber := "020 8743 8000135"
+	// UKCountryCode := "UK"
+	// InvalidNumber := "020 8743 8000135"
 	USNumber := "6502530000"
 
 	// Valid Fact
@@ -131,25 +131,25 @@ func TestValidateFact_PhoneNumber(t *testing.T) {
 		t.Errorf("Unexpected error in happy path: %v", err)
 	}
 
-	InvalidFact := Fact{
-		Fact: USNumber + UKCountryCode,
-		T:    Phone,
-	}
-
-	// Invalid number and country code combination
-	err = ValidateFact(InvalidFact)
-	if err == nil {
-		t.Errorf("Expected error path: should not be able to validate US number with UK country code")
-	}
-
-	InvalidFact = Fact{
-		Fact: InvalidNumber,
-		T:    Phone,
-	}
-	// Pass in an invalid number with a valid country code
-	err = ValidateFact(InvalidFact)
-	if err == nil {
-		t.Errorf("Expected error path: should not be able to validate US number with UK country code")
-	}
-
+	// Phone number validation disabled
+	// InvalidFact := Fact{
+	// 	Fact: USNumber + UKCountryCode,
+	// 	T:    Phone,
+	// }
+	//
+	// // Invalid number and country code combination
+	// err = ValidateFact(InvalidFact)
+	// if err == nil {
+	// 	t.Errorf("Expected error path: should not be able to validate US number with UK country code")
+	// }
+	//
+	// InvalidFact = Fact{
+	// 	Fact: InvalidNumber,
+	// 	T:    Phone,
+	// }
+	// // Pass in an invalid number with a valid country code
+	// err = ValidateFact(InvalidFact)
+	// if err == nil {
+	// 	t.Errorf("Expected error path: should not be able to validate US number with UK country code")
+	// }
 }
