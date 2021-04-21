@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	jww "github.com/spf13/jwalterweatherman"
-	"io"
 	"math"
 )
 
@@ -196,18 +195,19 @@ func (u64b uint64Buff) marshal() []byte {
 		return nil
 	}
 
-	var b = make([]byte, binary.MaxVarintLen64)
 	var buf bytes.Buffer
 	var cur = u64b[0]
 	var run uint64
 
 	for _, next := range u64b {
 		if cur != next {
-			n := binary.PutUvarint(b, cur)
-			buf.Write(b[:n])
+			b := make([]byte, 8)
+			binary.LittleEndian.PutUint64(b, cur)
+			buf.Write(b)
 			if run > 0 {
-				n := binary.PutUvarint(b, run)
-				buf.Write(b[:n])
+				b = make([]byte, 8)
+				binary.LittleEndian.PutUint64(b, run)
+				buf.Write(b)
 				run = 0
 			}
 		}
@@ -217,11 +217,13 @@ func (u64b uint64Buff) marshal() []byte {
 		cur = next
 	}
 
-	n := binary.PutUvarint(b, cur)
-	buf.Write(b[:n])
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, cur)
+	buf.Write(b)
 	if run > 0 {
-		n := binary.PutUvarint(b, run)
-		buf.Write(b[:n])
+		b = make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, run)
+		buf.Write(b)
 	}
 
 	return buf.Bytes()
@@ -233,24 +235,16 @@ func unmarshal(b []byte) uint64Buff {
 	buff := uint64Buff{}
 
 	// Reach each uint out of the buffer
-	num, err := binary.ReadUvarint(buf)
-	for ; err == nil; num, err = binary.ReadUvarint(buf) {
+	for bb := buf.Next(8); len(bb) == 8; bb = buf.Next(8) {
+		num := binary.LittleEndian.Uint64(bb)
 		if num == zeroes || num == ones {
-			run, err := binary.ReadUvarint(buf)
-			if err != nil {
-				jww.FATAL.Panicf("Failed to unmarshal run-length encoded buffer run: %+v", err)
-				return nil
-			}
+			run := binary.LittleEndian.Uint64(buf.Next(8))
 			for i := uint64(0); i < run; i++ {
 				buff = append(buff, num)
 			}
 		} else {
 			buff = append(buff, num)
 		}
-	}
-
-	if err != io.EOF {
-		jww.FATAL.Panicf("Failed to unmarshal run-length encoded buffer: %+v", err)
 	}
 
 	return buff
