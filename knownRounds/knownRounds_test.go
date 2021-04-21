@@ -9,7 +9,6 @@ package knownRounds
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"gitlab.com/xx_network/primitives/id"
 	"math"
@@ -36,6 +35,29 @@ func TestNewKnownRound(t *testing.T) {
 }
 
 // Tests happy path of KnownRounds.Marshal().
+func TestKnownRounds_Marshal_Unmarshal(t *testing.T) {
+	testKR := &KnownRounds{
+		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
+		firstUnchecked: 55,
+		lastChecked:    270,
+		fuPos:          55,
+	}
+
+	data := testKR.Marshal()
+
+	newKR := &KnownRounds{}
+	err := newKR.Unmarshal(data)
+	if err != nil {
+		t.Errorf("Unmarshal() produced an error: %+v", err)
+	}
+
+	if !reflect.DeepEqual(testKR, newKR) {
+		t.Errorf("Original KnownRounds does not match Unmarshalled."+
+			"\nexpected: %+v\nreceived: %+v", testKR, newKR)
+	}
+}
+
+// Tests happy path of KnownRounds.Marshal().
 func TestKnownRounds_Marshal(t *testing.T) {
 	testKR := &KnownRounds{
 		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
@@ -43,22 +65,16 @@ func TestKnownRounds_Marshal(t *testing.T) {
 		lastChecked:    150,
 		fuPos:          75,
 	}
-	startBlock, _ := testKR.bitStream.convertLoc(testKR.getBitStreamPos(testKR.firstUnchecked))
-	endBlock, _ := testKR.bitStream.convertLoc(testKR.getBitStreamPos(testKR.lastChecked))
 
-	expectedData := fmt.Sprintf("{\"BitStream\":\"%s\",\"FirstUnchecked"+
-		"\":%d,\"LastChecked\":%d}", base64.StdEncoding.EncodeToString(testKR.bitStream[startBlock:endBlock+1].marshal()),
-		testKR.firstUnchecked, testKR.lastChecked)
+	expectedData := []byte{75, 0, 0, 0, 0, 0, 0, 0, 150, 0, 0, 0, 0, 0, 0, 0,
+		255, 255, 255, 255, 255, 255, 255, 255, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}
 
-	data, err := testKR.Marshal()
-	if err != nil {
-		t.Errorf("Marshal() produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
-	}
+	data := testKR.Marshal()
 
 	if !bytes.Equal([]byte(expectedData), data) {
 		t.Errorf("Marshal() produced incorrect data."+
-			"\n\texpected: %s\n\treceived: %s", []byte(expectedData), data)
+			"\n\texpected: %+v\n\treceived: %+v", expectedData, data)
 	}
 
 }
@@ -72,14 +88,10 @@ func TestKnownRounds_Unmarshal(t *testing.T) {
 		fuPos:          11,
 	}
 
-	data, err := testKR.Marshal()
-	if err != nil {
-		t.Fatalf("Marshal() produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
-	}
+	data := testKR.Marshal()
 
 	newKR := NewKnownRound(310)
-	err = newKR.Unmarshal(data)
+	err := newKR.Unmarshal(data)
 	if err != nil {
 		t.Errorf("Unmarshal() produced an unexpected error."+
 			"\n\texpected: %+v\n\treceived: %+v", nil, err)
@@ -101,14 +113,10 @@ func TestKnownRounds_Unmarshal_SizeError(t *testing.T) {
 		fuPos:          11,
 	}
 
-	data, err := testKR.Marshal()
-	if err != nil {
-		t.Fatalf("Marshal() produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
-	}
+	data := testKR.Marshal()
 
 	newKR := NewKnownRound(1)
-	err = newKR.Unmarshal(data)
+	err := newKR.Unmarshal(data)
 	if err == nil {
 		t.Error("Unmarshal() did not produce an error when the size of new " +
 			"KnownRound bit stream is too small.")
