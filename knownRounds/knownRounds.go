@@ -224,6 +224,7 @@ func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
 // Forward sets all rounds before the given round ID as checked.
 func (kr *KnownRounds) Forward(rid id.Round) {
 	if rid > kr.lastChecked {
+		kr.bitStream.clearRange(kr.getBitStreamPos(kr.lastChecked+1), kr.getBitStreamPos(rid))
 		kr.firstUnchecked = rid
 		kr.lastChecked = rid
 		kr.fuPos = int(rid % 64)
