@@ -326,9 +326,12 @@ func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 	testData := []struct {
 		buff uint64Buff
 	}{
+		{uint64Buff{1}},
+		{uint64Buff{0x7FFFFFFFFFFFFFFF}},
 		{uint64Buff{1, ones, ones, ones, ones}},
 		{uint64Buff{0, ones, ones, ones, ones}},
 		{uint64Buff{0, 0x7FFFFFFFFFFFFFFF, ones, ones, ones}},
+		{uint64Buff{0, 0x7FFFFFFFFFFFFFFF, 0x7FFFFFFFFFFFFFFF, ones, ones}},
 		{uint64Buff{0, 0, 0, 0, 1}},
 		{uint64Buff{0, 0, 0, 0, 0}},
 		{uint64Buff{0x8000000000000000, 0, 0, 0, 3}},
@@ -337,7 +340,8 @@ func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 		{uint64Buff{0, 0, 0, 0, 0}},
 		{uint64Buff{0x30000000, 0, 0, 0, 0}},
 		{uint64Buff{ones, ones, ones, ones, ones}},
-		{uint64Buff{0x7FFFFFFFFFFFFFFF, ones, ones, ones, ones, 0x13324AFB434FF, zeroes, zeroes, zeroes, 0x5}},
+		{uint64Buff{0x7FFFFFFFFFFFFFFF, ones, ones, ones, ones, 0x13374AFB434FF, 0, 0, 0, 0x5}},
+		{uint64Buff{0xF800001FFFFFFFFF, 0xF800001FFFFFFFFF, ones, ones, ones, ones}},
 		{uint64Buff{0xF800001FFFFFFFFF, ones, ones, ones, ones}},
 		{uint64Buff{0xF800000000000000, 0x3FFFF, ones, ones, ones}},
 		{uint64Buff{0x7FFFFFFFFFFFFFF, ones, ones, ones, 0xFFFFFFFFFFFFFC00}},

@@ -70,6 +70,12 @@ func (u64b uint64Buff) clearRange(start, end int) {
 	}
 }
 
+func (u64b uint64Buff) clearAll() {
+	for i := range u64b {
+		u64b[i] = 0
+	}
+}
+
 // copy returns a copy of the bits from start to end (inclusive) from u64b.
 func (u64b uint64Buff) copy(start, end int) uint64Buff {
 	startBlock, startPos := u64b.convertLoc(start)
@@ -129,7 +135,7 @@ func (u64b uint64Buff) extend(numBlocks int) uint64Buff {
 // for the given position in the buffer.
 func (u64b uint64Buff) convertLoc(pos int) (int, int) {
 	// Block index in buffer (position / 64)
-	bin := pos >> 6 % len(u64b)
+	bin := (pos / 64) % len(u64b)
 
 	// Position of bit in block
 	offset := pos % 64
@@ -198,9 +204,11 @@ func (u64b uint64Buff) marshal() []byte {
 	var buf bytes.Buffer
 	var cur = u64b[0]
 	var run uint64
-
-	for _, next := range u64b {
-		if cur != next {
+	if cur == zeroes || cur == ones {
+		run = 1
+	}
+	for _, next := range u64b[1:] {
+		if cur != next || run == 0 {
 			b := make([]byte, 8)
 			binary.LittleEndian.PutUint64(b, cur)
 			buf.Write(b)
@@ -216,7 +224,6 @@ func (u64b uint64Buff) marshal() []byte {
 		}
 		cur = next
 	}
-
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, cur)
 	buf.Write(b)
@@ -233,15 +240,16 @@ func (u64b uint64Buff) marshal() []byte {
 func unmarshal(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	buff := uint64Buff{}
-
 	// Reach each uint out of the buffer
 	for bb := buf.Next(8); len(bb) == 8; bb = buf.Next(8) {
 		num := binary.LittleEndian.Uint64(bb)
 		if num == zeroes || num == ones {
 			run := binary.LittleEndian.Uint64(buf.Next(8))
-			for i := uint64(0); i < run; i++ {
-				buff = append(buff, num)
+			runBuf := make(uint64Buff, run)
+			for i := range runBuf {
+				runBuf[i] = num
 			}
+			buff = append(buff, runBuf...)
 		} else {
 			buff = append(buff, num)
 		}

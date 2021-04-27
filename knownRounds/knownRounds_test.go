@@ -491,6 +491,7 @@ func TestKnownRounds_getBitStreamPos(t *testing.T) {
 	}
 }
 
+/*
 // Test happy path of KnownRounds.RangeUncheckedMasked().
 func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 	expectedKR := KnownRounds{
@@ -525,7 +526,7 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 			"\n\texpected: %+v\n\treceived: %+v", expectedKR, kr)
 	}
 	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
-}
+}*/
 
 // // Test happy path of KnownRounds.RangeUncheckedMasked().
 // func TestKnownRounds_RangeUncheckedMasked_3(t *testing.T) {

@@ -152,18 +152,21 @@ func (kr *KnownRounds) Check(rid id.Round) {
 	kr.check(rid)
 }
 
+func (kr *KnownRounds) ForceCheck(rid id.Round) {
+	if rid < kr.firstUnchecked {
+		return
+	} else if kr.lastChecked < rid && int(rid-kr.firstUnchecked) > (len(kr.bitStream)*64) {
+		kr.Forward(rid - id.Round(len(kr.bitStream)*64))
+	}
+
+	kr.check(rid)
+}
+
 // Check denotes a round has been checked. If the passed in round occurred after
 // the last checked round, then every round between them is set as unchecked and
 // the passed in round becomes the last checked round. Will shift the buffer
 // forward, erasing old data, if the buffer is not large enough to hold the new
 // checked input
-func (kr *KnownRounds) ForceCheck(rid id.Round) {
-	if abs(int(kr.lastChecked-rid))/(len(kr.bitStream)*64) > 0 {
-		kr.Forward(rid - id.Round(len(kr.bitStream)*64))
-	}
-	kr.check(rid)
-}
-
 func (kr *KnownRounds) check(rid id.Round) {
 	if rid < kr.firstUnchecked {
 		return
@@ -214,8 +217,7 @@ func abs(n int) int {
 // migrateFirstUnchecked moves firstUnchecked to the next unchecked round or
 // sets it to lastUnchecked if all rounds are checked.
 func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
-	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
-		rid < kr.lastChecked; rid++ {
+	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) && rid <= kr.lastChecked; rid++ {
 	}
 	kr.fuPos = kr.getBitStreamPos(rid)
 	kr.firstUnchecked = rid
@@ -224,11 +226,10 @@ func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
 // Forward sets all rounds before the given round ID as checked.
 func (kr *KnownRounds) Forward(rid id.Round) {
 	if rid > kr.lastChecked {
-		kr.bitStream.clearRange(kr.getBitStreamPos(kr.lastChecked+1), kr.getBitStreamPos(rid))
 		kr.firstUnchecked = rid
 		kr.lastChecked = rid
 		kr.fuPos = int(rid % 64)
-	} else if rid >= kr.firstUnchecked {
+	} else if rid > kr.firstUnchecked {
 		kr.migrateFirstUnchecked(rid)
 	}
 }
