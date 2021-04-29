@@ -109,7 +109,7 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 
 	if !reflect.DeepEqual(m, newMsg) {
 		t.Errorf("Failed to Marshal() and Unmarshal() message."+
-			"\nexpected: %+v\nreceived: %+v", m, newMsg)
+			"\nexpected: %#v\nreceived: %#v", m, newMsg)
 	}
 }
 
@@ -651,7 +651,41 @@ func TestMessage_Digest(t *testing.T) {
 		t.Errorf("Digest A and Digest B are the same, they "+
 			"should be diferent; A: %s, B: %s", digestA, digestB)
 	}
+}
 
+// Unit test of Message.GoString.
+func TestMessage_GoString(t *testing.T) {
+	// Create message
+	msg := NewMessage(MinimumPrimeSize)
+	msg.SetKeyFP(NewFingerprint(makeAndFillSlice(KeyFPLen, 'c')))
+	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
+	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
+	msg.SetIdentityFP(makeAndFillSlice(IdentityFPLen, 'f'))
+	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'g'))
+
+	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
+		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
+		"ephemeralRID:7306357456645743973, " +
+		"identityFP:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
+		"contents:\"ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
+
+	if expected != msg.GoString() {
+		t.Errorf("GoString() returned incorrect string."+
+			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
+	}
+}
+
+// Unit test of Message.GoString with an empty Message.
+func TestMessage_GoString_EmptyMessage(t *testing.T) {
+
+	msg := Message{}
+
+	expected := "format.Message{keyFP:<nil>, MAC:<nil>, ephemeralRID:<nil>, identityFP:<nil>, contents:\"\"}"
+
+	if expected != msg.GoString() {
+		t.Errorf("GoString() returned incorrect string."+
+			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
+	}
 }
 
 // makeAndFillSlice creates a slice of the specified size filled with the
