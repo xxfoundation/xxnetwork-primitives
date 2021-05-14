@@ -139,7 +139,7 @@ func TestIsCompatible(t *testing.T) {
 		if !IsCompatible(v.required, v.current) {
 			t.Errorf("IsCompatible() incorectly determined the current version"+
 				"is not comptabile with the required version (%d)."+
-				"\nrequired: %s\ncurrent:  %s", i, &v.required, &v.current)
+				"\nrequired: %s\ncurrent:  %s", i, v.required, v.current)
 		}
 	}
 }
@@ -157,7 +157,7 @@ func TestIsCompatible_Failure(t *testing.T) {
 		if IsCompatible(v.required, v.current) {
 			t.Errorf("IsCompatible() incorectly determined the current version"+
 				"is comptabile with the required version (%d)."+
-				"\nrequired: %s\ncurrent:  %s", i, &v.required, &v.current)
+				"\nrequired: %s\ncurrent:  %s", i, v.required, v.current)
 		}
 	}
 }
@@ -174,7 +174,7 @@ func TestEqual_Same(t *testing.T) {
 	for i, v := range testValues {
 		if !Equal(v.a, v.b) {
 			t.Errorf("Equal() determined the versions are not equal (%d)."+
-				"\na: %s\nb: %s", i, &v.a, &v.b)
+				"\na: %s\nb: %s", i, v.a, v.b)
 		}
 	}
 }
@@ -192,7 +192,7 @@ func TestEqual_Different(t *testing.T) {
 	for i, v := range testValues {
 		if Equal(v.a, v.b) {
 			t.Errorf("Equal() determined the versions are equal (%d)."+
-				"\na: %s\nb: %s", i, &v.a, &v.b)
+				"\na: %s\nb: %s", i, v.a, v.b)
 		}
 	}
 }
@@ -217,7 +217,7 @@ func TestCmp(t *testing.T) {
 		test := Cmp(v.a, v.b)
 		if v.expected != test {
 			t.Errorf("Cmp() did not return the expected value for %s and %s (%d)."+
-				"\nexpected: %d\nreceived: %d", &v.a, &v.b, i, v.expected, test)
+				"\nexpected: %d\nreceived: %d", v.a, v.b, i, v.expected, test)
 		}
 	}
 }
