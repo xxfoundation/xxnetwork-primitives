@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"gitlab.com/xx_network/primitives/id"
 	"math"
+	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -31,6 +33,23 @@ func TestNewKnownRound(t *testing.T) {
 		t.Errorf("NewKnownRound() did not produce the expected KnownRounds."+
 			"\n\texpected: %v\n\treceived: %v",
 			expectedKR, testKR)
+	}
+}
+
+// Happy path.
+func TestNewFromParts(t *testing.T) {
+	expected := &KnownRounds{
+		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
+		firstUnchecked: 75,
+		lastChecked:    150,
+		fuPos:          75,
+	}
+
+	received := NewFromParts(expected.bitStream, expected.firstUnchecked, expected.lastChecked, expected.fuPos)
+
+	if !reflect.DeepEqual(expected, received) {
+		t.Errorf("NewFromParts() did not return the expected KnownRounds."+
+			"\nexpected: %v\nreceived: %v", expected, received)
 	}
 }
 
@@ -129,6 +148,95 @@ func TestKnownRounds_Unmarshal_JsonError(t *testing.T) {
 	err := newKR.Unmarshal([]byte("hello"))
 	if err == nil {
 		t.Error("Unmarshal() did not produce an error on invalid JSON data.")
+	}
+}
+
+// Happy path.
+func TestKnownRounds_OutputBuffChanges(t *testing.T) {
+	// Generate test round IDs and expected buffers
+	testData := []struct {
+		current KnownRounds
+		old     []uint64
+		changes KrChanges
+	}{
+		{
+			current: KnownRounds{uint64Buff{}, 75, 320, 75},
+			old:     []uint64{},
+			changes: KrChanges{},
+		},
+		{
+			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
+			changes: KrChanges{},
+		},
+		{
+			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
+			changes: KrChanges{},
+		},
+		{
+			current: KnownRounds{uint64Buff{1, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
+			changes: KrChanges{0: 1},
+		},
+		{
+			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{math.MaxUint64, 0, math.MaxUint64, 0, math.MaxUint64},
+			changes: KrChanges{0: 0, 1: math.MaxUint64, 2: 0, 3: math.MaxUint64, 4: 0},
+		},
+	}
+
+	for i, data := range testData {
+		changes, firstUnchecked, lastChecked, fuPos, err := data.current.OutputBuffChanges(data.old)
+		if err != nil {
+			t.Errorf("OutputBuffChanges() produced an error (%d): %+v", i, err)
+		}
+
+		if data.current.firstUnchecked != firstUnchecked {
+			t.Errorf("OutputBuffChanges() returned incorrect firstUnchecked (%d)."+
+				"\nexpected: %d\nreceived: %d", i, data.current.firstUnchecked, firstUnchecked)
+		}
+
+		if data.current.lastChecked != lastChecked {
+			t.Errorf("OutputBuffChanges() returned incorrect lastChecked (%d)."+
+				"\nexpected: %d\nreceived: %d", i, data.current.lastChecked, lastChecked)
+		}
+
+		if data.current.fuPos != fuPos {
+			t.Errorf("OutputBuffChanges() returned incorrect fuPos (%d)."+
+				"\nexpected: %d\nreceived: %d", i, data.current.fuPos, fuPos)
+		}
+
+		if !reflect.DeepEqual(data.changes, changes) {
+			t.Errorf("OutputBuffChanges() returned incorrect changes (%d)."+
+				"\nexpected: %v\nreceived: %v", i, data.changes, changes)
+		}
+	}
+}
+
+// Error path: buffers are not the same length.
+func TestKnownRounds_OutputBuffChanges_IncorrectLengthError(t *testing.T) {
+	// Generate test round IDs and expected buffers
+	testData := []struct {
+		current KnownRounds
+		old     []uint64
+	}{
+		{
+			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{0, math.MaxUint64, 0},
+		},
+		{
+			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0}, 75, 320, 75},
+			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
+		},
+	}
+
+	for i, data := range testData {
+		_, _, _, _, err := data.current.OutputBuffChanges(data.old)
+		if err == nil || !strings.Contains(err.Error(), "not the same as length of the current buffer") {
+			t.Errorf("OutputBuffChanges() did not produce an error when the "+
+				"buffers are the wrong lengths (%d): %+v", i, err)
+		}
 	}
 }
 
@@ -638,6 +746,62 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 //
 // 	kr.RangeUncheckedMasked(mask, roundCheck, 500)
 // }
+
+// Simulate saving and reading from the database by:
+// 1. make random edits to the KnownRounds
+// 2. save after each random edit (KnownRounds.OutputBuffChanges)
+// 3. reconstructs the KnownRounds from the saved data (NewFromParts)
+// 4. compare the original KnownRounds to the reconstructed KnownRounds
+func TestKnownRounds_Database_Simulation(t *testing.T) {
+	prng := rand.New(rand.NewSource(42))
+	n := 255
+
+	kr := &KnownRounds{
+		bitStream:      makeRandomUint64Slice(n, prng),
+		firstUnchecked: 5,
+		lastChecked:    id.Round(n * 64),
+		fuPos:          5,
+	}
+
+	saved := kr
+	var err error
+	var changes KrChanges
+
+	for i := 0; i < 100; i++ {
+		t.Logf("%d  %v", i, kr)
+		// Modify random round
+		kr.Check(id.Round(prng.Int63n(int64(kr.lastChecked))))
+		t.Logf("%d  %v", i, kr)
+
+		// Save changes
+		changes, saved.firstUnchecked, saved.lastChecked, saved.fuPos, err = kr.OutputBuffChanges(saved.bitStream)
+		if err != nil {
+			t.Errorf("Failed to output changed (%d): %+v", i, err)
+		}
+
+		// Apply changes to saved KnownRounds
+		for j, word := range changes {
+			saved.bitStream[j] = word
+		}
+
+		// Reconstructs the KnownRounds from the saved data
+		newKR := NewFromParts(saved.bitStream, saved.firstUnchecked, saved.lastChecked, saved.fuPos)
+
+		// Compare the original KnownRounds to the reconstructed KnownRounds
+		if !reflect.DeepEqual(kr, newKR) {
+			t.Errorf("Reconstructed KnownRounds does not match original."+
+				"\nexpected: %v\nreceived: %v", kr, newKR)
+		}
+	}
+}
+
+func makeRandomUint64Slice(n int, prng *rand.Rand) []uint64 {
+	uints := make([]uint64, n)
+	for i := range uints {
+		uints[i] = prng.Uint64()
+	}
+	return uints
+}
 
 func makeRange(min, max int) []id.Round {
 	a := make([]id.Round, max-min+1)

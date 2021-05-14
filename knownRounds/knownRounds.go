@@ -49,6 +49,17 @@ func NewKnownRound(roundCapacity int) *KnownRounds {
 	}
 }
 
+// NewFromParts creates a new KnownRounds from the given firstUnchecked,
+// lastChecked, fuPos, and uint64 buffer.
+func NewFromParts(buff []uint64, firstUnchecked, lastChecked id.Round, fuPos int) *KnownRounds {
+	return &KnownRounds{
+		bitStream:      buff,
+		firstUnchecked: firstUnchecked,
+		lastChecked:    lastChecked,
+		fuPos:          fuPos,
+	}
+}
+
 // Marshal returns the JSON encoding of DiskKnownRounds, which contains the
 // compressed information from KnownRounds. The bit stream is compressed such
 // that the firstUnchecked occurs in the first block of the bit stream.
@@ -120,6 +131,34 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	}
 
 	return nil
+}
+
+// KrChanges map contains a list of changes between two KnownRounds bit streams.
+// The key is the index of the changed word and the value contains the change.
+type KrChanges map[int]uint64
+
+// OutputBuffChanges returns the current KnownRounds' firstUnchecked,
+// lastChecked, fuPos, and a list of changes between the given uint64 buffer and
+// the current KnownRounds bit stream. An error is returned if the two buffers
+// are not of the same length.
+func (kr *KnownRounds) OutputBuffChanges(old []uint64) (KrChanges, id.Round, id.Round, int, error) {
+
+	// Return an error if they are not the same length
+	if len(old) != len(kr.bitStream) {
+		return nil, 0, 0, 0, errors.Errorf("length of old buffer %d is "+
+			"not the same as length of the current buffer %d",
+			len(old), len(kr.bitStream))
+	}
+
+	// Create list of changes
+	changes := make(KrChanges)
+	for i, word := range kr.bitStream {
+		if word != old[i] {
+			changes[i] = word
+		}
+	}
+
+	return changes, kr.firstUnchecked, kr.lastChecked, kr.fuPos, nil
 }
 
 func (kr KnownRounds) GetLastChecked() id.Round {
