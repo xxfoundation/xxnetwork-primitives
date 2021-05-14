@@ -17,8 +17,8 @@ import (
 	"testing"
 )
 
-// Tests that ID.Marshal() returns the correct marshaled byte slice of the ID
-// and that the returned data is a copy.
+// Tests that ID.Marshal returns the correct marshaled byte slice of the ID and
+// that the returned data is a copy.
 func TestID_Marshal(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
 	testID := NewIdFromBytes(expected, t)
@@ -26,35 +26,35 @@ func TestID_Marshal(t *testing.T) {
 	// Check for the correct values
 	idBytes := testID.Marshal()
 	if !bytes.Equal(expected, idBytes) {
-		t.Errorf("Marshal() returned unexpected bytes."+
+		t.Errorf("Marshal returned unexpected bytes."+
 			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
 	if &testID[0] == &idBytes[0] {
-		t.Errorf("Marshal() did not return a copy of the ID data."+
+		t.Errorf("Marshal did not return a copy of the ID data."+
 			"\nID pointer:    %+v\nbytes pointer: %+v", &testID[0], &idBytes[0])
 	}
 }
 
-// Tests that Unmarshal() creates a new ID with the expected data.
+// Tests that Unmarshal creates a new ID with the expected data.
 func TestUnmarshal(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
 
 	// Unmarshal the bytes into an ID
 	testID, err := Unmarshal(expected)
 	if err != nil {
-		t.Errorf("Unmarshal() produced an error: %+v", err)
+		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
 	// Make sure the ID contents are correct
 	if !bytes.Equal(expected, testID[:]) {
-		t.Errorf("Unmarshal() produced an ID with the incorrect bytes."+
+		t.Errorf("Unmarshal produced an ID with the incorrect bytes."+
 			"\nexpected: %v\nreceived: %v", expected, testID[:])
 	}
 }
 
-// Tests that Unmarshal() produces an error when the given data length is not
+// Tests that Unmarshal produces an error when the given data length is not
 // equal to the length of an ID.
 func TestUnmarshal_DataLengthError(t *testing.T) {
 	invalidIdBytes := rngBytes(ArrIDLen+10, 42, t)
@@ -63,7 +63,7 @@ func TestUnmarshal_DataLengthError(t *testing.T) {
 	// Unmarshal the bytes into an ID
 	_, err := Unmarshal(invalidIdBytes)
 	if err == nil || err.Error() != expectedErr {
-		t.Errorf("Unmarshal() did not product an expected error."+
+		t.Errorf("Unmarshal did not product an expected error."+
 			"\nexpected: %v\nreceived: %v", expectedErr, err)
 	}
 }
@@ -76,7 +76,7 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 
 	testID, err := Unmarshal(idBytes)
 	if err != nil {
-		t.Errorf("Unmarshal() produced an error: %+v", err)
+		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
 	if originalID != testID {
@@ -85,7 +85,7 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 	}
 }
 
-// Tests that ID.Bytes() returns the ID as a byte slice and the data is a copy.
+// Tests that ID.Bytes returns the ID as a byte slice and the data is a copy.
 func TestID_Bytes(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
 	testID := NewIdFromBytes(expected, t)
@@ -93,18 +93,18 @@ func TestID_Bytes(t *testing.T) {
 	// Check for the correct values
 	idBytes := testID.Bytes()
 	if !bytes.Equal(expected, idBytes) {
-		t.Errorf("Bytes() returned unexpected bytes."+
+		t.Errorf("Bytes returned unexpected bytes."+
 			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
 	if &testID[0] == &idBytes[0] {
-		t.Errorf("Bytes() did not return a copy of the ID data."+
+		t.Errorf("Bytes did not return a copy of the ID data."+
 			"\nID pointer:    %+v\nbytes pointer: %+v", &testID[0], &idBytes[0])
 	}
 }
 
-// Consistency test of ID.String().
+// Consistency test of ID.String.
 func TestID_String(t *testing.T) {
 	expectedIDs := []string{
 		"U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVLf",
@@ -123,13 +123,13 @@ func TestID_String(t *testing.T) {
 		testID := NewIdFromBytes(rngBytes(ArrIDLen, int64(i+42), t), t)
 
 		if testID.String() != expected {
-			t.Errorf("String() did not output the expected value for ID %d."+
+			t.Errorf("String did not output the expected value for ID %d."+
 				"\nexpected: %s\nreceived: %s", i, expected, testID.String())
 		}
 	}
 }
 
-// Tests that ID.GetType() returns the correct type for each ID type.
+// Tests that ID.GetType returns the correct type for each ID type.
 func TestID_GetType(t *testing.T) {
 	testTypes := []Type{Generic, Gateway, Node, User, NumTypes, 6}
 	var testIDs []ID
@@ -141,25 +141,52 @@ func TestID_GetType(t *testing.T) {
 
 	for i, testID := range testIDs {
 		if testTypes[i] != testID.GetType() {
-			t.Errorf("GetType() returned the incorrect type (%d)."+
+			t.Errorf("GetType returned the incorrect type (%d)."+
 				"\nexpected: %s\nreceived: %s", i, testTypes[i], testID.GetType())
 		}
 	}
 }
 
-// Tests that ID.SetType() sets the type of the ID correctly by checking if the
-// ID's type changed after calling SetType().
+// Tests that ID.SetType sets the type of the ID correctly by checking if the
+// ID's type changed after calling SetType.
 func TestID_SetType(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		testID := NewIdFromBytes(rngBytes(ArrIDLen, int64(i+42), t), t)
 		newTypeID := testID.SetType(testID.GetType() + 1)
 
 		if testID.GetType() == newTypeID.GetType() {
-			t.Errorf("SetType() failed to change the ID type."+
+			t.Errorf("SetType failed to change the ID type."+
 				"\noriginal ID type: %s\nnew ID type: %s",
 				testID.GetType(), newTypeID.GetType())
 		}
 	}
+}
+
+// Tests that ID.Cmp returns the expected comparisons.
+func TestID_Cmp(t *testing.T) {
+	idA := NewIdFromUInt(1, Generic, t)
+	idB := NewIdFromUInt(1, User, t)
+	idC := NewIdFromUInt(2, Generic, t)
+
+	testValues := []struct {
+		expected int
+		a, b     ID
+	}{
+		{-1, idA, idB},
+		{+1, idB, idA},
+		{-1, idB, idC},
+		{+1, idC, idB},
+		{+0, idA, idA},
+		{+0, ID{}, ID{}},
+	}
+
+	for i, v := range testValues {
+		if v.a.Cmp(v.b) != v.expected {
+			t.Errorf("Cmp failed to return the expected comparison (%d)."+
+				"\nexpected: %d\nreceived: %d", i, v.expected, v.a.Cmp(v.b))
+		}
+	}
+
 }
 
 // Tests that NewRandomID returns the expected IDs for a given PRNG.
@@ -181,11 +208,11 @@ func TestNewRandomID_Consistency(t *testing.T) {
 	for i, expected := range expectedIDs {
 		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
-			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
+			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
 		if testID.String() != expected {
-			t.Errorf("NewRandomID() did not generate the expected ID."+
+			t.Errorf("NewRandomID did not generate the expected ID."+
 				"\nexpected: %s\nreceived: %s", expected, testID)
 		}
 	}
@@ -199,11 +226,11 @@ func TestNewRandomID_Unique(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
-			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
+			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
 		if _, exists := ids[testID]; exists {
-			t.Errorf("NewRandomID() did not generate a unique ID (%d).\nID: %s",
+			t.Errorf("NewRandomID did not generate a unique ID (%d).\nID: %s",
 				i, testID)
 		} else {
 			ids[testID] = struct{}{}
@@ -216,18 +243,18 @@ func TestNewRandomID_Unique(t *testing.T) {
 func TestNewRandomID_ReaderError(t *testing.T) {
 	_, err := NewRandomID(strings.NewReader(""), Generic)
 	if err == nil {
-		t.Error("NewRandomID() failed to return an error when the reader " +
+		t.Error("NewRandomID failed to return an error when the reader " +
 			"failed.")
 	}
 }
 
-// Tests that NewIdFromBytes() creates a new ID with the correct contents.
+// Tests that NewIdFromBytes creates a new ID with the correct contents.
 func TestNewIdFromBytes(t *testing.T) {
 	expectedBytes := rngBytes(ArrIDLen, 42, t)
 	testID := NewIdFromBytes(expectedBytes, t)
 
 	if !bytes.Equal(expectedBytes, testID[:]) {
-		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
+		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
 			"\nexpected: %v\nreceived: %v", expectedBytes, testID[:])
 	}
 }
@@ -238,14 +265,14 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 
 	jsonData, err := json.Marshal(testID)
 	if err != nil {
-		t.Errorf("json.Marshal() returned an error: %+v", err)
+		t.Errorf("json.Marshal returned an error: %+v", err)
 	}
 	t.Logf("%s", jsonData)
 
 	newID := &ID{}
 	err = json.Unmarshal(jsonData, newID)
 	if err != nil {
-		t.Errorf("json.Unmarshal() returned an error: %+v", err)
+		t.Errorf("json.Unmarshal returned an error: %+v", err)
 	}
 
 	if testID != *newID {
@@ -260,7 +287,7 @@ func TestID_UnmarshalJSON_JsonUnmarshalError(t *testing.T) {
 	id := ID{}
 	err := id.UnmarshalJSON([]byte("invalid JSON"))
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
-		t.Errorf("UnmarshalJSON() failed to return the expected error for "+
+		t.Errorf("UnmarshalJSON failed to return the expected error for "+
 			"invalid JSON.\nexpected: %s\nreceived: %+v", expectedErr, err)
 	}
 }
@@ -272,17 +299,17 @@ func TestID_UnmarshalJSON_IdUnmarshalError(t *testing.T) {
 	err := id.UnmarshalJSON([]byte("\"\""))
 	t.Log(err)
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
-		t.Errorf("UnmarshalJSON() failed to return the expected error for "+
+		t.Errorf("UnmarshalJSON failed to return the expected error for "+
 			"invalid ID.\nexpected: %s\nreceived: %+v", expectedErr, err)
 	}
 }
 
-// Tests that NewIdFromBytes() panics when given a nil testing object.
+// Tests that NewIdFromBytes panics when given a nil testing object.
 func TestNewIdFromBytes_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromBytes() did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromBytes did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
@@ -290,8 +317,8 @@ func TestNewIdFromBytes_TestError(t *testing.T) {
 	_ = NewIdFromBytes(rngBytes(ArrIDLen, 42, t), nil)
 }
 
-// Tests that NewIdFromString() creates a new ID from string correctly. The new
-// ID is created from a string that is 32 bytes long so that no truncation or
+// Tests that NewIdFromString creates a new ID from string correctly. The new ID
+// is created from a string that is 32 bytes long so that no truncation or
 // padding is required. The test checks that the original string is still
 // present in the data.
 func TestNewIdFromString(t *testing.T) {
@@ -306,14 +333,14 @@ func TestNewIdFromString(t *testing.T) {
 
 	// Check if the new ID matches the expected ID
 	if expectedID != testID {
-		t.Errorf("NewIdFromString() produced an ID with the incorrect data."+
+		t.Errorf("NewIdFromString produced an ID with the incorrect data."+
 			"\nexpected: %v\nreceived: %v", expectedID[:], testID[:])
 	}
 
 	// Check if the original string is still in the first 32 bytes
 	newIdString := string(testID.Bytes()[:ArrIDLen-1])
 	if expectedIdString != newIdString {
-		t.Errorf("NewIdFromString() did not correctly convert the original "+
+		t.Errorf("NewIdFromString did not correctly convert the original "+
 			"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
 			"\nexpected bytes: %v\nreceived bytes: %v",
 			expectedIdString, newIdString,
@@ -321,12 +348,12 @@ func TestNewIdFromString(t *testing.T) {
 	}
 }
 
-// Tests that NewIdFromString() panics when given a nil testing object.
+// Tests that NewIdFromString panics when given a nil testing object.
 func TestNewIdFromString_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromString() did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromString did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
@@ -334,7 +361,7 @@ func TestNewIdFromString_TestError(t *testing.T) {
 	_ = NewIdFromString("test", Generic, nil)
 }
 
-// Tests that NewIdFromUInt() creates a new ID with the correct contents by
+// Tests that NewIdFromUInt creates a new ID with the correct contents by
 // converting the ID back into a uint and comparing it to the original.
 func TestNewIdFromUInt(t *testing.T) {
 	// Expected values
@@ -345,17 +372,17 @@ func TestNewIdFromUInt(t *testing.T) {
 	idUint := binary.BigEndian.Uint64(newID[:ArrIDLen-1])
 
 	if expectedUint != idUint {
-		t.Errorf("NewIdFromUInt() produced an ID from uint incorrectly."+
+		t.Errorf("NewIdFromUInt produced an ID from uint incorrectly."+
 			"\nexpected: %v\nreceived: %v", expectedUint, idUint)
 	}
 }
 
-// Tests that NewIdFromUInt() panics when given a nil testing object.
+// Tests that NewIdFromUInt panics when given a nil testing object.
 func TestNewIdFromUInt_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInt() did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromUInt did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
@@ -363,7 +390,7 @@ func TestNewIdFromUInt_TestError(t *testing.T) {
 	_ = NewIdFromUInt(rand.Uint64(), Generic, nil)
 }
 
-// Tests that NewIdFromUInts() creates a new ID with the correct contents by
+// Tests that NewIdFromUInts creates a new ID with the correct contents by
 // converting the ID back into a slice of uints and comparing it to the
 // original.
 func TestNewIdFromUInts(t *testing.T) {
@@ -379,17 +406,17 @@ func TestNewIdFromUInts(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
-		t.Errorf("NewIdFromUInts() produced an ID from uints incorrectly."+
+		t.Errorf("NewIdFromUInts produced an ID from uints incorrectly."+
 			"\nexpected: %#v\nreceived: %#v", expectedUints, idUints)
 	}
 }
 
-// Tests that NewIdFromUInts() panics when given a nil testing object.
+// Tests that NewIdFromUInts panics when given a nil testing object.
 func TestNewIdFromUInts_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInts() did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromUInts did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 

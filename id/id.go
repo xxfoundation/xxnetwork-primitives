@@ -12,6 +12,7 @@
 package id
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -30,10 +31,10 @@ const (
 const (
 	unmarshalLenErr   = "ID Unmarshal: length of data %d != %d expected"
 	readerErr         = "NewRandomID: failed to generate random bytes: %+v"
-	fromBytesTestErr  = "NewIdFromBytes() can only be used for testing."
-	fromStringTestErr = "NewIdFromString() can only be used for testing."
-	fromUintTestErr   = "NewIdFromUInt() can only be used for testing."
-	fromUintsTestErr  = "NewIdFromUInts() can only be used for testing."
+	fromBytesTestErr  = "NewIdFromBytes can only be used for testing."
+	fromStringTestErr = "NewIdFromString can only be used for testing."
+	fromUintTestErr   = "NewIdFromUInt can only be used for testing."
+	fromUintsTestErr  = "NewIdFromUInts can only be used for testing."
 )
 
 // ID is a fixed-length array containing data that services as an identifier for
@@ -56,8 +57,8 @@ func Unmarshal(buff []byte) (ID, error) {
 	return makeID(buff), nil
 }
 
-// Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
-// Marshal() and any changes made here will affect how Marshal() functions.
+// Bytes returns a copy of an ID as a byte slice. Note that Bytes is used by
+// Marshal and any changes made here will affect how Marshal functions.
 func (id ID) Bytes() []byte {
 	return id[:]
 }
@@ -78,6 +79,12 @@ func (id ID) SetType(t Type) ID {
 	newID := id
 	newID[ArrIDLen-1] = byte(t)
 	return newID
+}
+
+// Cmp returns an integer comparing two ID objects lexicographically.Return 0 if
+// id == x, -1 if id < x, and +1 if id > x.
+func (id ID) Cmp(x ID) int {
+	return bytes.Compare(id.Bytes(), x.Bytes())
 }
 
 // NewRandomID generates a random ID with the specified type.
@@ -119,7 +126,7 @@ func (id ID) MarshalJSON() ([]byte, error) {
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
-// to Unmarshal() but does not do any error checking. If the data is longer than
+// to Unmarshal but does not do any error checking. If the data is longer than
 // ArrIDLen, then it is truncated. If it is shorter, then the remaining bytes
 // are filled with zeroes. This function is for testing purposes only.
 func NewIdFromBytes(buff []byte, x interface{}) ID {
@@ -170,7 +177,7 @@ func NewIdFromUInt(idUInt uint64, t Type, x interface{}) ID {
 }
 
 // NewIdFromUInt converts the specified uint64 array into bytes and returns a
-// new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
+// new ID based off it with the specified ID type. Unlike NewIdFromUInt, the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
 func NewIdFromUInts(idUInts [4]uint64, t Type, x interface{}) ID {
