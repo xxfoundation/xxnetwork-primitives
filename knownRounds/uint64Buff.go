@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	ones   = math.MaxUint64
-	zeroes = 0
+	ones = math.MaxUint64
 )
 
 type uint64Buff []uint64
@@ -188,47 +187,318 @@ func getInvert(b bool) uint64 {
 	}
 }
 
-// TODO: fix licensing for code below. Code below is derived from github.com/tj/go-rle
+// Word sizes for each marshal/unmarshal function.
+const (
+	u8bLen  = 1
+	u16bLen = 2
+	u32bLen = 4
+	u64bLen = 8
+)
+
+// Map used to select correct unmarshal for the data version.
+var u64bUnmarshalVersions = map[uint8]func(b []byte) uint64Buff{
+	u8bLen:  unmarshal1Byte,
+	u16bLen: unmarshal2Bytes,
+	u32bLen: unmarshal4Bytes,
+	u64bLen: unmarshal8Bytes,
+}
 
 // marshal encodes the buffer into a byte slice and compresses the data using
 // run-length encoding on the integer level. For this implementation, run
 // lengths are only included after one or more consecutive integers of all 1s or
 // all 0s. All other data is kept in its original form.
 func (u64b uint64Buff) marshal() []byte {
-	size := len(u64b)
+	return append([]byte{u8bLen}, u64b.marshal1Byte()...)
+}
 
-	if size == 0 {
+// unmarshal decodes the run-length encoded buffer.
+func unmarshal(b []byte) uint64Buff {
+	return u64bUnmarshalVersions[b[0]](b[1:])
+}
+
+func (u64b uint64Buff) marshal1Byte() []byte {
+	if len(u64b) == 0 {
+		return nil
+	}
+
+	u8b := make([]uint8, 0, len(u64b)*8)
+	for _, u64 := range u64b {
+		u8b = append(u8b,
+			uint8(u64>>56),
+			uint8(u64>>48),
+			uint8(u64>>40),
+			uint8(u64>>32),
+			uint8(u64>>24),
+			uint8(u64>>16),
+			uint8(u64>>8),
+			uint8(u64),
+		)
+	}
+
+	var buf bytes.Buffer
+	var cur = u8b[0]
+	var run uint8
+	if cur == 0 || cur == 0xFF {
+		run = 1
+	}
+	for _, next := range u8b[1:] {
+		if cur != next || run == 0 {
+			buf.WriteByte(cur)
+			if run > 0 {
+				buf.WriteByte(run)
+				run = 0
+			}
+		}
+		if next == 0 || next == 0xFF {
+			run++
+		}
+		cur = next
+	}
+
+	buf.WriteByte(cur)
+	if run > 0 {
+		buf.WriteByte(run)
+	}
+
+	return buf.Bytes()
+}
+
+func unmarshal1Byte(b []byte) uint64Buff {
+	buf := bytes.NewBuffer(b)
+	var u8b []uint8
+
+	// Reach each uint out of the buffer
+	for num, err := buf.ReadByte(); err == nil; num, err = buf.ReadByte() {
+		if num == 0 || num == 0xFF {
+			run, err := buf.ReadByte()
+			if err != nil {
+				jww.FATAL.Panicf("Failed to read next byte: %+v", err)
+			}
+			runBuf := make([]uint8, run)
+			for i := range runBuf {
+				runBuf[i] = num
+			}
+			u8b = append(u8b, runBuf...)
+		} else {
+			u8b = append(u8b, num)
+		}
+	}
+
+	var u64b uint64Buff
+
+	for i := 0; i < len(u8b); i += 8 {
+		u8P0 := uint64(u8b[i]) << 56
+		u8P1 := uint64(u8b[i+1]) << 48
+		u8P2 := uint64(u8b[i+2]) << 40
+		u8P3 := uint64(u8b[i+3]) << 32
+		u8P4 := uint64(u8b[i+4]) << 24
+		u8P5 := uint64(u8b[i+5]) << 16
+		u8P6 := uint64(u8b[i+6]) << 8
+		u8P7 := uint64(u8b[i+7])
+
+		u64b = append(u64b, u8P0|u8P1|u8P2|u8P3|u8P4|u8P5|u8P6|u8P7)
+	}
+
+	return u64b
+}
+
+func (u64b uint64Buff) marshal2Bytes() []byte {
+	if len(u64b) == 0 {
+		return nil
+	}
+
+	u16b := make([]uint16, 0, len(u64b)*4)
+	for _, u64 := range u64b {
+		u16b = append(u16b,
+			uint16(u64>>48),
+			uint16(u64>>32),
+			uint16(u64>>16),
+			uint16(u64),
+		)
+	}
+
+	var buf bytes.Buffer
+	var cur = u16b[0]
+	var run uint16
+	if cur == 0 || cur == 0xFFFF {
+		run = 1
+	}
+	for _, next := range u16b[1:] {
+		if cur != next || run == 0 {
+			b := make([]byte, u16bLen)
+			binary.BigEndian.PutUint16(b, cur)
+			buf.Write(b)
+			if run > 0 {
+				b = make([]byte, u16bLen)
+				binary.BigEndian.PutUint16(b, run)
+				buf.Write(b)
+				run = 0
+			}
+		}
+		if next == 0 || next == 0xFFFF {
+			run++
+		}
+		cur = next
+	}
+
+	b := make([]byte, u16bLen)
+	binary.BigEndian.PutUint16(b, cur)
+	buf.Write(b)
+	if run > 0 {
+		b = make([]byte, u16bLen)
+		binary.BigEndian.PutUint16(b, run)
+		buf.Write(b)
+	}
+
+	return buf.Bytes()
+}
+
+func unmarshal2Bytes(b []byte) uint64Buff {
+	buf := bytes.NewBuffer(b)
+	var u16b []uint16
+
+	// Reach each uint out of the buffer
+	for bb := buf.Next(u16bLen); len(bb) == u16bLen; bb = buf.Next(u16bLen) {
+		num := binary.BigEndian.Uint16(bb)
+		if num == 0 || num == 0xFFFF {
+			run := binary.BigEndian.Uint16(buf.Next(u16bLen))
+			runBuf := make([]uint16, run)
+			for i := range runBuf {
+				runBuf[i] = num
+			}
+			u16b = append(u16b, runBuf...)
+		} else {
+			u16b = append(u16b, num)
+		}
+	}
+
+	var u64b uint64Buff
+
+	for i := 0; i < len(u16b); i += 4 {
+		u16P0 := uint64(u16b[i]) << 48
+		u16P1 := uint64(u16b[i+1]) << 32
+		u16P2 := uint64(u16b[i+2]) << 16
+		u16P3 := uint64(u16b[i+3])
+
+		u64b = append(u64b, u16P0|u16P1|u16P2|u16P3)
+	}
+
+	return u64b
+}
+
+func (u64b uint64Buff) marshal4Bytes() []byte {
+	if len(u64b) == 0 {
+		return nil
+	}
+
+	u32b := make([]uint32, 0, len(u64b)*2)
+	for _, u64 := range u64b {
+		u32b = append(u32b,
+			uint32(u64>>32),
+			uint32(u64),
+		)
+	}
+
+	var buf bytes.Buffer
+	var cur = u32b[0]
+	var run uint32
+	if cur == 0 || cur == 0xFFFFFFFF {
+		run = 1
+	}
+	for _, next := range u32b[1:] {
+		if cur != next || run == 0 {
+			b := make([]byte, u32bLen)
+			binary.BigEndian.PutUint32(b, cur)
+			buf.Write(b)
+			if run > 0 {
+				b = make([]byte, u32bLen)
+				binary.BigEndian.PutUint32(b, run)
+				buf.Write(b)
+				run = 0
+			}
+		}
+		if next == 0 || next == 0xFFFFFFFF {
+			run++
+		}
+		cur = next
+	}
+
+	b := make([]byte, u32bLen)
+	binary.BigEndian.PutUint32(b, cur)
+	buf.Write(b)
+	if run > 0 {
+		b = make([]byte, u32bLen)
+		binary.BigEndian.PutUint32(b, run)
+		buf.Write(b)
+	}
+
+	return buf.Bytes()
+}
+
+func unmarshal4Bytes(b []byte) uint64Buff {
+	buf := bytes.NewBuffer(b)
+	var u32b []uint32
+
+	// Reach each uint out of the buffer
+	for bb := buf.Next(u32bLen); len(bb) == u32bLen; bb = buf.Next(u32bLen) {
+		num := binary.BigEndian.Uint32(bb)
+		if num == 0 || num == 0xFFFFFFFF {
+			run := binary.BigEndian.Uint32(buf.Next(u32bLen))
+			runBuf := make([]uint32, run)
+			for i := range runBuf {
+				runBuf[i] = num
+			}
+			u32b = append(u32b, runBuf...)
+		} else {
+			u32b = append(u32b, num)
+		}
+	}
+
+	var u64b uint64Buff
+
+	for i := 0; i < len(u32b); i += 2 {
+		u16P0 := uint64(u32b[i]) << 32
+		u16P1 := uint64(u32b[i+1])
+
+		u64b = append(u64b, u16P0|u16P1)
+	}
+
+	return u64b
+}
+
+func (u64b uint64Buff) marshal8Bytes() []byte {
+	if len(u64b) == 0 {
 		return nil
 	}
 
 	var buf bytes.Buffer
 	var cur = u64b[0]
 	var run uint64
-	if cur == zeroes || cur == ones {
+	if cur == 0 || cur == ones {
 		run = 1
 	}
 	for _, next := range u64b[1:] {
 		if cur != next || run == 0 {
-			b := make([]byte, 8)
+			b := make([]byte, u64bLen)
 			binary.LittleEndian.PutUint64(b, cur)
 			buf.Write(b)
 			if run > 0 {
-				b = make([]byte, 8)
+				b = make([]byte, u64bLen)
 				binary.LittleEndian.PutUint64(b, run)
 				buf.Write(b)
 				run = 0
 			}
 		}
-		if next == zeroes || next == ones {
+		if next == 0 || next == ones {
 			run++
 		}
 		cur = next
 	}
-	b := make([]byte, 8)
+	b := make([]byte, u64bLen)
 	binary.LittleEndian.PutUint64(b, cur)
 	buf.Write(b)
 	if run > 0 {
-		b = make([]byte, 8)
+		b = make([]byte, u64bLen)
 		binary.LittleEndian.PutUint64(b, run)
 		buf.Write(b)
 	}
@@ -236,15 +506,14 @@ func (u64b uint64Buff) marshal() []byte {
 	return buf.Bytes()
 }
 
-// unmarshal decodes the run-length encoded buffer.
-func unmarshal(b []byte) uint64Buff {
+func unmarshal8Bytes(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	buff := uint64Buff{}
 	// Reach each uint out of the buffer
-	for bb := buf.Next(8); len(bb) == 8; bb = buf.Next(8) {
+	for bb := buf.Next(u64bLen); len(bb) == u64bLen; bb = buf.Next(u64bLen) {
 		num := binary.LittleEndian.Uint64(bb)
-		if num == zeroes || num == ones {
-			run := binary.LittleEndian.Uint64(buf.Next(8))
+		if num == 0 || num == ones {
+			run := binary.LittleEndian.Uint64(buf.Next(u64bLen))
 			runBuf := make(uint64Buff, run)
 			for i := range runBuf {
 				runBuf[i] = num
