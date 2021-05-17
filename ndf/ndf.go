@@ -58,6 +58,7 @@ type Node struct {
 type Registration struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	EllipticPubKey string
 }
 
 // Notification contains the connection information for the notification bot.
