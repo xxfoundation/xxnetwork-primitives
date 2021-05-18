@@ -25,7 +25,8 @@ func (fp Fingerprint) Bytes() []byte {
 	return fp[:]
 }
 
-// String returns the fingerprint as a base 64 encoded string.
+// String returns the fingerprint as a base 64 encoded string. This functions
+// satisfies the fmt.Stringer interface.
 func (fp Fingerprint) String() string {
 	return base64.StdEncoding.EncodeToString(fp.Bytes())
 }

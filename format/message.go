@@ -9,7 +9,10 @@ package format
 import (
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/binary"
+	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
+	"strconv"
 )
 
 const (
@@ -298,4 +301,33 @@ func copyByteSlice(s []byte) []byte {
 	c := make([]byte, len(s))
 	copy(c, s)
 	return c
+}
+
+// GoString returns the Message key fingerprint, MAC, ephemeral recipient ID,
+// identity fingerprint, and contents as a string. This functions satisfies the
+// fmt.GoStringer interface.
+func (m Message) GoString() string {
+	mac := "<nil>"
+	if len(m.mac) > 0 {
+		mac = base64.StdEncoding.EncodeToString(m.GetMac())
+	}
+	keyFP := "<nil>"
+	if len(m.keyFP) > 0 {
+		keyFP = m.GetKeyFP().String()
+	}
+	ephID := "<nil>"
+	if len(m.ephemeralRID) > 0 {
+		ephID = strconv.FormatUint(binary.BigEndian.Uint64(m.GetEphemeralRID()), 10)
+	}
+	identityFP := "<nil>"
+	if len(m.identityFP) > 0 {
+		identityFP = base64.StdEncoding.EncodeToString(m.GetIdentityFP())
+	}
+
+	return "format.Message{" +
+		"keyFP:" + keyFP +
+		", MAC:" + mac +
+		", ephemeralRID:" + ephID +
+		", identityFP:" + identityFP +
+		", contents:" + fmt.Sprintf("%q", m.GetContents()) + "}"
 }

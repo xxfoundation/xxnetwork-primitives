@@ -10,7 +10,8 @@
 package knownRounds
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/binary"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
@@ -51,18 +52,11 @@ func NewKnownRound(roundCapacity int) *KnownRounds {
 // Marshal returns the JSON encoding of DiskKnownRounds, which contains the
 // compressed information from KnownRounds. The bit stream is compressed such
 // that the firstUnchecked occurs in the first block of the bit stream.
-func (kr *KnownRounds) Marshal() ([]byte, error) {
+func (kr *KnownRounds) Marshal() []byte {
 	// Calculate length of compressed bit stream.
 	startPos := kr.getBitStreamPos(kr.firstUnchecked)
 	endPos := kr.getBitStreamPos(kr.lastChecked)
 	length := kr.bitStream.delta(startPos, endPos)
-
-	// Generate DiskKnownRounds with bit stream of the correct size
-	dkr := DiskKnownRounds{
-		BitStream:      []byte{},
-		FirstUnchecked: uint64(kr.firstUnchecked),
-		LastChecked:    uint64(kr.lastChecked),
-	}
 
 	// Copy only the blocks between firstUnchecked and lastChecked to the stream
 	startBlock, _ := kr.bitStream.convertLoc(startPos)
@@ -71,23 +65,42 @@ func (kr *KnownRounds) Marshal() ([]byte, error) {
 		bitStream[i] = kr.bitStream[(i+startBlock)%len(kr.bitStream)]
 	}
 
-	dkr.BitStream = bitStream.marshal()
+	// Create new buffer
+	buf := bytes.Buffer{}
 
-	return json.Marshal(dkr)
+	// Add firstUnchecked to buffer
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(kr.firstUnchecked))
+	buf.Write(b)
+
+	// Add lastChecked to buffer
+	b = make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(kr.lastChecked))
+	buf.Write(b)
+
+	// Add marshaled bitStream to buffer
+	buf.Write(bitStream.marshal())
+
+	return buf.Bytes()
 }
 
 // Unmarshal parses the JSON-encoded data and stores it in the KnownRounds. An
 // error is returned if the bit stream data is larger than the KnownRounds bit
 // stream.
 func (kr *KnownRounds) Unmarshal(data []byte) error {
-	// Unmarshal JSON data
-	dkr := &DiskKnownRounds{}
-	err := json.Unmarshal(data, dkr)
-	if err != nil {
-		return err
+	buf := bytes.NewBuffer(data)
+
+	if buf.Len() < 16 {
+		return errors.Errorf("KnownRounds Unmarshal: size of data %d < %d expected", buf.Len(), 16)
 	}
 
-	bitStream := unmarshal(dkr.BitStream)
+	// Get firstUnchecked and lastChecked and calculate fuPos
+	kr.firstUnchecked = id.Round(binary.LittleEndian.Uint64(buf.Next(8)))
+	kr.lastChecked = id.Round(binary.LittleEndian.Uint64(buf.Next(8)))
+	kr.fuPos = int(kr.firstUnchecked % 64)
+
+	// Unmarshal the bitStream from the rest of the bytes
+	bitStream := unmarshal(buf.Bytes())
 
 	// Handle the copying in of the bit stream
 	if len(kr.bitStream) == 0 {
@@ -105,12 +118,6 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 			"for passed in bit stream of size %d.",
 			len(kr.bitStream), len(bitStream))
 	}
-
-	// Copy values over
-	copy(kr.bitStream, bitStream)
-	kr.firstUnchecked = id.Round(dkr.FirstUnchecked)
-	kr.lastChecked = id.Round(dkr.LastChecked)
-	kr.fuPos = int(dkr.FirstUnchecked % 64)
 
 	return nil
 }
@@ -145,18 +152,21 @@ func (kr *KnownRounds) Check(rid id.Round) {
 	kr.check(rid)
 }
 
+func (kr *KnownRounds) ForceCheck(rid id.Round) {
+	if rid < kr.firstUnchecked {
+		return
+	} else if kr.lastChecked < rid && int(rid-kr.firstUnchecked) > (len(kr.bitStream)*64) {
+		kr.Forward(rid - id.Round(len(kr.bitStream)*64))
+	}
+
+	kr.check(rid)
+}
+
 // Check denotes a round has been checked. If the passed in round occurred after
 // the last checked round, then every round between them is set as unchecked and
 // the passed in round becomes the last checked round. Will shift the buffer
 // forward, erasing old data, if the buffer is not large enough to hold the new
 // checked input
-func (kr *KnownRounds) ForceCheck(rid id.Round) {
-	if abs(int(kr.lastChecked-rid))/(len(kr.bitStream)*64) > 0 {
-		kr.Forward(rid - id.Round(len(kr.bitStream)*64))
-	}
-	kr.check(rid)
-}
-
 func (kr *KnownRounds) check(rid id.Round) {
 	if rid < kr.firstUnchecked {
 		return
@@ -207,8 +217,7 @@ func abs(n int) int {
 // migrateFirstUnchecked moves firstUnchecked to the next unchecked round or
 // sets it to lastUnchecked if all rounds are checked.
 func (kr *KnownRounds) migrateFirstUnchecked(rid id.Round) {
-	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) &&
-		rid < kr.lastChecked; rid++ {
+	for ; kr.bitStream.get(kr.getBitStreamPos(rid)) && rid <= kr.lastChecked; rid++ {
 	}
 	kr.fuPos = kr.getBitStreamPos(rid)
 	kr.firstUnchecked = rid
@@ -220,7 +229,7 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 		kr.firstUnchecked = rid
 		kr.lastChecked = rid
 		kr.fuPos = int(rid % 64)
-	} else if rid >= kr.firstUnchecked {
+	} else if rid > kr.firstUnchecked {
 		kr.migrateFirstUnchecked(rid)
 	}
 }
