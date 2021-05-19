@@ -217,7 +217,13 @@ func unmarshal(b []byte) (uint64Buff, error) {
 		return nil, errors.Errorf("marshaled bytes length %d smaller than "+
 			"minimum %d", len(b), 2)
 	}
-	return u64bUnmarshalVersions[b[0]](b[1:]), nil
+
+	unmarshal, exists := u64bUnmarshalVersions[b[0]]
+	if !exists {
+		return nil, errors.Errorf("encoding version %d unrecognized", b[0])
+	}
+
+	return unmarshal(b[1:]), nil
 }
 
 func (u64b uint64Buff) marshal1Byte() []byte {
