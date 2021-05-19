@@ -195,38 +195,56 @@ const (
 	u64bLen = 8
 )
 
+// Current encoding version written to the marshaled buffer. Increment this on
+// changes.
+const currentVersion = 2
+
 // Map used to select correct unmarshal for the data version.
-var u64bUnmarshalVersions = map[uint8]func(b []byte) uint64Buff{
-	u8bLen:  unmarshal1Byte,
-	u16bLen: unmarshal2Bytes,
-	u32bLen: unmarshal4Bytes,
-	u64bLen: unmarshal8Bytes,
+var u64bUnmarshalVersion = map[uint8]map[uint8]func(b []byte) uint64Buff{
+	currentVersion: {
+		u8bLen:  unmarshal1ByteVer2,
+		u16bLen: unmarshal2BytesVer2,
+		u32bLen: unmarshal4BytesVer2,
+		u64bLen: unmarshal8BytesVer2,
+	},
 }
 
 // marshal encodes the buffer into a byte slice and compresses the data using
 // run-length encoding on the integer level. For this implementation, run
-// lengths are only included after one or more consecutive integers of all 1s or
+// lengths are only included after one or more consecutive words of all 1s or
 // all 0s. All other data is kept in its original form.
+//
+// The data is encoded along with the word size used and the version in the
+// following structure:
+// +---------+-----------+----------+
+// | version | word size |   data   |
+// | 1 byte  |  1 byte   | variable |
+// +---------+-----------+----------+
 func (u64b uint64Buff) marshal() []byte {
-	return append([]byte{u8bLen}, u64b.marshal1Byte()...)
+	return append([]byte{currentVersion, u8bLen}, u64b.marshal1ByteVer2()...)
 }
 
 // unmarshal decodes the run-length encoded buffer.
 func unmarshal(b []byte) (uint64Buff, error) {
-	if len(b) < 3 {
+	if len(b) < 4 {
 		return nil, errors.Errorf("marshaled bytes length %d smaller than "+
-			"minimum %d", len(b), 2)
+			"minimum %d", len(b), 3)
 	}
 
-	unmarshal, exists := u64bUnmarshalVersions[b[0]]
+	unmarshalWordMap, exists := u64bUnmarshalVersion[b[0]]
 	if !exists {
 		return nil, errors.Errorf("encoding version %d unrecognized", b[0])
 	}
 
-	return unmarshal(b[1:]), nil
+	unmarshal, exists := unmarshalWordMap[b[1]]
+	if !exists {
+		return nil, errors.Errorf("encoding word size %d unrecognized", b[1])
+	}
+
+	return unmarshal(b[2:]), nil
 }
 
-func (u64b uint64Buff) marshal1Byte() []byte {
+func (u64b uint64Buff) marshal1ByteVer2() []byte {
 	if len(u64b) == 0 {
 		return nil
 	}
@@ -273,7 +291,7 @@ func (u64b uint64Buff) marshal1Byte() []byte {
 	return buf.Bytes()
 }
 
-func unmarshal1Byte(b []byte) uint64Buff {
+func unmarshal1ByteVer2(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	var u8b []uint8
 
@@ -312,7 +330,7 @@ func unmarshal1Byte(b []byte) uint64Buff {
 	return u64b
 }
 
-func (u64b uint64Buff) marshal2Bytes() []byte {
+func (u64b uint64Buff) marshal2BytesVer2() []byte {
 	if len(u64b) == 0 {
 		return nil
 	}
@@ -363,7 +381,7 @@ func (u64b uint64Buff) marshal2Bytes() []byte {
 	return buf.Bytes()
 }
 
-func unmarshal2Bytes(b []byte) uint64Buff {
+func unmarshal2BytesVer2(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	var u16b []uint16
 
@@ -396,7 +414,7 @@ func unmarshal2Bytes(b []byte) uint64Buff {
 	return u64b
 }
 
-func (u64b uint64Buff) marshal4Bytes() []byte {
+func (u64b uint64Buff) marshal4BytesVer2() []byte {
 	if len(u64b) == 0 {
 		return nil
 	}
@@ -445,7 +463,7 @@ func (u64b uint64Buff) marshal4Bytes() []byte {
 	return buf.Bytes()
 }
 
-func unmarshal4Bytes(b []byte) uint64Buff {
+func unmarshal4BytesVer2(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	var u32b []uint32
 
@@ -476,7 +494,7 @@ func unmarshal4Bytes(b []byte) uint64Buff {
 	return u64b
 }
 
-func (u64b uint64Buff) marshal8Bytes() []byte {
+func (u64b uint64Buff) marshal8BytesVer2() []byte {
 	if len(u64b) == 0 {
 		return nil
 	}
@@ -516,7 +534,7 @@ func (u64b uint64Buff) marshal8Bytes() []byte {
 	return buf.Bytes()
 }
 
-func unmarshal8Bytes(b []byte) uint64Buff {
+func unmarshal8BytesVer2(b []byte) uint64Buff {
 	buf := bytes.NewBuffer(b)
 	buff := uint64Buff{}
 	// Reach each uint out of the buffer

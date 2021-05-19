@@ -85,8 +85,8 @@ func TestKnownRounds_Marshal(t *testing.T) {
 		fuPos:          75,
 	}
 
-	expectedData := []byte{75, 0, 0, 0, 0, 0, 0, 0, 150, 0, 0, 0, 0, 0, 0, 0, 1,
-		255, 8, 0, 8}
+	expectedData := []byte{75, 0, 0, 0, 0, 0, 0, 0, 150, 0, 0, 0, 0, 0, 0, 0, 2,
+		1, 255, 8, 0, 8}
 
 	data := testKR.Marshal()
 
