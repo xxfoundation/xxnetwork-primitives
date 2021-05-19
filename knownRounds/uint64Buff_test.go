@@ -349,7 +349,10 @@ func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 	for i, data := range testData {
 
 		buff := data.marshal()
-		u64b := unmarshal(buff)
+		u64b, err := unmarshal(buff)
+		if err != nil {
+			t.Errorf("unmarshal produced an error: %+v", err)
+		}
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 1 byte buffer (%d)."+
 				"\n\texpected: %X\n\treceived: %X", i, data, u64b)

@@ -10,6 +10,7 @@ package knownRounds
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"math"
 )
@@ -109,7 +110,6 @@ func (u64b uint64Buff) copy(start, end int) uint64Buff {
 //   https://en.wikipedia.org/wiki/Material_conditional
 func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 	if len(u64b) != len(mask) {
-		jww.FATAL.Printf("REPORT THIS ERROR TO JONO ↓")
 		jww.FATAL.Panicf("Cannot imply two buffers of different lengths "+
 			"(%v and %v).\nu64b: %064b\nmask: %064b", len(u64b), len(mask), u64b, mask)
 	}
@@ -212,8 +212,12 @@ func (u64b uint64Buff) marshal() []byte {
 }
 
 // unmarshal decodes the run-length encoded buffer.
-func unmarshal(b []byte) uint64Buff {
-	return u64bUnmarshalVersions[b[0]](b[1:])
+func unmarshal(b []byte) (uint64Buff, error) {
+	if len(b) < 3 {
+		return nil, errors.Errorf("marshaled bytes length %d smaller than "+
+			"minimum %d", len(b), 2)
+	}
+	return u64bUnmarshalVersions[b[0]](b[1:]), nil
 }
 
 func (u64b uint64Buff) marshal1Byte() []byte {

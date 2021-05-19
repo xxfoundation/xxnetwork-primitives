@@ -111,7 +111,10 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	kr.fuPos = int(kr.firstUnchecked % 64)
 
 	// Unmarshal the bitStream from the rest of the bytes
-	bitStream := unmarshal(buf.Bytes())
+	bitStream, err := unmarshal(buf.Bytes())
+	if err != nil {
+		return errors.Errorf("Failed to unmarshal bitstream: %+v", err)
+	}
 
 	// Handle the copying in of the bit stream
 	if len(kr.bitStream) == 0 {
