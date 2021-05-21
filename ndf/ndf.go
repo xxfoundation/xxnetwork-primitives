@@ -156,6 +156,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert Registration to byte slice
 	b = append(b, []byte(ndf.Registration.Address)...)
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
+	b = append(b, []byte(ndf.Registration.EllipticPubKey)...)
 
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
