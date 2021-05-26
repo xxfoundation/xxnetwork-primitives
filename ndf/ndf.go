@@ -144,12 +144,11 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 
 	// Copy UD
 	newNDF.UDB = UDB{
-		ID:       make([]byte, len(ndf.UDB.ID)),
+		ID:       ndf.UDB.ID,
 		Cert:     ndf.UDB.Cert,
 		Address:  ndf.UDB.Address,
 		DhPubKey: make([]byte, len(ndf.UDB.DhPubKey)),
 	}
-	copy(newNDF.UDB.ID, ndf.UDB.ID)
 	copy(newNDF.UDB.DhPubKey, ndf.UDB.DhPubKey)
 
 	// Copy E2E group
