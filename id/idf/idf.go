@@ -11,7 +11,6 @@
 package idf
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
@@ -25,12 +24,11 @@ const saltLen = 32
 // ID and ID type are saved as strings to make the file easy to read; they are
 // never used or processed.
 type IdFile struct {
-	ID      string            `json:"id"`
-	Type    string            `json:"type"`
-	Salt    [saltLen]byte     `json:"salt"`
-	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
-	//Hex encoded nodeID without 33rd type byte
-	HexNodeID string          `json:"hex_node_id"`
+	ID        string            `json:"id"`
+	Type      string            `json:"type"`
+	Salt      [saltLen]byte     `json:"salt"`
+	IdBytes   [id.ArrIDLen]byte `json:"idBytes"`
+	HexNodeID string            `json:"hex_node_id"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -121,7 +119,7 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 	newIDF.ID = genID.String()
 
 	// Set the hex node ID
-	newIDF.HexNodeID = hex.EncodeToString(genID.Bytes()[:32])
+	newIDF.HexNodeID = genID.HexEncode()
 
 	return newIDF, nil
 }

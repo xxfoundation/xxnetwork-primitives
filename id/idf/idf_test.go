@@ -31,10 +31,10 @@ var randomSaltBytes = [saltLen]byte{133, 90, 216, 104, 29, 13, 134, 209, 233,
 var randomType = "node"
 var randomHexNodeId = "52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649"
 var randomIDF = IdFile{
-	ID:      "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
-	Type:    randomType,
-	IdBytes: randomIDBytes,
-	Salt:    randomSaltBytes,
+	ID:        "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
+	Type:      randomType,
+	IdBytes:   randomIDBytes,
+	Salt:      randomSaltBytes,
 	HexNodeID: randomHexNodeId,
 }
 
