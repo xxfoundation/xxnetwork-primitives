@@ -16,11 +16,12 @@ import (
 )
 
 // Random test values
-var randomIdfJson = "{\"id\":\"Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC\"," +
-	"\"type\":\"node\",\"salt\":[133,90,216,104,29,13,134,209,233,30,0,22," +
-	"121,57,203,102,148,210,196,34,172,210,8,160,7,41,57,72,127,105,153,235]," +
-	"\"idBytes\":[82,253,252,7,33,130,101,79,22,63,95,15,154,98,29,114,149," +
-	"102,199,77,16,3,124,77,123,187,4,7,209,226,198,73,2]}"
+var randomIdfJson = "{\"id\":\"Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC\",\"" +
+	"type\":\"" +
+	"node\",\"" +
+	"salt\":[133,90,216,104,29,13,134,209,233,30,0,22,121,57,203,102,148,210,196,34,172,210,8,160,7,41,57,72,127,105,153,235],\"" +
+	"idBytes\":[82,253,252,7,33,130,101,79,22,63,95,15,154,98,29,114,149,102,199,77,16,3,124,77,123,187,4,7,209,226,198,73,2],\"" +
+	"hex_node_id\":\"52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649\"}"
 var randomIDBytes = [id.ArrIDLen]byte{82, 253, 252, 7, 33, 130, 101, 79, 22,
 	63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123, 187,
 	4, 7, 209, 226, 198, 73, 2}
@@ -28,11 +29,13 @@ var randomSaltBytes = [saltLen]byte{133, 90, 216, 104, 29, 13, 134, 209, 233,
 	30, 0, 22, 121, 57, 203, 102, 148, 210, 196, 34, 172, 210, 8, 160, 7, 41,
 	57, 72, 127, 105, 153, 235}
 var randomType = "node"
+var randomHexNodeId = "52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649"
 var randomIDF = IdFile{
 	ID:      "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
 	Type:    randomType,
 	IdBytes: randomIDBytes,
 	Salt:    randomSaltBytes,
+	HexNodeID: randomHexNodeId,
 }
 
 // Tests that newIdfFromJSON() creates the correct IdFile object form the given
@@ -345,6 +348,8 @@ func TestLoadIDF(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error reading test IDF file %#v:\n%v", filePath, err)
 	}
+
+	t.Logf("received: %s", string(testIdfJSON))
 
 	// Check if returned IDF JSON is correct
 	if !bytes.Equal(expectedIdfJSON, testIdfJSON) {
