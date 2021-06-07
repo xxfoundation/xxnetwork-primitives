@@ -11,6 +11,7 @@
 package idf
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
@@ -73,7 +74,7 @@ func newIdfFromJSON(jsonBytes []byte) (*IdFile, error) {
 	return idf, nil
 }
 
-// MarshalIdfToJSON creates an IdFile object with the provided values and
+// LoadIDF creates an IdFile object with the provided values and
 // marshals it into JSON bytes ready to be written to a file.
 func LoadIDF(filePath string, salt []byte, genID *id.ID) error {
 	// Generate new IdFile object
@@ -118,6 +119,9 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 
 	// Set the ID string
 	newIDF.ID = genID.String()
+
+	// Set the hex node ID
+	newIDF.HexNodeID = hex.EncodeToString(genID.Bytes()[:32])
 
 	return newIDF, nil
 }
