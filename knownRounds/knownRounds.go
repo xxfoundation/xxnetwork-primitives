@@ -164,9 +164,14 @@ func (kr *KnownRounds) OutputBuffChanges(old []uint64) (KrChanges, id.Round, id.
 	return changes, kr.firstUnchecked, kr.lastChecked, kr.fuPos, nil
 }
 
-func (kr KnownRounds) GetLastChecked() id.Round {
-	return kr.lastChecked
-}
+func (kr KnownRounds) GetFirstUnchecked() id.Round   { return kr.firstUnchecked }
+func (kr KnownRounds) GetLastChecked() id.Round      { return kr.lastChecked }
+func (kr KnownRounds) GetFuPos() int                 { return kr.fuPos }
+func (kr KnownRounds) GetBitStream() []uint64        { return kr.bitStream.deepCopy() }
+func (kr KnownRounds) MarshalBitStream1Byte() []byte { return kr.bitStream.marshal1ByteVer2() }
+func (kr KnownRounds) MarshalBitStream2Byte() []byte { return kr.bitStream.marshal2BytesVer2() }
+func (kr KnownRounds) MarshalBitStream4Byte() []byte { return kr.bitStream.marshal4BytesVer2() }
+func (kr KnownRounds) MarshalBitStream8Byte() []byte { return kr.bitStream.marshal8BytesVer2() }
 
 // Checked determines if the round has been checked.
 func (kr *KnownRounds) Checked(rid id.Round) bool {

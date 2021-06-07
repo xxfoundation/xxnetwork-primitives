@@ -322,6 +322,24 @@ func Test_bitMaskRange(t *testing.T) {
 	}
 }
 
+// Tests that uint64Buff.deepCopy returns a copy of the values and not the
+// reference.
+func Test_uint64Buff_deepCopy(t *testing.T) {
+	u64b := uint64Buff{0, 1, 2, 3, 4, 5, 6, 7}
+
+	u64bCopy := u64b.deepCopy()
+
+	if !reflect.DeepEqual(u64b, u64bCopy) {
+		t.Errorf("deepCopy did not return a copy of the value."+
+			"\nexpected: %v\nreceived: %v", u64b, u64bCopy)
+	}
+
+	if &u64b[0] == &u64bCopy[0] {
+		t.Errorf("deepCopy returned a copy of the reference."+
+			"\nexpected: %v\nreceived: %v", &u64b[0], &u64bCopy[0])
+	}
+}
+
 // Happy path.
 func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 	testData := []uint64Buff{
