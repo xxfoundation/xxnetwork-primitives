@@ -19,6 +19,7 @@ const (
 	Gateway
 	Node
 	User
+	Group
 	NumTypes // Gives number of ID types
 )
 
@@ -36,6 +37,8 @@ func (t Type) String() string {
 		return "node"
 	case User:
 		return "user"
+	case Group:
+		return "group"
 	case NumTypes:
 		return strconv.Itoa(int(NumTypes))
 	default:

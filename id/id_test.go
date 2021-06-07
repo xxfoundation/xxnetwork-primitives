@@ -131,7 +131,7 @@ func TestID_String(t *testing.T) {
 
 // Tests that ID.GetType returns the correct type for each ID type.
 func TestID_GetType(t *testing.T) {
-	testTypes := []Type{Generic, Gateway, Node, User, NumTypes, 6}
+	testTypes := []Type{Generic, Gateway, Node, User, Group, NumTypes, 7}
 	var testIDs []ID
 	for i, idType := range testTypes {
 		idDataBytes := rngBytes(dataLen, int64(i+42), t)
@@ -193,16 +193,16 @@ func TestID_Cmp(t *testing.T) {
 func TestNewRandomID_Consistency(t *testing.T) {
 	prng := rand.New(rand.NewSource(42))
 	expectedIDs := []string{
-		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsB",
-		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8B",
-		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4D",
-		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQD",
-		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcID",
-		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOMD",
-		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kC",
-		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4D",
-		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoC",
-		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIB",
+		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsA",
+		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8C",
+		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4A",
+		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQA",
+		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcIA",
+		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOME",
+		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kD",
+		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4A",
+		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoE",
+		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIE",
 	}
 
 	for i, expected := range expectedIDs {

@@ -18,7 +18,8 @@ func TestType_String(t *testing.T) {
 		Gateway:  "gateway",
 		Node:     "node",
 		User:     "user",
-		NumTypes: "4",
+		Group:    "group",
+		NumTypes: "5",
 	}
 
 	for idType, expected := range testValues {
@@ -32,7 +33,7 @@ func TestType_String(t *testing.T) {
 // Tests that Type.String returns an error when given a Type that has not been
 // defined.
 func TestType_String_Error(t *testing.T) {
-	testType := Type(5)
+	testType := Type(6)
 	expectedError := fmt.Sprintf("%s%d", noIDTypeErr, testType)
 
 	// Test stringer error
