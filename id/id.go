@@ -65,7 +65,7 @@ func (id *ID) Bytes() []byte {
 
 // HexEncode encodes the Id without 33rd type byte
 func (id *ID) HexEncode() string {
-	return hex.EncodeToString(id.Bytes()[:32])
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }
 
 // Cmp determines whether two IDs are equal. Returns true if they are equal and
