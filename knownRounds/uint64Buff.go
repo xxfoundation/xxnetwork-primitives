@@ -171,6 +171,13 @@ func (u64b uint64Buff) delta(start, end int) int {
 	}
 }
 
+// deepCopy returns a copy of the buffer.
+func (u64b uint64Buff) deepCopy() uint64Buff {
+	buff := make(uint64Buff, len(u64b))
+	copy(buff, u64b)
+	return buff
+}
+
 // bitMaskRange generates a bit mask that targets the bits in the provided
 // range. The resulting value has 0s in that range and 1s everywhere else.
 func bitMaskRange(start, end int) uint64 {

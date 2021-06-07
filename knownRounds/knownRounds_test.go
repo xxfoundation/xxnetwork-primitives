@@ -239,6 +239,66 @@ func TestKnownRounds_OutputBuffChanges_IncorrectLengthError(t *testing.T) {
 	}
 }
 
+// Tests that KnownRounds.GetFirstUnchecked returns the expected value.
+func TestKnownRounds_GetFirstUnchecked(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{0, 1, 2, 3, 4, 5, 6, 7},
+		firstUnchecked: 65,
+		lastChecked:    556,
+		fuPos:          1,
+	}
+
+	if kr.firstUnchecked != kr.GetFirstUnchecked() {
+		t.Errorf("GetFirstUnchecked did not return the expected value."+
+			"\nexpected: %d\nreceived: %d", kr.firstUnchecked, kr.GetFirstUnchecked())
+	}
+}
+
+// Tests that KnownRounds.GetLastChecked returns the expected value.
+func TestKnownRounds_GetLastChecked(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{0, 1, 2, 3, 4, 5, 6, 7},
+		firstUnchecked: 65,
+		lastChecked:    556,
+		fuPos:          1,
+	}
+
+	if kr.lastChecked != kr.GetLastChecked() {
+		t.Errorf("GetLastChecked did not return the expected value."+
+			"\nexpected: %d\nreceived: %d", kr.lastChecked, kr.GetLastChecked())
+	}
+}
+
+// Tests that KnownRounds.GetFuPos returns the expected value.
+func TestKnownRounds_GetFuPos(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{0, 1, 2, 3, 4, 5, 6, 7},
+		firstUnchecked: 65,
+		lastChecked:    556,
+		fuPos:          1,
+	}
+
+	if kr.fuPos != kr.GetFuPos() {
+		t.Errorf("GetFuPos did not return the expected value."+
+			"\nexpected: %d\nreceived: %d", kr.fuPos, kr.GetFuPos())
+	}
+}
+
+// Tests that KnownRounds.GetBitStream returns the expected value.
+func TestKnownRounds_GetBitStream(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{0, 1, 2, 3, 4, 5, 6, 7},
+		firstUnchecked: 65,
+		lastChecked:    556,
+		fuPos:          1,
+	}
+
+	if !reflect.DeepEqual([]uint64(kr.bitStream), kr.GetBitStream()) {
+		t.Errorf("GetFuPos did not return the expected value."+
+			"\nexpected: %#v\nreceived: %#v", kr.bitStream, kr.GetBitStream())
+	}
+}
+
 // Tests happy path of KnownRounds.Check().
 func TestKnownRounds_Check(t *testing.T) {
 	// Generate test round IDs and expected buffers

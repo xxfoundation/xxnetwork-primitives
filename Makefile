@@ -8,7 +8,7 @@ clean:
 	go mod vendor
 
 update:
-	-GOFLAGS="" go get -u all
+	-GOFLAGS="" go get all
 
 build:
 	go build ./...
@@ -18,6 +18,6 @@ update_release:
 
 update_master:
 
-master: clean update_master build
+master: update_master clean build
 
-release: clean update_release build
+release: update_release clean  build
