@@ -24,10 +24,11 @@ const saltLen = 32
 // ID and ID type are saved as strings to make the file easy to read; they are
 // never used or processed.
 type IdFile struct {
-	ID      string            `json:"id"`
-	Type    string            `json:"type"`
-	Salt    [saltLen]byte     `json:"salt"`
-	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
+	ID        string            `json:"id"`
+	Type      string            `json:"type"`
+	Salt      [saltLen]byte     `json:"salt"`
+	IdBytes   [id.ArrIDLen]byte `json:"idBytes"`
+	HexNodeID string            `json:"hex_node_id"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -71,7 +72,7 @@ func newIdfFromJSON(jsonBytes []byte) (*IdFile, error) {
 	return idf, nil
 }
 
-// MarshalIdfToJSON creates an IdFile object with the provided values and
+// LoadIDF creates an IdFile object with the provided values and
 // marshals it into JSON bytes ready to be written to a file.
 func LoadIDF(filePath string, salt []byte, genID *id.ID) error {
 	// Generate new IdFile object
@@ -116,6 +117,9 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 
 	// Set the ID string
 	newIDF.ID = genID.String()
+
+	// Set the hex node ID
+	newIDF.HexNodeID = genID.HexEncode()
 
 	return newIDF, nil
 }

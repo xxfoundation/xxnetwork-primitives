@@ -4,7 +4,7 @@
 // Use of this source code is governed by a license that can be found in the LICENSE file //
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-// Contains the generic ID type, which is a byte array that represents an entity
+// Package id contains the generic ID type, which is a byte array that represents an entity
 // ID. The first bytes in the array contain the actual ID data while the last
 // byte contains the ID type, which is either generic, gateway, node, or user.
 // IDs can be hard coded or generated using a cryptographic function found in
@@ -14,6 +14,7 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"io"
@@ -60,6 +61,11 @@ func (id *ID) Bytes() []byte {
 	copy(newBytes, id[:])
 
 	return newBytes
+}
+
+// HexEncode encodes the Id without 33rd type byte
+func (id *ID) HexEncode() string {
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }
 
 // Cmp determines whether two IDs are equal. Returns true if they are equal and
@@ -183,7 +189,7 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	return newID
 }
 
-// NewIdFromUInt converts the specified uint64 array into bytes and returns a
+// NewIdFromUInts converts the specified uint64 array into bytes and returns a
 // new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
