@@ -5,7 +5,7 @@ import "github.com/pkg/errors"
 // Convert region to a numerical representation
 //  in order to find distances between regions
 // fixme: consider modifying node state for a region field?
-func getRegion(region string) (int, error) {
+func GetRegion(region string) (int, error) {
 	switch region {
 	case "Americas":
 		return Americas, nil
