@@ -41,7 +41,7 @@ const (
 	Asia          = 7
 )
 
-var geobin = map[string]int{
+var Geobins = map[string]int{
 	"AI": Americas,
 	"AQ": Americas,
 	"AG": Americas,
