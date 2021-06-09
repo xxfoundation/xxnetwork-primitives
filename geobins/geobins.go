@@ -1,5 +1,46 @@
 package geobins
 
+import "github.com/pkg/errors"
+
+// Convert region to a numerical representation
+//  in order to find distances between regions
+// fixme: consider modifying node state for a region field?
+func getRegion(region string) (int, error) {
+	switch region {
+	case "Americas":
+		return Americas, nil
+	case "WesternEurope", "WestEurope":
+		return WesternEurope, nil
+	case "CentralEurope":
+		return CentralEurope, nil
+	case "EasternEurope", "EastEurope":
+		return EasternEurope, nil
+	case "MiddleEast":
+		return MiddleEast, nil
+	case "Africa":
+		return Africa, nil
+	case "Russia":
+		return Russia, nil
+	case "Asia":
+		return Asia, nil
+	default:
+		return -1, errors.Errorf("Could not parse region info ('%s')", region)
+
+	}
+}
+
+// Enumeration which links regions to numbers for legibility purposes
+const (
+	Americas      = 0
+	WesternEurope = 1
+	CentralEurope = 2
+	EasternEurope = 3
+	MiddleEast    = 4
+	Africa        = 5
+	Russia        = 6
+	Asia          = 7
+)
+
 var Geobins = map[string]string{
 	"AI": "Americas",
 	"AQ": "Americas",
