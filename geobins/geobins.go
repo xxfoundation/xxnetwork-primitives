@@ -5,7 +5,7 @@ import "github.com/pkg/errors"
 // Convert region to a numerical representation
 //  in order to find distances between regions
 // fixme: consider modifying node state for a region field?
-func getRegion(region string) (int, error) {
+func GetRegion(region string) (int, error) {
 	switch region {
 	case "Americas":
 		return Americas, nil
@@ -25,7 +25,31 @@ func getRegion(region string) (int, error) {
 		return Asia, nil
 	default:
 		return -1, errors.Errorf("Could not parse region info ('%s')", region)
+	}
+}
 
+// Convert a numerical represenation of the region to a string
+// fixme: consider modifying node state for a region field?
+func GetRegionFromString(region int) (string, error) {
+	switch region {
+	case Americas:
+		return "Americas", nil
+	case WesternEurope:
+		return "WesternEurope", nil
+	case CentralEurope:
+		return "CentralEurope", nil
+	case EasternEurope:
+		return "EasternEurope", nil
+	case MiddleEast:
+		return "MiddleEast", nil
+	case Africa:
+		return "Africa", nil
+	case Russia:
+		return "Russia", nil
+	case Asia:
+		return "Asia", nil
+	default:
+		return "", errors.Errorf("Could not parse region info ('%s')", region)
 	}
 }
 
