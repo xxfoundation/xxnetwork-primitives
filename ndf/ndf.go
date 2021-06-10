@@ -11,6 +11,7 @@
 package ndf
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -83,11 +84,14 @@ type Group struct {
 	Generator  string
 }
 
+// AddressSpace contains an ephemeral ID address space size and the timestamp of
+// when is was set.
 type AddressSpace struct {
 	Size      uint8
 	Timestamp time.Time
 }
 
+// String returns the JSON marshal of the Group as a string.
 func (g *Group) String() (string, error) {
 	data, err := json.Marshal(g)
 	if err != nil {
@@ -199,7 +203,7 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 
 // Serialize serializes the NetworkDefinition into a byte slice.
 func (ndf *NetworkDefinition) Serialize() []byte {
-	var b []byte
+	buff := bytes.NewBuffer(nil)
 
 	// Convert timestamp to a byte slice
 	timeBytes, err := ndf.Timestamp.MarshalBinary()
@@ -207,46 +211,46 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 		jww.FATAL.Panicf("Failed to marshal NetworkDefinition timestamp: %v", err)
 	}
 
-	b = append(b, timeBytes...)
+	buff.Write(timeBytes)
 
 	// Convert Gateways slice to byte slice
-	for _, val := range ndf.Gateways {
-		b = append(b, val.ID.Bytes()...)
-		b = append(b, []byte(val.Address)...)
-		b = append(b, []byte(val.TlsCertificate)...)
+	for _, gw := range ndf.Gateways {
+		buff.Write(gw.ID.Bytes())
+		buff.WriteString(gw.Address)
+		buff.WriteString(gw.TlsCertificate)
 	}
 
 	// Convert Nodes slice to byte slice
-	for _, val := range ndf.Nodes {
-		b = append(b, val.ID.Bytes()...)
-		b = append(b, []byte(val.Address)...)
-		b = append(b, []byte(val.TlsCertificate)...)
+	for _, n := range ndf.Nodes {
+		buff.Write(n.ID.Bytes())
+		buff.WriteString(n.Address)
+		buff.WriteString(n.TlsCertificate)
 	}
 
 	// Convert Registration to byte slice
-	b = append(b, []byte(ndf.Registration.Address)...)
-	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
-	b = append(b, []byte(ndf.Registration.EllipticPubKey)...)
+	buff.WriteString(ndf.Registration.Address)
+	buff.WriteString(ndf.Registration.TlsCertificate)
+	buff.WriteString(ndf.Registration.EllipticPubKey)
 
 	// Convert UDB to byte slice
-	b = append(b, ndf.UDB.ID.Bytes()...)
-	b = append(b, []byte(ndf.UDB.Cert)...)
-	b = append(b, ndf.UDB.Address...)
-	b = append(b, ndf.UDB.DhPubKey...)
+	buff.Write(ndf.UDB.ID.Bytes())
+	buff.WriteString(ndf.UDB.Cert)
+	buff.WriteString(ndf.UDB.Address)
+	buff.Write(ndf.UDB.DhPubKey)
 
 	// Convert E2E to byte slice
-	b = append(b, []byte(ndf.E2E.Prime)...)
-	b = append(b, []byte(ndf.E2E.Generator)...)
-	b = append(b, []byte(ndf.E2E.SmallPrime)...)
+	buff.WriteString(ndf.E2E.Prime)
+	buff.WriteString(ndf.E2E.Generator)
+	buff.WriteString(ndf.E2E.SmallPrime)
 
 	// Convert CMIX to byte slice
-	b = append(b, []byte(ndf.CMIX.Prime)...)
-	b = append(b, []byte(ndf.CMIX.Generator)...)
-	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
+	buff.WriteString(ndf.CMIX.Prime)
+	buff.WriteString(ndf.CMIX.Generator)
+	buff.WriteString(ndf.CMIX.SmallPrime)
 
 	// Convert AddressSpace to byte slice
 	for _, val := range ndf.AddressSpace {
-		b = append(b, val.Size)
+		buff.WriteByte(val.Size)
 
 		timeBytes, err := val.Timestamp.MarshalBinary()
 		if err != nil {
@@ -254,10 +258,10 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 				"AddressSpace timestamp: %v", err)
 		}
 
-		b = append(b, timeBytes...)
+		buff.Write(timeBytes)
 	}
 
-	return b
+	return buff.Bytes()
 }
 
 // GetNodeId unmarshalls the Node's ID bytes into an id.ID and returns it.

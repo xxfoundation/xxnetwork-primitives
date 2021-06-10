@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"gitlab.com/xx_network/primitives/id"
 	"reflect"
 	"testing"
@@ -111,7 +110,6 @@ func TestUnmarshal(t *testing.T) {
 	/* Ensure fields are populated with the correct data */
 
 	// Timestamp
-	fmt.Printf("%s\n", jsonData.Timestamp)
 	if !jsonData.Timestamp.Equal(timestamp) {
 		t.Errorf("Unmarshal() did not correctly set Timestamp"+
 			"\n\treceived: %#v\n\texpected: %#v",
