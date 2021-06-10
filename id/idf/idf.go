@@ -28,6 +28,7 @@ type IdFile struct {
 	Type      string            `json:"type"`
 	Salt      [saltLen]byte     `json:"salt"`
 	IdBytes   [id.ArrIDLen]byte `json:"idBytes"`
+	HexNodeID string            `json:"hexNodeID"`
 }
 
 // UnloadIDF reads the contents of the IDF at the given path and returns the
@@ -116,6 +117,9 @@ func newIDF(salt []byte, genID *id.ID) (*IdFile, error) {
 
 	// Set the ID string
 	newIDF.ID = genID.String()
+
+	// Set the hex node ID
+	newIDF.HexNodeID = genID.HexEncode()
 
 	return newIDF, nil
 }
