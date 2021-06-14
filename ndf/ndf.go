@@ -14,8 +14,11 @@
 package ndf
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"testing"
 	"time"
