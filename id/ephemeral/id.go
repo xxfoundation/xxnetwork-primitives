@@ -1,19 +1,29 @@
 package ephemeral
 
 import (
+	"bytes"
 	"crypto"
 	"encoding/binary"
 	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/xx_network/primitives/id"
+	"hash"
 	"io"
 	"math"
 	"time"
 )
 
-var period = int64(time.Hour * 24)
-var numOffsets int64 = 1 << 16
-var nsPerOffset = period / numOffsets
+const Period = int64(time.Hour * 24)
+const NumOffsets int64 = 1 << 16
+const NsPerOffset = Period / NumOffsets
+
+// Ephemeral Ids reserved for specific actions:
+// All zero's denote a dummy ID
+// All one's denote a payment
+var ReservedIDs = []Id{
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 1, 1, 1, 1, 1, 1},
+}
 
 // Ephemeral ID type alias
 type Id [8]byte
@@ -107,7 +117,7 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 			End:   end,
 		})
 
-		//make the timestamp into the next period
+		//make the timestamp into the next Period
 		timestamp = end.Add(time.Nanosecond)
 	}
 	return idList, nil
@@ -140,43 +150,95 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 // returns ephemeral ID, start & end timestamps for salt window
 func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
-	if size > 64 {
-		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID with size > 64")
+	if size > 64 || size < 1 {
+		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID, size must be between 1 and 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
+
+	// Continually generate an ephemeral Id until we land on
+	// an id not within the reserved list of Ids
+	eid := Id{}
+	var err error
+	for reserved := true; reserved; reserved = IsReserved(eid) {
+		eid, err = getIdFromIntermediaryHelper(b2b, iid, salt, size)
+		if err != nil {
+			return Id{}, start, end, err
+		}
+	}
+	return eid, start, end, nil
+}
+
+// Helper function which generates a single ephemeral Id
+func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
+	eid := Id{}
+
 	_, err := b2b.Write(iid)
 	if err != nil {
-		return Id{}, start, end, err
+		return Id{}, err
 	}
 	_, err = b2b.Write(salt)
 	if err != nil {
-		return Id{}, start, end, err
+		return Id{}, err
 	}
-	eid := Id{}
+
 	copy(eid[:], b2b.Sum(nil))
+
 	cleared := eid.Clear(size)
 	copy(eid[:], cleared[:])
-	return eid, start, end, nil
+
+	return eid, err
+}
+
+// Checks if the Id passed in is  among
+// the reserved global reserved ID list.
+// Returns true if reserved, false if non-reserved
+func IsReserved(eid Id) bool {
+	for _, r := range ReservedIDs {
+		if bytes.Equal(eid[:], r[:]) {
+			return true
+		}
+	}
+	return false
 }
 
 // getRotationSalt returns rotation salt based on ID hash and timestamp
 func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Time) {
-	hashNum := binary.BigEndian.Uint64(idHash)
-	offset := int64((hashNum % uint64(numOffsets)) * uint64(nsPerOffset))
-	timestampPhase := timestamp % period
-	var start, end int64
-	timestampNum := timestamp / period
-	var saltNum uint64
-	if timestampPhase < offset {
-		start = (timestampNum-1)*period + offset
-		end = start + period
-		saltNum = uint64((timestamp - period) / period)
-	} else {
-		start = timestampNum*period + offset
-		end = start + period
-		saltNum = uint64(timestamp / period)
-	}
+	offset := GetOffset(idHash)
+	start, end, saltNum := GetOffsetBounds(offset, timestamp)
 	salt := make([]byte, 8)
 	binary.BigEndian.PutUint64(salt, saltNum)
-	return salt, time.Unix(0, start), time.Unix(0, end)
+	return salt, start, end
+}
+
+func GetOffset(intermediaryId []byte) int64 {
+	hashNum := binary.BigEndian.Uint64(intermediaryId)
+	offset := int64((hashNum % uint64(NumOffsets)) * uint64(NsPerOffset))
+	return offset
+}
+
+func GetOffsetNum(offset int64) int64 {
+	return offset / NsPerOffset
+}
+
+func GetOffsetBounds(offset, timestamp int64) (time.Time, time.Time, uint64) {
+	timestampPhase := timestamp % Period
+	var start, end int64
+	timestampNum := timestamp / Period
+	var saltNum uint64
+	if timestampPhase < offset {
+		start = (timestampNum-1)*Period + offset
+		end = start + Period
+		saltNum = uint64((timestamp - Period) / Period)
+	} else {
+		start = timestampNum*Period + offset
+		end = start + Period
+		saltNum = uint64(timestamp / Period)
+	}
+	return time.Unix(0, start), time.Unix(0, end), saltNum
+}
+
+func HandleQuantization(start time.Time) (int64, int32) {
+	currentOffset := (start.UnixNano() / NsPerOffset) % NumOffsets
+	epoch := start.UnixNano() / NsPerOffset
+	return currentOffset, int32(epoch)
 }

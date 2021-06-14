@@ -14,7 +14,6 @@
 package ndf
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"gitlab.com/xx_network/primitives/id"
@@ -29,15 +28,16 @@ const NO_NDF = "Contacted server does not have an ndf to give"
 // NetworkDefinition structure hold connection and network information. It
 // matches the JSON structure generated in Terraform.
 type NetworkDefinition struct {
-	Timestamp        time.Time
-	Gateways         []Gateway
-	Nodes            []Node
-	Registration     Registration
-	Notification     Notification
-	UDB              UDB   `json:"Udb"`
-	E2E              Group `json:"E2e"`
-	CMIX             Group `json:"Cmix"`
-	AddressSpaceSize uint32
+	Timestamp     time.Time
+	Gateways      []Gateway
+	Nodes         []Node
+	Registration  Registration
+	Notification  Notification
+	UDB           UDB   `json:"Udb"`
+	E2E           Group `json:"E2e"`
+	CMIX          Group `json:"Cmix"`
+	AddressSpace  []AddressSpace
+	ClientVersion string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -61,6 +61,7 @@ type Node struct {
 type Registration struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	EllipticPubKey string
 }
 
 // Notification contains the connection information for the notification bot.
@@ -69,7 +70,8 @@ type Notification struct {
 	TlsCertificate string `json:"Tls_certificate"`
 }
 
-// UDB contains the ID and public key in PEM form for user discovery.
+// UDB contains the ID, public key in PEM format, address, and DH public key for
+// user discovery.
 type UDB struct {
 	ID       []byte `json:"Id"`
 	Cert     string `json:"Cert"`
@@ -84,6 +86,11 @@ type Group struct {
 	Generator  string
 }
 
+type AddressSpace struct {
+	Size      uint8
+	Timestamp time.Time
+}
+
 func (g *Group) String() (string, error) {
 	data, err := json.Marshal(g)
 	if err != nil {
@@ -93,28 +100,82 @@ func (g *Group) String() (string, error) {
 	return string(data), nil
 }
 
-// DecodeNDF decodes the given JSON string into the NetworkDefinition structure
-// and decodes the base 64 signature to a byte slice. The NDF string is expected
-// to have the JSON data on line 1 and its signature on line 2. Returns an error
-// if separating the lines fails or if the JSON unmarshal fails.
-func DecodeNDF(ndf string) (*NetworkDefinition, []byte, error) {
-	// Get JSON data and check if the separating failed
-	jsonData, signature := separate(ndf)
+// Marshal returns the JSON encoding of the NDF.
+func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
+	return json.Marshal(ndf)
+}
 
-	// Decode the signature form base 64 and check for errors
-	signatureBytes, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		return nil, nil, err
+// Unmarshal parses the JSON encoded data and returns the resulting
+// NetworkDefinition.
+func Unmarshal(data []byte) (*NetworkDefinition, error) {
+	ndf := &NetworkDefinition{}
+	err := json.Unmarshal(data, ndf)
+	return ndf, err
+}
+
+// DeepCopy returns a deep copy of the NDF. Note that this function is
+// intentionally verbose so that tests will fail if this function is not updated
+// when the NetworkDefinition is modified.
+func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
+	newNDF := &NetworkDefinition{
+		Gateways:     make([]Gateway, len(ndf.Gateways)),
+		Nodes:        make([]Node, len(ndf.Nodes)),
+		AddressSpace: make([]AddressSpace, len(ndf.AddressSpace)),
 	}
 
-	// Unmarshal the JSON string into a structure
-	networkDefinition := &NetworkDefinition{}
-	err = json.Unmarshal([]byte(jsonData), networkDefinition)
-	if err != nil {
-		return nil, nil, err
+	// Copy timestamp
+	newNDF.Timestamp = ndf.Timestamp
+
+	// Copy Gateways
+	copy(newNDF.Gateways, ndf.Gateways)
+
+	// Copy Nodes
+	copy(newNDF.Nodes, ndf.Nodes)
+
+	// Copy Registration
+	newNDF.Registration = Registration{
+		Address:        ndf.Registration.Address,
+		TlsCertificate: ndf.Registration.TlsCertificate,
+		EllipticPubKey: ndf.Registration.EllipticPubKey,
 	}
 
-	return networkDefinition, signatureBytes, nil
+	// Copy Notification
+	newNDF.Notification = Notification{
+		Address:        ndf.Notification.Address,
+		TlsCertificate: ndf.Notification.TlsCertificate,
+	}
+
+	// Copy UD
+	newNDF.UDB = UDB{
+		ID:       make([]byte, len(ndf.UDB.ID)),
+		Cert:     ndf.UDB.Cert,
+		Address:  ndf.UDB.Address,
+		DhPubKey: make([]byte, len(ndf.UDB.DhPubKey)),
+	}
+	copy(newNDF.UDB.ID, ndf.UDB.ID)
+	copy(newNDF.UDB.DhPubKey, ndf.UDB.DhPubKey)
+
+	// Copy E2E group
+	newNDF.E2E = Group{
+		Prime:      ndf.E2E.Prime,
+		SmallPrime: ndf.E2E.SmallPrime,
+		Generator:  ndf.E2E.Generator,
+	}
+
+	// Copy CMIX group
+	newNDF.CMIX = Group{
+		Prime:      ndf.CMIX.Prime,
+		SmallPrime: ndf.CMIX.SmallPrime,
+		Generator:  ndf.CMIX.Generator,
+	}
+
+	// Copy AddressSpace
+	copy(newNDF.AddressSpace, ndf.AddressSpace)
+
+	// Copy ClientVersion
+	newNDF.ClientVersion = ndf.ClientVersion
+
+	return newNDF
 }
 
 // StripNdf returns a stripped down copy of the NetworkDefinition to be used by
@@ -123,54 +184,26 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 	// Remove address and TLS cert for every node.
 	var strippedNodes []Node
 	for _, node := range ndf.Nodes {
-		newNode := Node{
-			ID: node.ID,
-		}
-		strippedNodes = append(strippedNodes, newNode)
+		strippedNodes = append(strippedNodes, Node{ID: node.ID})
 	}
 
 	// Create a new NetworkDefinition with the stripped information
 	return &NetworkDefinition{
-		Timestamp:        ndf.Timestamp,
-		Gateways:         ndf.Gateways,
-		Nodes:            strippedNodes,
-		Registration:     ndf.Registration,
-		Notification:     ndf.Notification,
-		UDB:              ndf.UDB,
-		E2E:              ndf.E2E,
-		CMIX:             ndf.CMIX,
-		AddressSpaceSize: ndf.AddressSpaceSize,
+		Timestamp:    ndf.Timestamp,
+		Gateways:     ndf.Gateways,
+		Nodes:        strippedNodes,
+		Registration: ndf.Registration,
+		Notification: ndf.Notification,
+		UDB:          ndf.UDB,
+		E2E:          ndf.E2E,
+		CMIX:         ndf.CMIX,
+		AddressSpace: ndf.AddressSpace,
 	}
 }
 
-// separate splits the JSON data from the signature. The NDF string is expected
-// to have the JSON data starting on line 1 and its signature on the last line.
-// Returns JSON data and signature as separate strings. If the signature is not
-// present, it is returned as an empty string.
-func separate(ndf string) (string, string) {
-	var jsonLineEnd int
-	var signature string
-	lines := strings.Split(ndf, "\n")
-
-	// Determine which line the JSON ends and which line the signature is on
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-		if line != "" {
-			if strings.HasSuffix(line, "}") {
-				jsonLineEnd = i
-				break
-			} else {
-				signature = line
-			}
-		}
-	}
-
-	return strings.Join(lines[0:jsonLineEnd+1], "\n"), signature
-}
-
-// Serialize converts the NetworkDefinition into a byte slice.
+// Serialize serializes the NetworkDefinition into a byte slice.
 func (ndf *NetworkDefinition) Serialize() []byte {
-	b := make([]byte, 0)
+	var b []byte
 
 	// Convert timestamp to a byte slice
 	timeBytes, err := ndf.Timestamp.MarshalBinary()
@@ -197,6 +230,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	// Convert Registration to byte slice
 	b = append(b, []byte(ndf.Registration.Address)...)
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
+	b = append(b, []byte(ndf.Registration.EllipticPubKey)...)
 
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
@@ -214,25 +248,28 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.CMIX.Generator)...)
 	b = append(b, []byte(ndf.CMIX.SmallPrime)...)
 
+	// Convert AddressSpace to byte slice
+	for _, val := range ndf.AddressSpace {
+		b = append(b, val.Size)
+
+		timeBytes, err := val.Timestamp.MarshalBinary()
+		if err != nil {
+			jww.FATAL.Panicf("Failed to marshal NetworkDefinition "+
+				"AddressSpace timestamp: %v", err)
+		}
+
+		b = append(b, timeBytes...)
+	}
+
 	return b
 }
 
-// Marshal returns a json marshal of the ndf
-func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
-	ndfBytes, err := json.Marshal(ndf)
-	if err != nil {
-		return nil, err
-	}
-
-	return ndfBytes, nil
-}
-
-// GetNodeId unmarshalls the node's ID bytes into an id.ID and returns it.
+// GetNodeId unmarshalls the Node's ID bytes into an id.ID and returns it.
 func (n *Node) GetNodeId() (*id.ID, error) {
 	return id.Unmarshal(n.ID)
 }
 
-// GetGatewayId unmarshalls the gateway's ID bytes into an id.ID and returns it.
+// GetGatewayId unmarshalls the Gateway's ID bytes into an id.ID and returns it.
 func (g *Gateway) GetGatewayId() (*id.ID, error) {
 	return id.Unmarshal(g.ID)
 }
