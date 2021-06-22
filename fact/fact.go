@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/badoux/checkmail"
 	"github.com/pkg/errors"
+	"github.com/ttacon/libphonenumber"
 )
 
 type Fact struct {
@@ -67,9 +68,8 @@ func ValidateFact(fact Fact) error {
 	case Phone:
 		// Extract specific information for validating a number
 		// TODO: removes phone validation entirely. It is not used right now anyhow
-		// number, code := extractNumberInfo(fact.Fact)
-		// return validateNumber(number, code)
-		return nil
+		number, code := extractNumberInfo(fact.Fact)
+		return validateNumber(number, code)
 	case Email:
 		// Check input of email inputted
 		return validateEmail(fact.Fact)
@@ -101,7 +101,7 @@ func validateEmail(email string) error {
 	return nil
 }
 
-/*/ Checks if the number and country code passed in is parse-able
+// Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
 	errCh := make(chan error)
@@ -118,17 +118,17 @@ func validateNumber(number, countryCode string) error {
 		if len(number) == 0 || len(countryCode) == 0 {
 			errCh <- errors.New("Number or input are of length 0")
 		}
-		num, err := phonenumbers.Parse(number, countryCode)
+		num, err := libphonenumber.Parse(number, countryCode)
 		if err != nil || num == nil {
 			errCh <- errors.Errorf("Could not parse number [%s]: %v", number, err)
 		}
-		if !phonenumbers.IsValidNumber(num) {
+		if !libphonenumber.IsValidNumber(num) {
 			errCh <- errors.Errorf("Could not validate number [%s]: %v", number, err)
 		}
 		errCh <- nil
 	}()
 	return <-errCh
-}*/
+}
 
 func validateNickname(nickname string) error {
 	if len(nickname) < 3 {
