@@ -14,6 +14,7 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"io"
@@ -183,7 +184,12 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	return newID
 }
 
-// NewIdFromUInt converts the specified uint64 array into bytes and returns a
+// HexEncode encodes the Id without 33rd type byte
+func (id *ID) HexEncode() string {
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
+}
+
+// NewIdFromUInts converts the specified uint64 array into bytes and returns a
 // new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
