@@ -16,6 +16,10 @@ package id
 var Permissioning = ID{80, 101, 114, 109, 105, 115, 115, 105, 111, 110, 105,
 	110, 103, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
 
+// ID for authorizer (ID data is the string "authorizer")
+var Authorizer = ID{97, 117, 116, 104, 111, 114, 105, 122, 101, 114, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
+
 // ID for notification bot (ID data is the string "notification-bot")
 var NotificationBot = ID{110, 111, 116, 105, 102, 105, 99, 97, 116, 105, 111,
 	110, 45, 98, 111, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
@@ -39,6 +43,7 @@ var UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 // GetHardCodedIDs returns an array of all the hard coded IDs.
 func GetHardCodedIDs() (ids []*ID) {
 	ids = append(ids, &Permissioning)
+	ids = append(ids, &Authorizer)
 	ids = append(ids, &NotificationBot)
 	ids = append(ids, &TempGateway)
 	ids = append(ids, &ZeroUser)
