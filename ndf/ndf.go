@@ -206,17 +206,17 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 
 	// Create a new NetworkDefinition with the stripped information
 	return &NetworkDefinition{
-		Timestamp:    ndf.Timestamp,
-		Gateways:     ndf.Gateways,
-		Nodes:        strippedNodes,
-		Registration: ndf.Registration,
-		Notification: ndf.Notification,
-		Authorizer: ndf.Authorizer,
+		Timestamp:          ndf.Timestamp,
+		Gateways:           ndf.Gateways,
+		Nodes:              strippedNodes,
+		Registration:       ndf.Registration,
+		Notification:       ndf.Notification,
+		Authorizer:         ndf.Authorizer,
 		ClientRegistration: ndf.ClientRegistration,
-		UDB:          ndf.UDB,
-		E2E:          ndf.E2E,
-		CMIX:         ndf.CMIX,
-		AddressSpace: ndf.AddressSpace,
+		UDB:                ndf.UDB,
+		E2E:                ndf.E2E,
+		CMIX:               ndf.CMIX,
+		AddressSpace:       ndf.AddressSpace,
 	}
 }
 

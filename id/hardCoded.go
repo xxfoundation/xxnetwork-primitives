@@ -20,6 +20,11 @@ var Permissioning = ID{80, 101, 114, 109, 105, 115, 115, 105, 111, 110, 105,
 var Authorizer = ID{97, 117, 116, 104, 111, 114, 105, 122, 101, 114, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
 
+// ID for authorizer (ID data is the string "client-registration")
+var ClientRegistration = ID{99, 108, 105, 101, 110, 116, 45, 114, 101, 103,
+	105, 115, 116, 114, 97, 116, 105, 111, 110, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, byte(Generic)}
+
 // ID for notification bot (ID data is the string "notification-bot")
 var NotificationBot = ID{110, 111, 116, 105, 102, 105, 99, 97, 116, 105, 111,
 	110, 45, 98, 111, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
@@ -49,6 +54,7 @@ func GetHardCodedIDs() (ids []*ID) {
 	ids = append(ids, &ZeroUser)
 	ids = append(ids, &DummyUser)
 	ids = append(ids, &UDB)
+	ids = append(ids, &ClientRegistration)
 
 	return
 }
