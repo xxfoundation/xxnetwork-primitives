@@ -14,7 +14,7 @@ import (
 // they were added.
 func TestGetHardCodedIDs(t *testing.T) {
 	expectedIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot, &TempGateway,
-		&ZeroUser, &DummyUser, &UDB}
+		&ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for i, testID := range GetHardCodedIDs() {
 		if !expectedIDs[i].Cmp(testID) {
@@ -48,7 +48,7 @@ func TestCollidesWithHardCodedID_HappyPath(t *testing.T) {
 // IDs collide.
 func TestCollidesWithHardCodedID_True(t *testing.T) {
 	testIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot, &TempGateway,
-		&ZeroUser, &DummyUser, &UDB}
+		&ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for _, testID := range testIDs {
 		if !CollidesWithHardCodedID(testID) {

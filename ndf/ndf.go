@@ -56,9 +56,10 @@ type Node struct {
 // Registration contains the connection information for the permissioning
 // server.
 type Registration struct {
-	Address        string
-	TlsCertificate string `json:"Tls_certificate"`
-	EllipticPubKey string
+	Address                   string
+	ClientRegistrationAddress string
+	TlsCertificate            string `json:"Tls_certificate"`
+	EllipticPubKey            string
 }
 
 // Notification contains the connection information for the notification bot.
@@ -228,6 +229,10 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.Registration.Address)...)
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
 	b = append(b, []byte(ndf.Registration.EllipticPubKey)...)
+
+	// Convert notification bot to byte slice
+	b = append(b, []byte(ndf.Notification.Address)...)
+	b = append(b, []byte(ndf.Notification.TlsCertificate)...)
 
 	// Convert UDB to byte slice
 	b = append(b, ndf.UDB.ID...)
