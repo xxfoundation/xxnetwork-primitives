@@ -25,18 +25,16 @@ const NO_NDF = "Contacted server does not have an ndf to give"
 // NetworkDefinition structure hold connection and network information. It
 // matches the JSON structure generated in Terraform.
 type NetworkDefinition struct {
-	Timestamp          time.Time
-	Gateways           []Gateway
-	Nodes              []Node
-	Registration       Registration
-	Notification       Notification
-	Authorizer         Authorizer
-	ClientRegistration ClientRegistration
-	UDB                UDB   `json:"Udb"`
-	E2E                Group `json:"E2e"`
-	CMIX               Group `json:"Cmix"`
-	AddressSpace       []AddressSpace
-	ClientVersion      string
+	Timestamp     time.Time
+	Gateways      []Gateway
+	Nodes         []Node
+	Registration  Registration
+	Notification  Notification
+	UDB           UDB   `json:"Udb"`
+	E2E           Group `json:"E2e"`
+	CMIX          Group `json:"Cmix"`
+	AddressSpace  []AddressSpace
+	ClientVersion string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -58,25 +56,14 @@ type Node struct {
 // Registration contains the connection information for the permissioning
 // server.
 type Registration struct {
-	Address        string
-	TlsCertificate string `json:"Tls_certificate"`
-	EllipticPubKey string
+	Address                   string
+	ClientRegistrationAddress string
+	TlsCertificate            string `json:"Tls_certificate"`
+	EllipticPubKey            string
 }
 
 // Notification contains the connection information for the notification bot.
 type Notification struct {
-	Address        string
-	TlsCertificate string `json:"Tls_certificate"`
-}
-
-// ClientRegistration contains the connection information for the client registrar.
-type ClientRegistration struct {
-	Address        string
-	TlsCertificate string `json:"Tls_certificate"`
-}
-
-// Authorizer contains the connection information for the authorizer.
-type Authorizer struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 }
@@ -186,12 +173,6 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 	// Copy ClientVersion
 	newNDF.ClientVersion = ndf.ClientVersion
 
-	// Copy client registration
-	newNDF.ClientRegistration = ndf.ClientRegistration
-
-	// Copy the authorizer
-	newNDF.Authorizer = ndf.Authorizer
-
 	return newNDF
 }
 
@@ -206,17 +187,15 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 
 	// Create a new NetworkDefinition with the stripped information
 	return &NetworkDefinition{
-		Timestamp:          ndf.Timestamp,
-		Gateways:           ndf.Gateways,
-		Nodes:              strippedNodes,
-		Registration:       ndf.Registration,
-		Notification:       ndf.Notification,
-		Authorizer:         ndf.Authorizer,
-		ClientRegistration: ndf.ClientRegistration,
-		UDB:                ndf.UDB,
-		E2E:                ndf.E2E,
-		CMIX:               ndf.CMIX,
-		AddressSpace:       ndf.AddressSpace,
+		Timestamp:    ndf.Timestamp,
+		Gateways:     ndf.Gateways,
+		Nodes:        strippedNodes,
+		Registration: ndf.Registration,
+		Notification: ndf.Notification,
+		UDB:          ndf.UDB,
+		E2E:          ndf.E2E,
+		CMIX:         ndf.CMIX,
+		AddressSpace: ndf.AddressSpace,
 	}
 }
 
@@ -250,14 +229,6 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.Registration.Address)...)
 	b = append(b, []byte(ndf.Registration.TlsCertificate)...)
 	b = append(b, []byte(ndf.Registration.EllipticPubKey)...)
-
-	// Convert ClientRegistration to byte slice
-	b = append(b, []byte(ndf.ClientRegistration.Address)...)
-	b = append(b, []byte(ndf.ClientRegistration.TlsCertificate)...)
-
-	// Convert authorizer to byte slice
-	b = append(b, []byte(ndf.Authorizer.Address)...)
-	b = append(b, []byte(ndf.Authorizer.TlsCertificate)...)
 
 	// Convert notification bot to byte slice
 	b = append(b, []byte(ndf.Notification.Address)...)
