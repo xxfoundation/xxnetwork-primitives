@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/region"
 	"time"
 )
 
@@ -43,6 +44,7 @@ type Gateway struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Bin            region.GeoBin
 }
 
 // Node contains the connection and identity information of a node on the
@@ -215,6 +217,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 		b = append(b, val.ID...)
 		b = append(b, []byte(val.Address)...)
 		b = append(b, []byte(val.TlsCertificate)...)
+		b = append(b, val.Bin.Bytes()...)
 	}
 
 	// Convert Nodes slice to byte slice
