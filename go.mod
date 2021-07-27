@@ -9,7 +9,7 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.2.1
-	gitlab.com/xx_network/primitives v0.0.4-0.20210715170345-a78092d7b48e
+	gitlab.com/xx_network/primitives v0.0.4-0.20210727191551-5fe750830811
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
