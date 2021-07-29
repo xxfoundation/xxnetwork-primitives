@@ -15,335 +15,108 @@ import (
 	"unicode/utf8"
 )
 
-// addrBlock describes a block of addresses that have bee registered for as
-// specific purpose.
-type addrBlock struct {
-	name string    // Name for the purpose of the block
-	rfc  string    // The standard describing block
-	net  net.IPNet // The IPNet that describes the address block
-}
+// Maximum and Minimum lengths.
+const (
+	domainMaxLen   = 255
+	labelMaxLen    = 63
+	topLevelMaxLen = 63
 
-// A list of IPv4 and IPv6 addresses block that are globally unreachable.
-// List sourced from:
-// https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
-// https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
-
-// https://github.com/letsencrypt/boulder/blob/master/bdns/dns.go
-var (
-	privateV4Networks = []addrBlock{
-		// 10.0.0.0/8 (RFC 1918)
-		{
-			name: "Private-Use",
-			rfc:  "RFC1918",
-			net: net.IPNet{
-				IP:   []byte{10, 0, 0, 0},
-				Mask: []byte{255, 0, 0, 0},
-			},
-		},
-		// 172.16.0.0/12 (RFC 1918)
-		{
-			name: "Private-Use",
-			rfc:  "RFC1918",
-			net: net.IPNet{
-				IP:   []byte{172, 16, 0, 0},
-				Mask: []byte{255, 240, 0, 0},
-			},
-		},
-		// 192.168.0.0/16 (RFC 1918)
-		{
-			name: "Private-Use",
-			rfc:  "RFC1918",
-			net: net.IPNet{
-				IP:   []byte{192, 168, 0, 0},
-				Mask: []byte{255, 255, 0, 0},
-			},
-		},
-		// 127.0.0.0/8 (RFC 5735, Section 3.2.1.3)
-		{
-			name: "Loopback",
-			rfc:  "RFC1122",
-			net: net.IPNet{
-				IP:   []byte{127, 0, 0, 0},
-				Mask: []byte{255, 0, 0, 0},
-			},
-		},
-		// 0.0.0.0/8 (RFC 1122, Section 3.2)
-		{
-			name: "\"This network\"",
-			rfc:  "RFC1122",
-			net: net.IPNet{
-				IP:   []byte{0, 0, 0, 0},
-				Mask: []byte{255, 0, 0, 0},
-			},
-		},
-		// 169.254.0.0/16 (RFC 3927)
-		{
-			name: "Link Local",
-			rfc:  "RFC3927",
-			net: net.IPNet{
-				IP:   []byte{169, 254, 0, 0},
-				Mask: []byte{255, 255, 0, 0},
-			},
-		},
-		// 192.0.0.0/24 (RFC 5736, Section 2.1)
-		{
-			name: "IETF Protocol Assignments",
-			rfc:  "RFC3927",
-			net: net.IPNet{
-				IP:   []byte{192, 0, 0, 0},
-				Mask: []byte{255, 255, 255, 0},
-			},
-		},
-		// 192.0.2.0/24 (RFC 5737)
-		{
-			name: "Documentation (TEST-NET-1)",
-			rfc:  "RFC5737",
-			net: net.IPNet{
-				IP:   []byte{192, 0, 2, 0},
-				Mask: []byte{255, 255, 255, 0},
-			},
-		},
-		// 198.51.100.0/24 (RFC 5737)
-		{
-			name: "Documentation (TEST-NET-2)",
-			rfc:  "RFC5737",
-			net: net.IPNet{
-				IP:   []byte{198, 51, 100, 0},
-				Mask: []byte{255, 255, 255, 0},
-			},
-		},
-		// 203.0.113.0/24 (RFC 5737)
-		{
-			name: "Documentation (TEST-NET-3)",
-			rfc:  "RFC5737",
-			net: net.IPNet{
-				IP:   []byte{203, 0, 113, 0},
-				Mask: []byte{255, 255, 255, 0},
-			},
-		},
-		// 192.88.99.0/24 (RFC 7526)
-		{
-			name: "6to4 Relay Anycast",
-			rfc:  "RFC7526",
-			net: net.IPNet{
-				IP:   []byte{192, 88, 99, 0},
-				Mask: []byte{255, 255, 255, 0},
-			},
-		},
-		// 192.18.0.0/15 (RFC 2544)
-		{
-			name: "Benchmarking",
-			rfc:  "RFC2544",
-			net: net.IPNet{
-				IP:   []byte{192, 18, 0, 0},
-				Mask: []byte{255, 254, 0, 0},
-			},
-		},
-		// 224.0.0.0/4 (RFC 3171)
-		{
-			name: "Multicast",
-			rfc:  "RFC3171",
-			net: net.IPNet{
-				IP:   []byte{224, 0, 0, 0},
-				Mask: []byte{240, 0, 0, 0},
-			},
-		},
-		// 255.255.255.255/32 (RFC 919, Section 7)
-		{
-			name: "Limited Broadcast",
-			rfc:  "RFC919",
-			net: net.IPNet{
-				IP:   []byte{255, 255, 255, 255},
-				Mask: []byte{255, 255, 255, 255},
-			},
-		},
-		// 240.0.0.0/4 (RFC 1112, Section 4)
-		{
-			name: "Reserved",
-			rfc:  "RFC1112",
-			net: net.IPNet{
-				IP:   []byte{240, 0, 0, 0},
-				Mask: []byte{240, 0, 0, 0},
-			},
-		},
-		//
-		// 100.64.0.0/10 (RFC 6598)
-		{
-			name: "Shared Address Space",
-			rfc:  "RFC6598",
-			net: net.IPNet{
-				IP:   []byte{100, 64, 0, 0},
-				Mask: []byte{255, 192, 0, 0},
-			},
-		},
-	}
-	privateV6Networks = []addrBlock{
-		// ::/128 (RFC 4291)
-		{
-			name: "Unspecified Address",
-			rfc:  "RFC4291",
-			net: net.IPNet{
-				IP: net.IP{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-					0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-			},
-		},
-		// ::1/128 (RFC 4291)
-		{
-			name: "Loopback Address",
-			rfc:  "RFC4291",
-			net: net.IPNet{
-				IP: net.IP{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-					0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-			},
-		},
-		// ::ffff:0:0/96 (RFC 4291)
-		{
-			name: "IPv4-mapped Address",
-			rfc:  "RFC4291",
-			net: net.IPNet{
-				IP: net.IP{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-					0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0},
-			},
-		},
-		// 100::/64 (RFC 6666)
-		{
-			name: "Discard-Only Address Block",
-			rfc:  "RFC6666",
-			net: net.IPNet{
-				IP: net.IP{0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-					0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-		// 2001:2::/48 (RFC 5180)
-		{
-			name: "Benchmarking",
-			rfc:  "RFC5180",
-			net: net.IPNet{
-				IP: net.IP{0x20, 0x1, 0, 0x2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0},
-			},
-		},
-		// 2001:db8::/32 (RFC 3849)
-		{
-			name: "Documentation",
-			rfc:  "RFC3849",
-			net: net.IPNet{
-				IP:   net.IP{0x20, 0x1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-		// 2001::/32 (RFC 4380)
-		{
-			name: "TEREDO",
-			rfc:  "RFC4380",
-			net: net.IPNet{
-				IP: net.IP{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0},
-			},
-		},
-		// 2001::/23 (RFC 2928)
-		{
-			name: "IETF Protocol Assignments",
-			rfc:  "RFC2928",
-			net: net.IPNet{
-				IP: net.IP{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0},
-			},
-		},
-		// fc00::/7 (RFC 4193)
-		{
-			name: "Unique-Local",
-			rfc:  "RFC4193",
-			net: net.IPNet{
-				IP:   net.IP{0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-		// fe80::/10 (RFC 4291)
-		{
-			name: "Link-Local Unicast",
-			rfc:  "RFC4291",
-			net: net.IPNet{
-				IP:   net.IP{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-		// ff00::/8 (RFC 4291)
-		{
-			name: "Multicast",
-			rfc:  "RFC4291",
-			net: net.IPNet{
-				IP:   net.IP{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-		// 2002::/16 (RFC 7526)
-		// We disable validations to IPs under the 6to4 anycase prefix because
-		// there's too much risk of a malicious actor advertising the prefix and
-		// answering validations for a 6to4 host they do not control.
-		// https://community.letsencrypt.org/t/problems-validating-ipv6-against-host-running-6to4/18312/9
-		{
-			name: "6to4",
-			rfc:  "RFC7526",
-			net: net.IPNet{
-				IP:   net.IP{0x20, 0x2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			},
-		},
-	}
+	minPortNum       = 0
+	maxPortNum       = 65535
+	minAllowablePort = 1024
+	maxAllowablePort = maxPortNum
 )
 
-// IsAddress determines if the given address is a valid hostname or IP address.
-func IsAddress(address string) bool {
-	return IsIP(address) || IsHost(address) != nil
+// Error messages.
+const (
+	lookupIpErr    = "failed to lookup host: %+v"
+	invalidIPErr   = "address %q is an invalid IP address"
+	nonGlobalIpErr = "address %q is not globally routable (%s: %s [%s])"
+
+	// Error messages for domain name checking
+	dnMinLenErr           = "address cannot be empty"
+	dnMaxLenErr           = "address length is %d, cannot exceed %d"
+	dnLabelStarPeriodErr  = "invalid character '%c' at offset %d: label cannot begin with a period"
+	dnRuneErr             = "invalid rune %q at offset %d"
+	dnCharErr             = "invalid character %q at offset %d"
+	dnLabelMaxLenErr      = "byte length of label %q is %d, cannot exceed %d"
+	dnLabelStartHyphenErr = "label %q at offset %d begins with a hyphen"
+	dnLabelEndHyphenErr   = "label %q at offset %d end with a hyphen"
+	dnTldEndPeriodErr     = "missing top-level domain, domain name cannot end with a period"
+	dnTldMaxLenErr        = "byte length of top-level domain %q is %d, cannot exceed %d"
+	dnTldStartHyphenErr   = "top-level domain %q at offset %d begins with a hyphen"
+	dnTldEndHyphenErr     = "top-level domain %q at offset %d ends with a hyphen"
+	dnTldStartDigitErr    = "top-level domain %q at offset %d begins with a digit"
+)
+
+// GetIP returns the address as a net.IP object. Expects a valid IPv4 address,
+// IPv6 address, or domain name. Ports are allowed; if a port is present, then
+// it is stripped.
+func GetIP(address string) (net.IP, error) {
+	// Split the address from the port if the port exists
+	host, _, err := net.SplitHostPort(address)
+	if err == nil {
+		address = host
+	}
+
+	// If the address is a valid IP, then parse it and return it
+	ip := net.ParseIP(address)
+	if ip != nil {
+		return ip, nil
+	}
+
+	// Lookup host using the local resolver
+	ips, err := net.LookupIP(address)
+	if err != nil {
+		return nil, errors.Errorf(lookupIpErr, err)
+	}
+
+	fmt.Printf("IPs: %+v\n", ips)
+
+	// Returns the first IP address for the host
+	return ips[0], nil
 }
 
-// IsPublicAddress determines if the given address is a valid hostname or public
-// IP address.
+// IsAddress determines if the given address is a valid IP address or domain
+// name. Ports are allowed; if a port is present, then it is stripped.
+// TODO: add tests
+func IsAddress(address string) bool {
+	return IsIP(address) || IsDomainName(address) != nil
+}
+
+// IsPublicAddress determines if the given address is a public IP address or
+// domain name. Ports are allowed; if a port is present, then it is stripped.
 func IsPublicAddress(address string) error {
-	if ip := getIP(address); ip != nil {
+	if ip := ParseIP(address); ip != nil {
 		switch ip.To4() {
 		case nil:
 			return isPrivateV6(ip)
 		default:
 			return isPrivateV4(ip)
 		}
+	} else {
+		return IsDomainName(address)
 	}
-	return nil
 }
 
-// IsHost determines if the given string is a valid hostname.
-func IsHost(address string) error {
-	switch {
-	case len(address) == 0:
-		return errors.New("address is empty")
-	case len(address) > 255:
-		return errors.Errorf("address length is %d, cannot exceed 255", len(address))
-	}
-
-	return checkDomain(address)
-}
-
-const maxHostLength = 255
-
-// checkDomain returns an error if the domain name is not valid
+// IsDomainName returns an error if the domain name is not valid. Ports are
+// allowed; if a port is present, then it is stripped.
 // See https://tools.ietf.org/html/rfc1034#section-3.5 and
 // https://tools.ietf.org/html/rfc1123#section-2.
 // source: https://gist.github.com/chmike/d4126a3247a6d9a70922fc0e8b4f4013
-func checkDomain(address string) error {
+func IsDomainName(address string) error {
+	// Split the address from the port if the port exists
+	host, _, err := net.SplitHostPort(address)
+	if err == nil {
+		address = host
+	}
+
 	// Verify the address is of the correct length
 	switch {
 	case len(address) == 0:
-		return errors.New("address cannot be empty")
-	case len(address) > maxHostLength:
-		return errors.Errorf("address length is %d, cannot exceed %d", len(address), maxHostLength)
+		return errors.New(dnMinLenErr)
+	case len(address) > domainMaxLen:
+		return errors.Errorf(dnMaxLenErr, len(address), domainMaxLen)
 	}
 
 	var l int
@@ -352,13 +125,13 @@ func checkDomain(address string) error {
 			// Check domain labels validity
 			switch {
 			case i == l:
-				return errors.Errorf("invalid character '%c' at offset %d: label cannot begin with a period", b, i)
+				return errors.Errorf(dnLabelStarPeriodErr, b, i)
 			case i-l > 63:
-				return errors.Errorf("byte length of label '%s' is %d, cannot exceed 63", address[l:i], i-l)
+				return errors.Errorf(dnLabelMaxLenErr, address[l:i], i-l, labelMaxLen)
 			case address[l] == '-':
-				return errors.Errorf("label '%s' at offset %d begins with a hyphen", address[l:i], l)
+				return errors.Errorf(dnLabelStartHyphenErr, address[l:i], l)
 			case address[i-1] == '-':
-				return errors.Errorf("label '%s' at offset %d ends with a hyphen", address[l:i], l)
+				return errors.Errorf(dnLabelEndHyphenErr, address[l:i], l)
 			}
 			l = i + 1
 			continue
@@ -370,58 +143,59 @@ func checkDomain(address string) error {
 			// Show the printable unicode character starting at byte offset i
 			c, _ := utf8.DecodeRuneInString(address[i:])
 			if c == utf8.RuneError {
-				return errors.Errorf("invalid rune at offset %d", i)
+				return errors.Errorf(dnRuneErr, c, i)
 			}
 
-			return errors.Errorf("invalid character '%c' at offset %d", c, i)
+			return errors.Errorf(dnCharErr, c, i)
 		}
 	}
 
-	// Check top level domain validity
+	// Check top-level domain validity
 	switch {
 	case l == len(address):
-		return errors.Errorf("missing top level domain, domain cannot end with a period")
+		return errors.Errorf(dnTldEndPeriodErr)
 	case len(address)-l > 63:
-		return errors.Errorf("byte length of top level domain '%s' is %d, cannot exceed 63", address[l:], len(address)-l)
+		return errors.Errorf(dnTldMaxLenErr, address[l:], len(address)-l, topLevelMaxLen)
 	case address[l] == '-':
-		return errors.Errorf("top level domain '%s' at offset %d begins with a hyphen", address[l:], l)
+		return errors.Errorf(dnTldStartHyphenErr, address[l:], l)
 	case address[len(address)-1] == '-':
-		return errors.Errorf("top level domain '%s' at offset %d ends with a hyphen", address[l:], l)
+		return errors.Errorf(dnTldEndHyphenErr, address[l:], l)
 	case address[l] >= '0' && address[l] <= '9':
-		return errors.Errorf("top level domain '%s' at offset %d begins with a digit", address[l:], l)
+		return errors.Errorf(dnTldStartDigitErr, address[l:], l)
 	}
 
 	return nil
 }
 
-// IsIPv4 determines if the given string is a valid IPv4 address. The IP address
-// address may include a port.
+// IsIPv4 determines if the given string is a valid IPv4 address. Ports are
+// allowed; if a port is present, then it is stripped.
 func IsIPv4(address string) bool {
-	ip := getIP(address)
+	ip := ParseIP(address)
 	return ip != nil && ip.To4() != nil
 }
 
-// IsIPv6 determines if the given string is a valid IPv6 address. The IP address
-// address may include a port.
+// IsIPv6 determines if the given string is a valid IPv6 address. Ports are
+// allowed; if a port is present, then it is stripped.
 func IsIPv6(address string) bool {
-	ip := getIP(address)
+	ip := ParseIP(address)
 	return ip != nil && ip.To4() == nil
 }
 
-// IsIP determines if the given string is is a valid IP address. The IP address
-// address may include a port.
+// IsIP determines if the given string is is a valid IP address. Ports are
+// allowed; if a port is present, then it is stripped.
 func IsIP(address string) bool {
-	return getIP(address) != nil
+	return ParseIP(address) != nil
 }
 
 // IsPublicIP determines if the given string is a valid public IP address. The
 // IP address address may include a port. If the IP is invalid, then an error is
-// returned specifying the reason. Otherwise, it returns nil.
+// returned specifying the reason. Otherwise, it returns nil. Ports are allowed;
+// if a port is present, then it is stripped.
 func IsPublicIP(address string) error {
 	// Parse the IP address
-	ip := getIP(address)
+	ip := ParseIP(address)
 	if ip == nil {
-		return errors.Errorf("address %s is an invalid IP", address)
+		return errors.Errorf(invalidIPErr, address)
 	}
 
 	switch ip.To4() {
@@ -432,31 +206,39 @@ func IsPublicIP(address string) error {
 	}
 }
 
-// IsPort determines if the string is a valid network port.
-func IsPort(port string) bool {
+// IsPort determines if the integer is a valid network port.
+func IsPort(port int) bool {
+	return port >= minPortNum && port <= maxPortNum
+}
+
+// IsPortString determines if the string is a valid network port.
+func IsPortString(port string) bool {
 	portNum, err := strconv.Atoi(port)
 
-	return err == nil && IsPortNum(portNum)
+	return err == nil && IsPort(portNum)
 }
 
-// IsPortNum determines if the integer is a valid network port.
-func IsPortNum(port int) bool {
-	return port > 0 && port < 65536
+// IsEphemeralPort determines if the port is ephemeral. An ephemeral port is any
+// unreserved port, which is any value greater than 1024 (RFC 6056). Note that
+// some ports in this range are still assigned.
+// https://datatracker.ietf.org/doc/html/rfc6056#section-3.2
+func IsEphemeralPort(port int) bool {
+	return port >= minAllowablePort && port <= maxAllowablePort
 }
 
-// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?&page=121
-
-// IsValidPort determines if the port is in the allowable range of 1024 to 49151.
-func IsValidPort(port int) bool {
-	return port > 1023 && port < 49152
+// IsEphemeralPortString determines if the string is an ephemeral port.
+func IsEphemeralPortString(port string) bool {
+	portNum, err := strconv.Atoi(port)
+	return err == nil && IsEphemeralPort(portNum)
 }
 
-// isPrivateV4 returns an error if the IPv4 address is part of a private address
-// block.
+// isPrivateV4 determines if the IPv4 address is a valid public IP address by
+// checking that the IP is not part of a private address block. If it in a
+// private block, then an error is returned specifying the block.
 func isPrivateV4(ip net.IP) error {
 	for _, privNet := range privateV4Networks {
 		if privNet.net.Contains(ip) {
-			return errors.Errorf("address %s is not globally routable (%s: %s [%s])",
+			return errors.Errorf(nonGlobalIpErr,
 				ip, privNet.net.String(), privNet.name, privNet.rfc)
 		}
 	}
@@ -464,21 +246,22 @@ func isPrivateV4(ip net.IP) error {
 	return nil
 }
 
-// isPrivateV6 returns an error if the IPv6 address is part of a private address
-// block.
+// isPrivateV6 determines if the IPv6 address is a valid public IP address by
+// checking that the IP is not part of a private address block. If it in a
+// private block, then an error is returned specifying the block.
 func isPrivateV6(ip net.IP) error {
 	for _, privNet := range privateV6Networks {
 		if privNet.net.Contains(ip) {
-			return errors.Errorf("address %s is not globally routable (%s: %s [%s])",
+			return errors.Errorf(nonGlobalIpErr,
 				ip, privNet.net.String(), privNet.name, privNet.rfc)
 		}
 	}
 	return nil
 }
 
-// getIP returns the address as a net.IP. The IP address address may include a
-// port.
-func getIP(address string) net.IP {
+// ParseIP returns the IP address as a net.IP object. Expects a valid IPv4 or
+// IPv6 address. Ports are allowed; if a port is present, then it is stripped.
+func ParseIP(address string) net.IP {
 	// Split the address from the port if the port exists
 	host, _, err := net.SplitHostPort(address)
 	if err == nil {
@@ -487,12 +270,4 @@ func getIP(address string) net.IP {
 
 	// Parse the IP address
 	return net.ParseIP(address)
-}
-
-func PrintPrivateV4NetworksSV(s string) {
-	var printString string
-	for _, block := range privateV4Networks {
-		printString += block.net.String() + s + block.name + s + block.rfc + "\n"
-	}
-	fmt.Print(printString)
 }
