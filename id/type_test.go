@@ -17,7 +17,8 @@ func TestType_String(t *testing.T) {
 	expectedGateway := "gateway"
 	expectedNode := "node"
 	expectedUser := "user"
-	expectedNumTypes := "4"
+	expectedGroup := "group"
+	expectedNumTypes := "5"
 
 	// Test Generic stringer
 	testVal := Generic.String()
@@ -47,6 +48,13 @@ func TestType_String(t *testing.T) {
 			"\n\texpected: %s\n\treceived: %s", expectedUser, testVal)
 	}
 
+	// Test Group stringer
+	testVal = Group.String()
+	if expectedGroup != testVal {
+		t.Errorf("String() returned incorrect string for Group type."+
+			"\n\texpected: %s\n\treceived: %s", expectedGroup, testVal)
+	}
+
 	// Test NumTypes stringer
 	testVal = NumTypes.String()
 	if expectedNumTypes != testVal {
@@ -59,8 +67,8 @@ func TestType_String(t *testing.T) {
 // defined.
 func TestType_String_Error(t *testing.T) {
 	// Expected/test values
-	expectedError := "UNKNOWN ID TYPE: 5"
-	testType := Type(5)
+	expectedError := "UNKNOWN ID TYPE: 6"
+	testType := Type(6)
 
 	// Test stringer error
 	testVal := testType.String()
