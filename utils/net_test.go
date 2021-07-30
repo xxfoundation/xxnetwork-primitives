@@ -9,11 +9,11 @@ package utils
 
 import (
 	"fmt"
-	"net"
 	"strings"
 	"testing"
 )
 
+/*
 // Tests that GetIP returns the expected IP address for each valid address.
 func TestGetIP_ValidAddress(t *testing.T) {
 	testValues := []struct {
@@ -35,6 +35,7 @@ func TestGetIP_ValidAddress(t *testing.T) {
 		{"google.com", net.IPv4(173, 194, 215, 138)},
 		{"xx.network", net.IPv4(172, 67, 68, 159)},
 		{"elixxir.io", net.IPv4(104, 26, 4, 131)},
+		{"permissioning.prod.cmix.rip", net.IPv4(18, 157, 190, 101)},
 	}
 
 	for i, val := range testValues {
@@ -92,7 +93,9 @@ func TestGetIP_InvalidAddress(t *testing.T) {
 		t.Log(ip)
 	}
 }
+*/
 
+/*
 // Happy path.
 func TestIsAddress_ValidAddress(t *testing.T) {
 	// TODO
@@ -102,6 +105,7 @@ func TestIsAddress_ValidAddress(t *testing.T) {
 func TestIsAddress_InvalidAddress(t *testing.T) {
 	// TODO
 }
+*/
 
 // Tests that IsPublicAddress returns nil for valid public addresses.
 func TestIsPublicAddress_ValidAddress(t *testing.T) {
@@ -112,6 +116,7 @@ func TestIsPublicAddress_ValidAddress(t *testing.T) {
 		"localhost.localdomain.intern",
 		"l.local.intern",
 		"ru.link.n.svpncloud.com",
+		"permissioning.prod.cmix.rip",
 
 		"example.com",
 		"foo.example.com",
@@ -134,6 +139,18 @@ func TestIsPublicAddress_ValidAddress(t *testing.T) {
 		"fec0::1",
 		"feff::1",
 		"0100::0001:0000:0000:0000:0000",
+
+		"one.one.one.one",
+		"rfree1.blue-shield.at",
+		"dns01.prd.kista.ovpn.com",
+		"ns.belltele.in",
+		"cache0300.ns.eu.uu.net",
+		"dns.quad9.net",
+		"nsx.euroweb.ro",
+		"dns11.quad9.net",
+		"ns1.solwaycomms.net",
+		"lookup1.resolver.lax-noc.com",
+		"resolver5.freedns.zone.powered.by.ihost24.com",
 	}
 
 	for i, address := range addresses {
@@ -144,6 +161,25 @@ func TestIsPublicAddress_ValidAddress(t *testing.T) {
 		}
 	}
 }
+
+/*
+// Tests that IsPublicAddress returns nil for valid public addresses.
+func TestIsPublicAddress_ValidAddressFile(t *testing.T) {
+	file, err := ReadFile("domain_list.txt")
+	if err != nil {
+		t.Errorf("Failed to read file: %+v", err)
+	}
+	addresses := strings.Split(strings.TrimSpace(string(file)), "\n")
+
+	for i, address := range addresses {
+		err := IsPublicAddress(address)
+		if err != nil {
+			t.Errorf("Address %q incorrectly determined to not be valid "+
+				"public address (%d): %+v", address, i, err)
+		}
+	}
+}
+*/
 
 // Error path: tests that IsPublicAddress returns the expected error for invalid
 // and private addresses.

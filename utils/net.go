@@ -8,7 +8,6 @@
 package utils
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"net"
 	"strconv"
@@ -29,7 +28,7 @@ const (
 
 // Error messages.
 const (
-	lookupIpErr    = "failed to lookup host: %+v"
+	// lookupIpErr    = "failed to lookup host: %+v"
 	invalidIPErr   = "address %q is an invalid IP address"
 	nonGlobalIpErr = "address %q is not globally routable (%s: %s [%s])"
 
@@ -49,6 +48,7 @@ const (
 	dnTldStartDigitErr    = "top-level domain %q at offset %d begins with a digit"
 )
 
+/*
 // GetIP returns the address as a net.IP object. Expects a valid IPv4 address,
 // IPv6 address, or domain name. Ports are allowed; if a port is present, then
 // it is stripped.
@@ -65,7 +65,7 @@ func GetIP(address string) (net.IP, error) {
 		return ip, nil
 	}
 
-	// Lookup host using the local resolver
+	// Lookup host using the local resolver to get a list of IP addresses
 	ips, err := net.LookupIP(address)
 	if err != nil {
 		return nil, errors.Errorf(lookupIpErr, err)
@@ -73,16 +73,26 @@ func GetIP(address string) (net.IP, error) {
 
 	fmt.Printf("IPs: %+v\n", ips)
 
+	// Return the first IPv4 address in the list
+	for _, ip := range ips {
+		if ip.To4() != nil {
+			return ip, nil
+		}
+	}
+
 	// Returns the first IP address for the host
 	return ips[0], nil
 }
+*/
 
+/*
 // IsAddress determines if the given address is a valid IP address or domain
 // name. Ports are allowed; if a port is present, then it is stripped.
 // TODO: add tests
 func IsAddress(address string) bool {
 	return IsIP(address) || IsDomainName(address) != nil
 }
+*/
 
 // IsPublicAddress determines if the given address is a public IP address or
 // domain name. Ports are allowed; if a port is present, then it is stripped.
