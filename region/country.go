@@ -24,6 +24,18 @@ func GetCountryList() []string {
 	return list
 }
 
+// GetCountryBins returns a copy of the countryBins map.
+func GetCountryBins() map[string]GeoBin {
+	// Create the target map
+	targetMap := make(map[string]GeoBin)
+
+	// Copy from the original map to the target map
+	for key, value := range countryBins {
+		targetMap[key] = value
+	}
+	return targetMap
+}
+
 // CountryLen returns the number of countries in the countryBins list.
 func CountryLen() int {
 	return len(countryBins)
