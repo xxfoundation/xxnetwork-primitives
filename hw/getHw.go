@@ -23,35 +23,35 @@ func LogHardware() error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("lscpu: %s", err))
 	}
-	jww.INFO.Printf("---------------------CPU INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------CPU INFO---------------------------\r\n%s", out)
 
 	// lspci GPUs
 	out, err = exec.Command("bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA").Output()
 	if err != nil {
 		return errors.New(fmt.Sprintf("lspci gpu: %s", err))
 	}
-	jww.INFO.Printf("---------------------GPU INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------GPU INFO---------------------------\r\n%s", out)
 
 	// lsblk
 	out, err = exec.Command("lsblk").Output()
 	if err != nil {
 		return errors.New(fmt.Sprintf("lsblk: %s", err))
 	}
-	jww.INFO.Printf("---------------------PARTITION INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------PARTITION INFO---------------------------\r\n%s", out)
 
 	// df disk usage
 	out, err = exec.Command("df", "-h").Output()
 	if err != nil {
 		return errors.New(fmt.Sprintf("df: %s", err))
 	}
-	jww.INFO.Printf("---------------------DISK USAGE INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------DISK USAGE INFO---------------------------\r\n%s", out)
 
 	// disk hw info
 	out, err = exec.Command("lshw", "-class", "disk", "-class", "storage").Output()
 	if err != nil {
 		return errors.New(fmt.Sprintf("lshw: %s", err))
 	}
-	jww.INFO.Printf("---------------------DISK HW INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------DISK HW INFO---------------------------\r\n%s", out)
 
 	/* requires root :(
 		// RAM info
@@ -67,9 +67,9 @@ func LogHardware() error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("free: %s", err))
 	}
-	jww.INFO.Printf("---------------------RAM USAGE INFO---------------------:\r\n%s", out)
+	jww.INFO.Printf("---------------------------RAM USAGE INFO---------------------------\r\n%s", out)
 
-	jww.INFO.Printf("---------------------End of Hardware Information---------------------")
+	jww.INFO.Printf("---------------------------End of Hardware Information---------------------------")
 
 	return nil
 }
