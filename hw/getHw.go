@@ -17,40 +17,41 @@ import (
 )
 
 func LogHardware() error {
+	jww.INFO.Printf("---------------------Printing Hardware Information---------------------")
 	// lscpu
 	out, err := exec.Command("lscpu").Output()
     if err != nil {
         return errors.New(fmt.Sprintf("lscpu: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] CPU INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------CPU INFO---------------------:\r\n%s", out)
 
 	// lspci GPUs
 	out, err = exec.Command("bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA").Output()
     if err != nil {
         return errors.New(fmt.Sprintf("lspci gpu: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] GPU INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------GPU INFO---------------------:\r\n%s", out)
 
 	// lsblk
 	out, err = exec.Command("lsblk").Output()
     if err != nil {
         return errors.New(fmt.Sprintf("lsblk: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] PARTITION INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------PARTITION INFO---------------------:\r\n%s", out)
 
 	// df disk usage
 	out, err = exec.Command("df", "-h").Output()
     if err != nil {
         return errors.New(fmt.Sprintf("df: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] DISK USAGE INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------DISK USAGE INFO---------------------:\r\n%s", out)
 
 	// disk hw info
 	out, err = exec.Command("lshw", "-class", "disk", "-class", "storage").Output()
 	if err != nil {
         return errors.New(fmt.Sprintf("lshw: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] DISK HW INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------DISK HW INFO---------------------:\r\n%s", out)
 
 	/* requires root :(
 	// RAM info
@@ -66,7 +67,7 @@ func LogHardware() error {
 	if err != nil {
         return errors.New(fmt.Sprintf("free: %s", err))
     }
-	jww.INFO.Printf("[HWINFO] RAM USAGE INFO:\r\n%s", out)
+	jww.INFO.Printf("---------------------RAM USAGE INFO---------------------:\r\n%s", out)
 
 	return nil
 }
