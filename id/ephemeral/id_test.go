@@ -40,7 +40,7 @@ func TestGetIdByRange(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
-	expectedLength := int(int64(duration)/period) + 1
+	expectedLength := int(int64(duration)/Period) + 1
 
 	if len(eids) != expectedLength {
 		t.Errorf("Unexpected list of ephemeral IDs."+
@@ -56,9 +56,9 @@ func TestGetIdByRange(t *testing.T) {
 				"when the current identity ends: \n\t end: %s \n\t start: %s",
 				i, eids[i].End, eids[next].Start)
 		}
-		if int64(eids[i].End.Sub(eids[i].Start)) != period {
+		if int64(eids[i].End.Sub(eids[i].Start)) != Period {
 			t.Errorf("Delta between start and end on %d does not equal the "+
-				"period: \n\t end: %s \n\t start: %s",
+				"Period: \n\t end: %s \n\t start: %s",
 				i, eids[i].End, eids[next].Start)
 		}
 	}
@@ -236,7 +236,7 @@ func TestGetRotationSalt(t *testing.T) {
 	ts += (12 * time.Hour).Nanoseconds()
 	salt3, _, _ := getRotationSalt(idHash, ts)
 	if bytes.Compare(salt1, salt2) == 0 && bytes.Compare(salt2, salt3) == 0 {
-		t.Error("Salt did not change as timestamp increased w/ period of one day")
+		t.Error("Salt did not change as timestamp increased w/ Period of one day")
 	}
 	t.Logf("First: %+v\tSecond: %+v\nThird: %+v\n", salt1, salt2, salt3)
 }
