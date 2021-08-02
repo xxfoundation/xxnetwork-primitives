@@ -101,8 +101,14 @@ func (g *Group) String() (string, error) {
 }
 
 // Marshal returns the JSON encoding of the NDF.
-func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
-	return json.Marshal(ndf)
+func (ndf *NetworkDefinition) Marshal() (data []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("json error: %+v", r)
+		}
+	}()
+	data, err = json.Marshal(ndf)
+	return
 }
 
 // Unmarshal parses the JSON encoded data and returns the resulting
