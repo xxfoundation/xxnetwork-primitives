@@ -7,7 +7,7 @@
 package current
 
 import (
-	"gitlab.com/elixxir/primitives/states"
+	"git.xx.network/elixxir/primitives/states"
 	"testing"
 )
 

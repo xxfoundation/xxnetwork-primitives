@@ -10,7 +10,7 @@ package knownRounds
 import (
 	"bytes"
 	"fmt"
-	"gitlab.com/xx_network/primitives/id"
+	"git.xx.network/xx_network/primitives/id"
 	"math"
 	"math/rand"
 	"reflect"

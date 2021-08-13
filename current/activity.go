@@ -9,7 +9,7 @@ package current
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"gitlab.com/elixxir/primitives/states"
+	"git.xx.network/elixxir/primitives/states"
 )
 
 //this holds the enum for the activity of the server. It is in primitives so
