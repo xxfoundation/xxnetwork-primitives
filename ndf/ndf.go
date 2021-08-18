@@ -12,10 +12,12 @@ package ndf
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/region"
+	"strconv"
 	"time"
 )
 
@@ -53,6 +55,7 @@ type Node struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Status
 }
 
 // Registration contains the connection information for the permissioning
@@ -89,6 +92,27 @@ type Group struct {
 type AddressSpace struct {
 	Size      uint8
 	Timestamp time.Time
+}
+
+type Status int
+
+const (
+	Old = Status(iota)
+	Validator
+	NumTypes
+)
+
+func (s Status) String() string {
+	switch s {
+	case Old:
+		return "Old"
+	case Validator:
+		return "Validator"
+	case NumTypes:
+		return strconv.Itoa(int(NumTypes))
+	default:
+		return fmt.Sprintf("UNKNOWN STATUS TYPE: %d", s)
+	}
 }
 
 func (g *Group) String() (string, error) {
