@@ -94,7 +94,7 @@ type AddressSpace struct {
 	Timestamp time.Time
 }
 
-type Status int
+type Status uint8
 
 const (
 	Old = Status(iota)
