@@ -97,17 +97,17 @@ type AddressSpace struct {
 type Status uint8
 
 const (
-	Stale = Status(iota)
-	Active
+	Active = Status(iota)
+	Stale
 	NumTypes
 )
 
 func (s Status) String() string {
 	switch s {
-	case Stale:
-		return "Stale"
 	case Active:
 		return "Active"
+	case Stale:
+		return "Stale"
 	case NumTypes:
 		return strconv.Itoa(int(NumTypes))
 	default:
