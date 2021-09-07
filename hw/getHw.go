@@ -44,11 +44,11 @@ var commandList = []string{cpu, gpu, partition, diskUsage, diskHw, ramUsage}
 // commandMap maps the header that will be printed to the bash command that will be run.
 var commandMap = map[string][]string{
 	cpu:       {"lscpu"},
-	gpu:       {"bash ", "-c ", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
+	gpu:       {"bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
 	partition: {"lsblk"},
-	diskUsage: {"df ", "-h "},
-	diskHw:    {"lshw ", "-class ", "disk ", "-class ", "storage"},
-	ramUsage:  {"free ", "-mt"},
+	diskUsage: {"df", "-h"},
+	diskHw:    {"lshw", "-class", "disk", "-class", "storage"},
+	ramUsage:  {"free", "-mt"},
 }
 
 // LogHardware iterates over commandList, running the command
