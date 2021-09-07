@@ -63,7 +63,7 @@ func LogHardware() error {
 		// Run command
 		var out []byte
 		var err error
-		cmd := strings.Join(cmdList, "")
+		cmd := strings.Join(cmdList, " ")
 		if len(cmdList) == 1 { // Handle quirks of exec.Command() and variable command length
 			out, err = exec.Command(cmdList[0]).Output()
 			if err != nil {
