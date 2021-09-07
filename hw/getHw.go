@@ -11,65 +11,73 @@ package hw
 import (
 	"errors"
 	"fmt"
-	"os/exec"
-
 	jww "github.com/spf13/jwalterweatherman"
+	"os/exec"
 )
 
+const (
+	// Initial header print, used for all other prints using fmt.Printf(header, s).
+	header = "---------------------%s---------------------"
+
+	// Beginning and ending headers for hardware information.
+	begin = "Printing Hardware Information"
+	end   = "End of Hardware Information"
+
+	path = "."
+
+	// All info headers to be printed.
+	cpu       = "CPU INFO"
+	gpu       = "GPU INFO"
+	partition = "PARTITION INFO"
+	diskUsage = "DISK USAGE INFO"
+	diskHw    = "DISK HW INFO"
+	ramUsage  = "RAM USAGE INFO"
+)
+
+// commandList is the list of headers that will be run and printed to the log.
+// commandList will be iterated over in LogHardware rather than commandMap to ensure
+// consistent printing order. The entry will be used to pull out the bash command
+// to be run out of commandMap.
+var commandList = []string{cpu, gpu, partition, diskUsage, diskHw, ramUsage}
+
+// commandMap maps the header that will be printed to the bash command that will be run.
+var commandMap = map[string][]string{
+	cpu:       {"lscpu"},
+	gpu:       {"bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
+	partition: {"lsblk"},
+	diskUsage: {"df", "-h"},
+	diskHw:    {"lshw", "-class", "disk", "-class", "storage"},
+	ramUsage:  {"free", "-mt"},
+}
+
 func LogHardware() error {
-	jww.INFO.Printf("---------------------Printing Hardware Information---------------------")
-	// lscpu
-	out, err := exec.Command("lscpu").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("lscpu: %s", err))
+	jww.INFO.Printf(header, begin)
+
+	for _, cmdHeader := range commandList {
+		// Pull command from map
+		cmdList := commandMap[cmdHeader]
+
+		// Run command
+		var out []byte
+		var err error
+
+		if len(cmdList) == 1 { // Handle quirks of exec.Command() and variable command length
+			out, err = exec.Command(cmdList[0]).Output()
+			if err != nil {
+				return errors.New(fmt.Sprintf("%s err: %s", cmdList, err))
+			}
+		} else {
+			out, err = exec.Command(cmdList[0], cmdList[1:]...).Output()
+			if err != nil {
+				return errors.New(fmt.Sprintf("%s err: %s", cmdList, err))
+			}
+		}
+
+		jww.INFO.Printf("%s\r\n%s\r\n%s", fmt.Sprintf(header, cmdHeader), cmdList, out)
+
 	}
-	jww.INFO.Printf("---------------------------CPU INFO---------------------------\r\n%s", out)
 
-	// lspci GPUs
-	out, err = exec.Command("bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("lspci gpu: %s", err))
-	}
-	jww.INFO.Printf("---------------------------GPU INFO---------------------------\r\n%s", out)
-
-	// lsblk
-	out, err = exec.Command("lsblk").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("lsblk: %s", err))
-	}
-	jww.INFO.Printf("---------------------------PARTITION INFO---------------------------\r\n%s", out)
-
-	// df disk usage
-	out, err = exec.Command("df", "-h").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("df: %s", err))
-	}
-	jww.INFO.Printf("---------------------------DISK USAGE INFO---------------------------\r\n%s", out)
-
-	// disk hw info
-	out, err = exec.Command("lshw", "-class", "disk", "-class", "storage").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("lshw: %s", err))
-	}
-	jww.INFO.Printf("---------------------------DISK HW INFO---------------------------\r\n%s", out)
-
-	/* requires root :(
-		// RAM info
-		out, err = exec.Command("dmidecode", "--type", "17").Output()
-	    if err != nil {
-	        return errors.New(fmt.Sprintf("dmidecode: %s", err))
-	    }
-		jww.INFO.Printf("[HWINFO] RAM HW INFO:\r\n%s", out)
-	*/
-
-	// RAM usage
-	out, err = exec.Command("free", "-mt").Output()
-	if err != nil {
-		return errors.New(fmt.Sprintf("free: %s", err))
-	}
-	jww.INFO.Printf("---------------------------RAM USAGE INFO---------------------------\r\n%s", out)
-
-	jww.INFO.Printf("---------------------------End of Hardware Information---------------------------")
+	jww.INFO.Printf(header, end)
 
 	return nil
 }
