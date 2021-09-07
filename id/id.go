@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"io"
+	"regexp"
 	"testing"
 )
 
@@ -27,7 +28,13 @@ const (
 
 	// Length of the full ID array
 	ArrIDLen = dataLen + 1
+
+	// Alphanumeric contains the regular expression to search for an alphanumeric string.
+	Alphanumeric string = "^[a-zA-Z0-9]+$"
 )
+
+// regexAlphanumeric is the regex for searching for an alphanumeric string.
+var regexAlphanumeric = regexp.MustCompile(Alphanumeric)
 
 // ID is a fixed-length array containing data that services as an identifier for
 // entities. The first 32 bytes hold the ID data while the last byte holds the
@@ -105,21 +112,31 @@ func (id *ID) SetType(idType Type) {
 	id[ArrIDLen-1] = byte(idType)
 }
 
+// NewRandomID generates a random ID using the passed in io.Reader r
+// and sets the ID to Type t. If the base64 string of the generated
+// ID does not begin with an alphanumeric character, then another ID
+// is generated until the encoding begins with an alphanumeric character.
 func NewRandomID(r io.Reader, t Type) (*ID, error) {
-	// Generate random bytes
-	idBytes := make([]byte, ArrIDLen)
-	if _, err := r.Read(idBytes); err != nil {
-		return nil, errors.Errorf("failed to generate random bytes for new "+
-			"ID: %+v", err)
+	for {
+		// Generate random bytes
+		idBytes := make([]byte, ArrIDLen)
+		if _, err := r.Read(idBytes); err != nil {
+			return nil, errors.Errorf("failed to generate random bytes for new "+
+				"ID: %+v", err)
+		}
+
+		// Create ID from bytes
+		id := copyID(idBytes)
+
+		// Set new ID type
+		id.SetType(t)
+
+		// Avoid the first character being a special character
+		if regexAlphanumeric.MatchString(string(id.String()[0])) {
+			return id, nil
+		}
 	}
 
-	// Create ID from bytes
-	id := copyID(idBytes)
-
-	// Set new ID type
-	id.SetType(t)
-
-	return id, nil
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
