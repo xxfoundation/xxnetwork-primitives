@@ -132,7 +132,8 @@ func NewRandomID(r io.Reader, t Type) (*ID, error) {
 		id.SetType(t)
 
 		// Avoid the first character being a special character
-		if regexAlphanumeric.MatchString(string(id.String()[0])) {
+		base64Id := id.String()
+		if regexAlphanumeric.MatchString(string(base64Id[0])) {
 			return id, nil
 		}
 	}
