@@ -13,6 +13,7 @@ import (
 	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
 	"os/exec"
+	"strings"
 )
 
 const (
@@ -43,11 +44,11 @@ var commandList = []string{cpu, gpu, partition, diskUsage, diskHw, ramUsage}
 // commandMap maps the header that will be printed to the bash command that will be run.
 var commandMap = map[string][]string{
 	cpu:       {"lscpu"},
-	gpu:       {"bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
+	gpu:       {"bash ", "-c ", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
 	partition: {"lsblk"},
-	diskUsage: {"df", "-h"},
-	diskHw:    {"lshw", "-class", "disk", "-class", "storage"},
-	ramUsage:  {"free", "-mt"},
+	diskUsage: {"df ", "-h "},
+	diskHw:    {"lshw ", "-class ", "disk ", "-class ", "storage"},
+	ramUsage:  {"free ", "-mt"},
 }
 
 // LogHardware iterates over commandList, running the command
@@ -62,7 +63,7 @@ func LogHardware() error {
 		// Run command
 		var out []byte
 		var err error
-
+		cmd := strings.Join(cmdList, "")
 		if len(cmdList) == 1 { // Handle quirks of exec.Command() and variable command length
 			out, err = exec.Command(cmdList[0]).Output()
 			if err != nil {
@@ -75,7 +76,7 @@ func LogHardware() error {
 			}
 		}
 
-		jww.INFO.Printf("%s\r\n%s\r\n%s", fmt.Sprintf(header, cmdHeader), cmdList, out)
+		jww.INFO.Printf("%s\r\n%s\r\n%s", fmt.Sprintf(header, cmdHeader), cmd, out)
 
 	}
 
