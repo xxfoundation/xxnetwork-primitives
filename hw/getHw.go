@@ -50,6 +50,8 @@ var commandMap = map[string][]string{
 	ramUsage:  {"free", "-mt"},
 }
 
+// LogHardware iterates over commandList, running the command
+// from the commandMap and printing out the results.
 func LogHardware() error {
 	jww.INFO.Printf(header, begin)
 
