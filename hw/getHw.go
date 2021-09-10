@@ -9,7 +9,6 @@
 package hw
 
 import (
-	"errors"
 	"fmt"
 	jww "github.com/spf13/jwalterweatherman"
 	"os/exec"
@@ -53,7 +52,7 @@ var commandMap = map[string][]string{
 
 // LogHardware iterates over commandList, running the command
 // from the commandMap and printing out the results.
-func LogHardware() error {
+func LogHardware() {
 	jww.INFO.Printf(header, begin)
 
 	for _, cmdHeader := range commandList {
@@ -66,13 +65,13 @@ func LogHardware() error {
 		cmd := strings.Join(cmdList, " ")
 		if len(cmdList) == 1 { // Handle quirks of exec.Command() and variable command length
 			out, err = exec.Command(cmdList[0]).Output()
-			if err != nil {
-				return errors.New(fmt.Sprintf("%s err: %s", cmdList, err))
+			if err != nil { // Print error, continue with other commands
+				out = []byte((fmt.Sprintf("%s err: %s", cmdList, err)))
 			}
 		} else {
 			out, err = exec.Command(cmdList[0], cmdList[1:]...).Output()
-			if err != nil {
-				return errors.New(fmt.Sprintf("%s err: %s", cmdList, err))
+			if err != nil { // Print error, continue with other commands
+				out = []byte((fmt.Sprintf("%s err: %s", cmdList, err)))
 			}
 		}
 
@@ -82,5 +81,5 @@ func LogHardware() error {
 
 	jww.INFO.Printf(header, end)
 
-	return nil
+	return
 }
