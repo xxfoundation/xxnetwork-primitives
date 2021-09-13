@@ -61,7 +61,7 @@ func Unmarshal(data []byte) (*ID, error) {
 // Marshal() and any changes made here will affect how Marshal() functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get bytes of ID: ID is nil.").Error())
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get bytes of ID: ID is nil."))
 	}
 
 	newBytes := make([]byte, ArrIDLen)
@@ -74,7 +74,7 @@ func (id *ID) Bytes() []byte {
 // false otherwise.
 func (id *ID) Cmp(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil.").Error())
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
 	}
 
 	return *id == *y
@@ -83,7 +83,7 @@ func (id *ID) Cmp(y *ID) bool {
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to create a copy of ID: ID is nil.").Error())
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to create a copy of ID: ID is nil."))
 	}
 
 	return copyID(id.Bytes())
@@ -97,7 +97,7 @@ func (id *ID) String() string {
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get ID type: ID is nil.").Error())
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get ID type: ID is nil."))
 	}
 
 	return Type(id[ArrIDLen-1])
@@ -106,7 +106,7 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to set ID type: ID is nil.").Error())
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to set ID type: ID is nil."))
 	}
 
 	id[ArrIDLen-1] = byte(idType)
