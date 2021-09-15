@@ -231,7 +231,7 @@ func TestID_String(t *testing.T) {
 // Tests that GetType() returns the correct type for each ID type.
 func TestID_GetType(t *testing.T) {
 	// Test values
-	testTypes := []Type{Generic, Gateway, Node, User, NumTypes, 6}
+	testTypes := []Type{Generic, Gateway, Node, User, Group, NumTypes, 7}
 	randomBytes := [][]byte{
 		newRandomBytes(ArrIDLen-1, t), newRandomBytes(ArrIDLen-1, t),
 		newRandomBytes(ArrIDLen-1, t), newRandomBytes(ArrIDLen-1, t),
@@ -305,16 +305,16 @@ func TestID_SetType_NilError(t *testing.T) {
 func TestNewRandomID_Consistency(t *testing.T) {
 	prng := rand.New(rand.NewSource(42))
 	expectedIDs := []string{
-		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsB",
-		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8B",
-		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4D",
-		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQD",
-		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcID",
-		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOMD",
-		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kC",
-		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4D",
-		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoC",
-		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIB",
+		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsA",
+		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8C",
+		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4A",
+		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQA",
+		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcIA",
+		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOME",
+		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kD",
+		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4A",
+		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoE",
+		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIE",
 	}
 
 	for i, expected := range expectedIDs {
@@ -322,7 +322,6 @@ func TestNewRandomID_Consistency(t *testing.T) {
 		if err != nil {
 			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
 		}
-
 		if testID.String() != expected {
 			t.Errorf("NewRandomID() did not generate the expected ID."+
 				"\nexpected: %s\nreceived: %s", expected, testID)
@@ -348,6 +347,24 @@ func TestNewRandomID_Unique(t *testing.T) {
 			ids[testID] = struct{}{}
 		}
 	}
+}
+
+// This tests uses a custom PRNG which generates an ID with a base64 encoding
+// starting with a special character. NewRandomID should force another call
+// to prng.Read, and this call should return an ID with encoding starting with an
+// alphanumeric character. This test fails if it hangs forever (PRNG error) or
+// the ID has an encoding beginning with a special character (NewRandomID error).
+func TestNewRandomID_SpecialCharacter(t *testing.T) {
+	prng := newAlphanumericPRNG()
+	testId, err := NewRandomID(prng, 0)
+	if err != nil {
+		t.Errorf("NewRandomID() returned an error: %+v", err)
+	}
+
+	if !regexAlphanumeric.MatchString(string(testId.String()[0])) {
+		t.Errorf("Should not have an ID starting with a special character")
+	}
+
 }
 
 // Tests that NewRandomID returns an error when the io reader encounters an
@@ -542,4 +559,43 @@ func newRandomBytes(length int, t *testing.T) []byte {
 	}
 
 	return idBytes
+}
+
+// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface. This is used for
+// testing special characters.
+type alphaNumericPRNG struct {
+	counter uint
+}
+
+// newAlphanumericPRNG generates a copy of the custom prng alphaNumericPRNG.
+func newAlphanumericPRNG() *alphaNumericPRNG {
+	return &alphaNumericPRNG{counter: 0}
+}
+
+// Hardcoded byte array which generates a base64 string starting with a special character.
+// Expected encoding is "/ABBb6YWlbkgLmg2Ohx4f0eE4K7Zx4VkGE4THx58gR8A",
+// any other encoding output indicates that something is wrong (likely a dependency).
+var hardCodedSpecialCharacter = []byte{252, 0, 65, 111, 166, 22, 149, 185, 32, 46, 104, 54, 58, 28, 120, 127, 71, 132, 224, 174, 217, 199, 133, 100, 24, 78, 19, 31, 30, 124, 129, 31, 189}
+
+// Hardcoded byte array which generates a base64 string starting with an alphanumeric character.
+// Expected encoding is "6iMc/s5V6MSzD6+DDQthcfA53w7wY988cenRkjxNwIcD",
+// any other encoding output indicates that something is wrong (likely a dependency).
+var hardcodedAlphaNumeric = []byte{234, 35, 28, 254, 206, 85, 232, 196, 179, 15, 175, 131, 13, 11, 97, 113, 240, 57, 223, 14, 240, 99, 223, 60, 113, 233, 209, 146, 60, 77, 192, 135, 19}
+
+// Read will copy a value into byte slice p. On the first call to alphaNumericPRNG.Read()
+// a hardcoded value with a base64 encoding starting with a special character will be returned.
+// For any other call to alphaNumericPRNG.Read(), a hardcoded value with a base64 encoding starting with an
+// alphanumeric character will be returned.
+func (prng *alphaNumericPRNG) Read(p []byte) (n int, err error) {
+	defer func() {
+		prng.counter++
+	}()
+
+	if prng.counter == 0 {
+		copy(p, hardCodedSpecialCharacter)
+		return len(p), nil
+	} else {
+		copy(p, hardcodedAlphaNumeric)
+		return len(p), nil
+	}
 }

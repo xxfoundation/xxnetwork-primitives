@@ -14,9 +14,11 @@ package id
 import (
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"io"
+	"regexp"
 	"testing"
 )
 
@@ -26,7 +28,13 @@ const (
 
 	// Length of the full ID array
 	ArrIDLen = dataLen + 1
+
+	// Alphanumeric contains the regular expression to search for an alphanumeric string.
+	Alphanumeric string = "^[a-zA-Z0-9]+$"
 )
+
+// regexAlphanumeric is the regex for searching for an alphanumeric string.
+var regexAlphanumeric = regexp.MustCompile(Alphanumeric)
 
 // ID is a fixed-length array containing data that services as an identifier for
 // entities. The first 32 bytes hold the ID data while the last byte holds the
@@ -53,7 +61,7 @@ func Unmarshal(data []byte) (*ID, error) {
 // Marshal() and any changes made here will affect how Marshal() functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("Failed to get bytes of ID: ID is nil.")
+		jww.FATAL.Panicf(errors.Errorf("Failed to get bytes of ID: ID is nil.").Error())
 	}
 
 	newBytes := make([]byte, ArrIDLen)
@@ -66,7 +74,7 @@ func (id *ID) Bytes() []byte {
 // false otherwise.
 func (id *ID) Cmp(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("Failed to compare IDs: one or both IDs are nil.")
+		jww.FATAL.Panicf(errors.Errorf("Failed to compare IDs: one or both IDs are nil.").Error())
 	}
 
 	return *id == *y
@@ -75,7 +83,7 @@ func (id *ID) Cmp(y *ID) bool {
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("Failed to create a copy of ID: ID is nil.")
+		jww.FATAL.Panicf(errors.Errorf("Failed to create a copy of ID: ID is nil.").Error())
 	}
 
 	return copyID(id.Bytes())
@@ -89,7 +97,7 @@ func (id *ID) String() string {
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("Failed to get ID type: ID is nil.")
+		jww.FATAL.Panicf(errors.Errorf("Failed to get ID type: ID is nil.").Error())
 	}
 
 	return Type(id[ArrIDLen-1])
@@ -98,27 +106,38 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("Failed to set ID type: ID is nil.")
+		jww.FATAL.Panicf(errors.Errorf("Failed to set ID type: ID is nil.").Error())
 	}
 
 	id[ArrIDLen-1] = byte(idType)
 }
 
+// NewRandomID generates a random ID using the passed in io.Reader r
+// and sets the ID to Type t. If the base64 string of the generated
+// ID does not begin with an alphanumeric character, then another ID
+// is generated until the encoding begins with an alphanumeric character.
 func NewRandomID(r io.Reader, t Type) (*ID, error) {
-	// Generate random bytes
-	idBytes := make([]byte, ArrIDLen)
-	if _, err := r.Read(idBytes); err != nil {
-		return nil, errors.Errorf("failed to generate random bytes for new "+
-			"ID: %+v", err)
+	for {
+		// Generate random bytes
+		idBytes := make([]byte, ArrIDLen)
+		if _, err := r.Read(idBytes); err != nil {
+			return nil, errors.Errorf("failed to generate random bytes for new "+
+				"ID: %+v", err)
+		}
+
+		// Create ID from bytes
+		id := copyID(idBytes)
+
+		// Set new ID type
+		id.SetType(t)
+
+		// Avoid the first character being a special character
+		base64Id := id.String()
+		if regexAlphanumeric.MatchString(string(base64Id[0])) {
+			return id, nil
+		}
 	}
 
-	// Create ID from bytes
-	id := copyID(idBytes)
-
-	// Set new ID type
-	id.SetType(t)
-
-	return id, nil
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
@@ -183,7 +202,12 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	return newID
 }
 
-// NewIdFromUInt converts the specified uint64 array into bytes and returns a
+// HexEncode encodes the Id without 33rd type byte
+func (id *ID) HexEncode() string {
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
+}
+
+// NewIdFromUInts converts the specified uint64 array into bytes and returns a
 // new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.

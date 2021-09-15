@@ -7,6 +7,7 @@ cache:
     - vendor/
 
 before_script:
+  - apt install -y pciutils lshw dmidecode
   - go version || echo "Go executable not found."
   - echo $CI_BUILD_REF
   - echo $CI_PROJECT_DIR
@@ -18,7 +19,6 @@ before_script:
   - ssh-keyscan -t rsa $GITLAB_SERVER > ~/.ssh/known_hosts
   - git config --global url."git@$GITLAB_SERVER:".insteadOf "https://gitlab.com/"
   - export PATH=$HOME/go/bin:$PATH
-  - export GOPRIVATE=gitlab.com/elixxir/*,gitlab.com/xx_network/*
 
 stages:
   - build
@@ -26,7 +26,7 @@ stages:
 
 build:
   stage: build
-  image: elixxirlabs/cuda-go:go1.13-cuda11.1
+  image: elixxirlabs/cuda-go:go1.16-cuda11.1
   script:
     - git clean -ffdx
     - go mod vendor -v
