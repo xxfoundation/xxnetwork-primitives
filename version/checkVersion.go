@@ -51,9 +51,8 @@ func (v Version) Patch() string {
 	return v.patch
 }
 
-// FIXME: make String operate on value not address
 // String prints the Version in a string format of the form "major.minor.path".
-func (v *Version) String() string {
+func (v Version) String() string {
 	return strconv.Itoa(v.major) + delimiter + strconv.Itoa(v.minor) +
 		delimiter + v.patch
 }
