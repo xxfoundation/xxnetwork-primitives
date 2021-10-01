@@ -7,9 +7,12 @@
 
 package region
 
+import "strings"
+
 // GetCountryBin return the bin for the given country alpha-2 code.
 func GetCountryBin(countryCode string) (GeoBin, bool) {
-	bin, exists := countryBins[countryCode]
+	cleaned := strings.ToUpper(countryCode)
+	bin, exists := countryBins[cleaned]
 	return bin, exists
 }
 
