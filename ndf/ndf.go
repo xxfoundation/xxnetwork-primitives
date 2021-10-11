@@ -28,17 +28,18 @@ const NO_NDF = "Contacted server does not have an ndf to give"
 // NetworkDefinition structure hold connection and network information. It
 // matches the JSON structure generated in Terraform.
 type NetworkDefinition struct {
-	Timestamp      time.Time
-	Gateways       []Gateway
-	Nodes          []Node
-	Registration   Registration
-	Notification   Notification
-	UDB            UDB   `json:"Udb"`
-	E2E            Group `json:"E2e"`
-	CMIX           Group `json:"Cmix"`
-	AddressSpace   []AddressSpace
-	ClientVersion  string
-	PreApprovedIps []string
+	Timestamp     time.Time
+	Gateways      []Gateway
+	Nodes         []Node
+	Registration  Registration
+	Notification  Notification
+	UDB           UDB   `json:"Udb"`
+	E2E           Group `json:"E2e"`
+	CMIX          Group `json:"Cmix"`
+	AddressSpace  []AddressSpace
+	ClientVersion string
+	// Ids that bypass rate limiting
+	PreApprovedIds []string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
