@@ -46,6 +46,17 @@ func TestGetCountryList(t *testing.T) {
 	}
 }
 
+// Unit test of GetCountryBins.
+func TestGetCountryBins(t *testing.T) {
+	bins := GetCountryBins()
+
+	for k, v := range bins {
+		if val, exists := bins[k]; !exists || v != val {
+			t.Errorf("Country code %q with %s not found in map.", k, v)
+		}
+	}
+}
+
 // Unit test of CountryLen.
 func TestCountryLen(t *testing.T) {
 	if len(countryBins) != CountryLen() {

@@ -12,10 +12,12 @@ package ndf
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/region"
+	"strconv"
 	"time"
 )
 
@@ -53,6 +55,7 @@ type Node struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Status
 }
 
 // Registration contains the connection information for the permissioning
@@ -91,6 +94,27 @@ type AddressSpace struct {
 	Timestamp time.Time
 }
 
+type Status uint8
+
+const (
+	Active = Status(iota)
+	Stale
+	NumTypes
+)
+
+func (s Status) String() string {
+	switch s {
+	case Active:
+		return "Active"
+	case Stale:
+		return "Stale"
+	case NumTypes:
+		return strconv.Itoa(int(NumTypes))
+	default:
+		return fmt.Sprintf("UNKNOWN STATUS TYPE: %d", s)
+	}
+}
+
 func (g *Group) String() (string, error) {
 	data, err := json.Marshal(g)
 	if err != nil {
@@ -101,8 +125,14 @@ func (g *Group) String() (string, error) {
 }
 
 // Marshal returns the JSON encoding of the NDF.
-func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
-	return json.Marshal(ndf)
+func (ndf *NetworkDefinition) Marshal() (data []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("json error: %+v", r)
+		}
+	}()
+	data, err = json.Marshal(ndf)
+	return
 }
 
 // Unmarshal parses the JSON encoded data and returns the resulting
