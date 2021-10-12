@@ -118,7 +118,7 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 
 	latencyTable := CreateSetLatencyTableWeights(CreateLinkTable())
 
-	bestOrdering, weight, err := OrderNodeTeam(nodeList, countryMap, GetCountryBins(), latencyTable, rng)
+	_, _, err := OrderNodeTeam(nodeList, countryMap, GetCountryBins(), latencyTable, rng)
 
 	duration := time.Now().Sub(start)
 	t.Logf("CreateRound took: %v\n", duration)
@@ -135,18 +135,21 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 			"\n\tReceived: %s", teamsize, expectedDuration, duration)
 	}
 
-	for i := 0; i < len(bestOrdering); i++ {
-
-	}
-
-	t.Logf("Amount of long distant jumps: %v", longTransitions)
-
-	// Check that the long jumps does not exceed over half the jumps
-	if longTransitions > teamsize/2+1 {
-		t.Errorf("Number of long distant transitions beyond acceptable amount!"+
-			"\n\tAcceptable long distance transitions: %v"+
-			"\n\tReceived long distance transitions: %v", teamsize/2+1, longTransitions)
-	}
+	//var regionOrder []GeoBin
+	//var regionOrderStr []string
+	//for _, n := range bestOrdering {
+	//	order, _ := GetCountryBin(countryMap[*n])
+	//	regionOrder = append(regionOrder, order)
+	//	regionOrderStr = append(regionOrderStr, order.String())
+	//}
+	//
+	//
+	//for i := 0; i < len(bestOrdering)-1; i++ {
+	//	x :=  latencyTable[(regionOrder[i])][regionOrder[i+1]]
+	//	if x > 2 {
+	//		t.Fatalf("blah")
+	//	}
+	//}
 
 }
 
