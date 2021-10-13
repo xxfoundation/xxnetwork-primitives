@@ -39,9 +39,9 @@ type NetworkDefinition struct {
 	AddressSpace  []AddressSpace
 	ClientVersion string
 	// Ids that bypass rate limiting
-	PreApprovedIds []string
+	WhitelistedIds []string
 	// Ips that bypass rate limiting
-	PreApprovedIps []string
+	WhitelistedIps []string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -209,9 +209,9 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 	// Copy ClientVersion
 	newNDF.ClientVersion = ndf.ClientVersion
 
-	newNDF.PreApprovedIps = ndf.PreApprovedIps
+	newNDF.WhitelistedIps = ndf.WhitelistedIps
 
-	newNDF.PreApprovedIds = ndf.PreApprovedIds
+	newNDF.WhitelistedIds = ndf.WhitelistedIds
 
 	return newNDF
 }
