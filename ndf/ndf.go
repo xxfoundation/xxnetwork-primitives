@@ -42,6 +42,8 @@ type NetworkDefinition struct {
 	WhitelistedIds []string
 	// Ips that bypass rate limiting
 	WhitelistedIpAddresses []string
+	//Details on how gateways will rate limit clients
+	RateLimits RateLimiting
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -51,6 +53,13 @@ type Gateway struct {
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
 	Bin            region.GeoBin
+}
+
+// RateLimiting contains details on how to rate limit clients.
+type RateLimiting struct {
+	Capacity     uint
+	LeakedTokens uint
+	LeakDuration uint64
 }
 
 // Node contains the connection and identity information of a node on the
@@ -212,6 +221,12 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 	newNDF.WhitelistedIpAddresses = ndf.WhitelistedIpAddresses
 
 	newNDF.WhitelistedIds = ndf.WhitelistedIds
+
+	newNDF.RateLimits = RateLimiting{
+		Capacity:     ndf.RateLimits.Capacity,
+		LeakedTokens: ndf.RateLimits.LeakedTokens,
+		LeakDuration: ndf.RateLimits.LeakDuration,
+	}
 
 	return newNDF
 }
