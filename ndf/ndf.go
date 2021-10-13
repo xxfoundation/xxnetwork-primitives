@@ -38,6 +38,8 @@ type NetworkDefinition struct {
 	CMIX          Group `json:"Cmix"`
 	AddressSpace  []AddressSpace
 	ClientVersion string
+	// Ids that bypass rate limiting
+	PreApprovedIds []string
 }
 
 // Gateway contains the connection and identity information of a gateway on the
