@@ -6,7 +6,7 @@ import (
 )
 
 func TestWeights(t *testing.T) {
-	to := 12
+	to := 7
 
 	weights := make([]int, to+1)
 
