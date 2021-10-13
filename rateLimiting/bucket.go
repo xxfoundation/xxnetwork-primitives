@@ -114,7 +114,7 @@ func (b *Bucket) IsEmpty() bool {
 // Add adds the specified number of tokens to the bucket. Returns true if the
 // tokens were added; otherwise, returns false if there was insufficient
 // capacity to do so.
-func (b *Bucket) Add(tokens uint32) bool {
+func (b *Bucket) Add(tokens uint32) (bool, bool) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -131,10 +131,10 @@ func (b *Bucket) Add(tokens uint32) bool {
 
 	// If the tokens went over capacity, then return false, unless the bucket is
 	// whitelisted
-	return b.whitelist || b.remaining <= b.capacity
+	return b.whitelist || b.remaining <= b.capacity, b.whitelist
 }
 
-func (b *Bucket) AddWithoutOverflow(tokens uint32) bool {
+func (b *Bucket) AddWithoutOverflow(tokens uint32) (bool, bool) {
 	b.Lock()
 	defer b.Unlock()
 
@@ -153,7 +153,7 @@ func (b *Bucket) AddWithoutOverflow(tokens uint32) bool {
 
 	// If the tokens went over capacity, then return false, unless the bucket is
 	// whitelisted
-	return b.whitelist || addOK
+	return b.whitelist || addOK, b.whitelist
 }
 
 // update updates the number of remaining tokens in the bucket. It subtracts the
