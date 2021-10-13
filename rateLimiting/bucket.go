@@ -134,6 +134,28 @@ func (b *Bucket) Add(tokens uint32) bool {
 	return b.whitelist || b.remaining <= b.capacity
 }
 
+func (b *Bucket) AddWithoutOverflow(tokens uint32) bool {
+	b.Lock()
+	defer b.Unlock()
+
+	// Update the number of remaining tokens in the bucket prior to adding
+	b.update()
+
+	addOK := b.remaining <= b.capacity
+
+	// Add the tokens to the bucket
+	b.remaining += tokens
+
+	// If using the database, then update the remaining in the database bucket
+	if b.addToDb != nil {
+		b.addToDb(b.remaining, b.lastUpdate)
+	}
+
+	// If the tokens went over capacity, then return false, unless the bucket is
+	// whitelisted
+	return b.whitelist || addOK
+}
+
 // update updates the number of remaining tokens in the bucket. It subtracts the
 // number of leaked tokens since lastUpdate from the remaining number of tokens.
 // This function is not thread safe. It must be called with a locked mutex.
