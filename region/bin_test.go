@@ -23,15 +23,20 @@ func TestGeoBin_String(t *testing.T) {
 		bin      GeoBin
 		expected string
 	}{
-		{Americas, "Americas"},
+		{NorthAmerica, "NorthAmerica"},
+		{SouthAndCentralAmerica, "SouthAndCentralAmerica"},
 		{WesternEurope, "WesternEurope"},
 		{CentralEurope, "CentralEurope"},
 		{EasternEurope, "EasternEurope"},
 		{MiddleEast, "MiddleEast"},
-		{Africa, "Africa"},
+		{NorthernAfrica, "NorthernAfrica"},
+		{SouthernAfrica, "SouthernAfrica"},
 		{Russia, "Russia"},
-		{Asia, "Asia"},
-		{Asia + 1, "INVALID BIN " + strconv.Itoa(int(Asia+1))},
+		{EasternAsia, "EasternAsia"},
+		{WesternAsia, "WesternAsia"},
+		{Oceania, "Oceania"},
+
+		{Oceania + 1, "INVALID BIN " + strconv.Itoa(int(Oceania+1))},
 	}
 
 	for i, val := range testValues {
@@ -48,14 +53,18 @@ func TestGetRegion(t *testing.T) {
 		region   string
 		expected GeoBin
 	}{
-		{"Americas", Americas},
+		{"NorthAmerica", NorthAmerica},
+		{"SouthAndCentralAmerica", SouthAndCentralAmerica},
 		{"WesternEurope", WesternEurope},
 		{"CentralEurope", CentralEurope},
 		{"EasternEurope", EasternEurope},
 		{"MiddleEast", MiddleEast},
-		{"Africa", Africa},
+		{"NorthernAfrica", NorthernAfrica},
+		{"SouthernAfrica", SouthernAfrica},
 		{"Russia", Russia},
-		{"Asia", Asia},
+		{"EasternAsia", EasternAsia},
+		{"WesternAsia", WesternAsia},
+		{"Oceania", Oceania},
 	}
 
 	for i, val := range testValues {
@@ -90,7 +99,7 @@ func TestGetRegion_InvalidRegionError(t *testing.T) {
 
 // Tests that a GeoBin can be JSON marshalled and unmarshalled.
 func TestGeoBin_JsonMarshalUnmarshal(t *testing.T) {
-	bin := Americas
+	bin := NorthAmerica
 
 	data, err := json.Marshal(bin)
 	if err != nil {
@@ -111,7 +120,7 @@ func TestGeoBin_JsonMarshalUnmarshal(t *testing.T) {
 
 // Unit test of GeoBin.Bytes.
 func TestGeoBin_Bytes(t *testing.T) {
-	bin := Americas
+	bin := NorthAmerica
 	expected := []byte{byte(bin)}
 
 	if !bytes.Equal(expected, bin.Bytes()) {

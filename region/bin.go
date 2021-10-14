@@ -11,14 +11,18 @@ import (
 type GeoBin uint8
 
 const (
-	Americas GeoBin = iota
+	NorthAmerica GeoBin = iota
+	SouthAndCentralAmerica
 	WesternEurope
 	CentralEurope
 	EasternEurope
 	MiddleEast
-	Africa
+	NorthernAfrica
+	SouthernAfrica
 	Russia
-	Asia
+	EasternAsia
+	WesternAsia
+	Oceania
 )
 
 // Error messages.
@@ -31,8 +35,10 @@ const (
 // satisfies the fmt.Stringer interface.
 func (b GeoBin) String() string {
 	switch b {
-	case Americas:
-		return "Americas"
+	case NorthAmerica:
+		return "NorthAmerica"
+	case SouthAndCentralAmerica:
+		return "SouthAndCentralAmerica"
 	case WesternEurope:
 		return "WesternEurope"
 	case CentralEurope:
@@ -41,12 +47,18 @@ func (b GeoBin) String() string {
 		return "EasternEurope"
 	case MiddleEast:
 		return "MiddleEast"
-	case Africa:
-		return "Africa"
+	case NorthernAfrica:
+		return "NorthernAfrica"
+	case SouthernAfrica:
+		return "SouthernAfrica"
 	case Russia:
 		return "Russia"
-	case Asia:
-		return "Asia"
+	case EasternAsia:
+		return "EasternAsia"
+	case WesternAsia:
+		return "WesternAsia"
+	case Oceania:
+		return "Oceania"
 	default:
 		return "INVALID BIN " + strconv.Itoa(int(b))
 	}
@@ -55,22 +67,30 @@ func (b GeoBin) String() string {
 // GetRegion converts the region to a numerical representation.
 func GetRegion(region string) (GeoBin, error) {
 	switch region {
-	case "Americas":
-		return Americas, nil
-	case "WesternEurope", "WestEurope":
+	case "NorthAmerica":
+		return NorthAmerica, nil
+	case "SouthAndCentralAmerica":
+		return SouthAndCentralAmerica, nil
+	case "WesternEurope":
 		return WesternEurope, nil
 	case "CentralEurope":
 		return CentralEurope, nil
-	case "EasternEurope", "EastEurope":
+	case "EasternEurope":
 		return EasternEurope, nil
 	case "MiddleEast":
 		return MiddleEast, nil
-	case "Africa":
-		return Africa, nil
+	case "NorthernAfrica":
+		return NorthernAfrica, nil
+	case "SouthernAfrica":
+		return SouthernAfrica, nil
 	case "Russia":
 		return Russia, nil
-	case "Asia":
-		return Asia, nil
+	case "EasternAsia":
+		return EasternAsia, nil
+	case "WesternAsia":
+		return WesternAsia, nil
+	case "Oceania":
+		return Oceania, nil
 	default:
 		return math.MaxUint8, errors.Errorf(invalidRegionErr, region)
 	}
