@@ -12,10 +12,12 @@ package ndf
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
 	"gitlab.com/xx_network/primitives/region"
+	"strconv"
 	"time"
 )
 
@@ -36,6 +38,12 @@ type NetworkDefinition struct {
 	CMIX          Group `json:"Cmix"`
 	AddressSpace  []AddressSpace
 	ClientVersion string
+	// Ids that bypass rate limiting
+	WhitelistedIds []string
+	// Ips that bypass rate limiting
+	WhitelistedIpAddresses []string
+	//Details on how gateways will rate limit clients
+	RateLimits RateLimiting
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -47,12 +55,20 @@ type Gateway struct {
 	Bin            region.GeoBin
 }
 
+// RateLimiting contains details on how to rate limit clients.
+type RateLimiting struct {
+	Capacity     uint
+	LeakedTokens uint
+	LeakDuration uint64
+}
+
 // Node contains the connection and identity information of a node on the
 // network.
 type Node struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Status
 }
 
 // Registration contains the connection information for the permissioning
@@ -89,6 +105,27 @@ type Group struct {
 type AddressSpace struct {
 	Size      uint8
 	Timestamp time.Time
+}
+
+type Status uint8
+
+const (
+	Active = Status(iota)
+	Stale
+	NumTypes
+)
+
+func (s Status) String() string {
+	switch s {
+	case Active:
+		return "Active"
+	case Stale:
+		return "Stale"
+	case NumTypes:
+		return strconv.Itoa(int(NumTypes))
+	default:
+		return fmt.Sprintf("UNKNOWN STATUS TYPE: %d", s)
+	}
 }
 
 func (g *Group) String() (string, error) {
@@ -180,6 +217,16 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 
 	// Copy ClientVersion
 	newNDF.ClientVersion = ndf.ClientVersion
+
+	newNDF.WhitelistedIpAddresses = ndf.WhitelistedIpAddresses
+
+	newNDF.WhitelistedIds = ndf.WhitelistedIds
+
+	newNDF.RateLimits = RateLimiting{
+		Capacity:     ndf.RateLimits.Capacity,
+		LeakedTokens: ndf.RateLimits.LeakedTokens,
+		LeakDuration: ndf.RateLimits.LeakDuration,
+	}
 
 	return newNDF
 }
