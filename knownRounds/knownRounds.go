@@ -412,6 +412,9 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 
 // Truncate returns a subsample of the KnownRounds buffer from last checked.
 func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
+	if start<=kr.firstUnchecked{
+		return kr
+	}
 
 	// Return a buffer of the correct size and its length
 	newKr := &KnownRounds{
@@ -435,7 +438,12 @@ func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 		delta = int(rid - kr.firstUnchecked)
 	}
 
-	return (kr.fuPos + delta) % kr.Len()
+	pos := (kr.fuPos + delta) % kr.Len()
+	if pos <0{
+		return kr.Len()+pos
+	}
+	return pos
+
 }
 
 // Len returns the max number of round IDs the buffer can hold.
