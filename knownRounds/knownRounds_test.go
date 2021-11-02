@@ -806,6 +806,30 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 // 	kr.RangeUncheckedMasked(mask, roundCheck, 500)
 // }
 
+func TestKnownRounds_Truncate(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{math.MaxUint64, 0, math.MaxUint64, 0},
+		firstUnchecked: 15,
+		lastChecked:    191,
+		fuPos:          0,
+	}
+
+	newKR := kr.Truncate(32)
+
+	if newKR.firstUnchecked != 64 {
+		t.Errorf("Failed to truncate. First unchecked not migrated correctly."+
+			"\nexpected: %d\nreceived: %d", 64, newKR.firstUnchecked)
+	}
+
+	krBytes := kr.Marshal()
+	newKrBytes := newKR.Marshal()
+
+	if len(newKrBytes) >= len(krBytes) {
+		t.Errorf("Marshalled truncated KR larger than original."+
+			"\nexpected: %d\nrecived: %d", len(krBytes), len(newKrBytes))
+	}
+}
+
 // Simulate saving and reading from the database by:
 // 1. make random edits to the KnownRounds
 // 2. save after each random edit (KnownRounds.OutputBuffChanges)
