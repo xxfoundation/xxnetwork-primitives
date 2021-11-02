@@ -18,6 +18,8 @@ import (
 	"math"
 )
 
+const blockSize = 64
+
 type RoundCheckFunc func(id id.Round) bool
 
 // KnownRounds structure tracks which rounds are known and which are unknown.
@@ -406,6 +408,26 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 
 	// Return a buffer of the correct size and its length
 	return buff.extend(numBlocks), abs(int(end - start))
+}
+
+// Truncate returns a subsample of the KnownRounds buffer from last checked
+func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
+	//blocks,delta := kr.subSample(start, kr.lastChecked)
+
+	// Return a buffer of the correct size and its length
+	newKr := &KnownRounds{
+		bitStream:      kr.bitStream,
+		firstUnchecked: 0,
+		lastChecked:    kr.lastChecked,
+		fuPos:          0,
+	}
+
+	// Dividing and multiplying by blockSize is an intentional truncation methodology
+	//firstCanonical := ((newKr.lastChecked-id.Round(delta))/blockSize)*blockSize
+
+	newKr.migrateFirstUnchecked(start)
+
+	return newKr
 }
 
 // Get the position of the bit in the bit stream for the given round ID.
