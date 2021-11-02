@@ -128,7 +128,7 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 		// into the beginning of the buffer
 		copy(kr.bitStream, bitStream)
 	} else {
-		// If the passed in data is larger then the internal buffer, then return
+		// If the passed in data is larger than the internal buffer, then return
 		// an error
 		return errors.Errorf("KnownRounds bitStream size of %d is too small "+
 			"for passed in bit stream of size %d.",
@@ -410,20 +410,16 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	return buff.extend(numBlocks), abs(int(end - start))
 }
 
-// Truncate returns a subsample of the KnownRounds buffer from last checked
+// Truncate returns a subsample of the KnownRounds buffer from last checked.
 func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
-	//blocks,delta := kr.subSample(start, kr.lastChecked)
 
 	// Return a buffer of the correct size and its length
 	newKr := &KnownRounds{
-		bitStream:      kr.bitStream,
-		firstUnchecked: 0,
+		bitStream:      kr.bitStream.deepCopy(),
+		firstUnchecked: kr.firstUnchecked,
 		lastChecked:    kr.lastChecked,
-		fuPos:          0,
+		fuPos:          kr.fuPos,
 	}
-
-	// Dividing and multiplying by blockSize is an intentional truncation methodology
-	//firstCanonical := ((newKr.lastChecked-id.Round(delta))/blockSize)*blockSize
 
 	newKr.migrateFirstUnchecked(start)
 

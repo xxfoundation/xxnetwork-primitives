@@ -809,16 +809,42 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 func TestKnownRounds_Truncate(t *testing.T) {
 	kr := KnownRounds{
 		bitStream:      uint64Buff{math.MaxUint64, 0, math.MaxUint64, 0},
-		firstUnchecked: 15,
-		lastChecked:    191,
-		fuPos:          0,
+		firstUnchecked: 64,
+		lastChecked:    130,
+		fuPos:          1,
 	}
 
-	newKR := kr.Truncate(32)
+	newKR := kr.Truncate(74)
 
-	if newKR.firstUnchecked != 64 {
+	if newKR.firstUnchecked != 127 {
 		t.Errorf("Failed to truncate. First unchecked not migrated correctly."+
-			"\nexpected: %d\nreceived: %d", 64, newKR.firstUnchecked)
+			"\nexpected: %d\nreceived: %d", 127, newKR.firstUnchecked)
+	}
+
+	krBytes := kr.Marshal()
+	newKrBytes := newKR.Marshal()
+
+	if len(newKrBytes) >= len(krBytes) {
+		t.Errorf("Marshalled truncated KR larger than original."+
+			"\nexpected: %d\nrecived: %d", len(krBytes), len(newKrBytes))
+	}
+}
+
+// Same as test above but checking in the case that the circular buffer has
+// wrapped around.
+func TestKnownRounds_Truncate_Wrap_Around(t *testing.T) {
+	kr := KnownRounds{
+		bitStream:      uint64Buff{math.MaxUint64, 0, math.MaxUint64, 0},
+		firstUnchecked: 320,
+		lastChecked:    390,
+		fuPos:          1,
+	}
+
+	newKR := kr.Truncate(330)
+
+	if newKR.firstUnchecked != 383 {
+		t.Errorf("Failed to truncate. First unchecked not migrated correctly."+
+			"\nexpected: %d\nreceived: %d", 383, newKR.firstUnchecked)
 	}
 
 	krBytes := kr.Marshal()
@@ -892,4 +918,22 @@ func makeRange(min, max int) []id.Round {
 		a[i] = id.Round(min + i)
 	}
 	return a
+}
+
+func TestKnownRounds_Len(t *testing.T) {
+	// decodeString, err := base64.StdEncoding.DecodeString("XTLOAAAAAACXRc4AAAAAAAIBAAID+Vf/AXdv/wi//yh//yP9/w/+/wX7/x79/yl//wXf/wl//xK//zz9/yT9/xjv/zt//8f+/wf2/wH+tlkABQ==")
+	// if err != nil {
+	// 	t.Fatalf("Failed to decode: %+v", err)
+	// }
+	kr := NewKnownRound(0)
+
+	decodeString := []byte{174, 69, 206, 0, 0, 0, 0, 0, 150, 73, 206, 0, 0, 0, 0, 0, 2, 1, 0, 136}
+
+	err := kr.Unmarshal(decodeString)
+	if err != nil {
+		t.Errorf("Failed to unmarshal: %+v", err)
+	}
+
+	t.Logf("%+v", kr)
+	t.Logf("%064b", kr.bitStream)
 }
