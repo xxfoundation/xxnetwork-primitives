@@ -12,6 +12,7 @@ import (
 	"github.com/badoux/checkmail"
 	"github.com/pkg/errors"
 	"github.com/ttacon/libphonenumber"
+	"strings"
 )
 
 type Fact struct {
@@ -38,6 +39,10 @@ func NewFact(ft FactType, fact string) (Fact, error) {
 // marshal is for transmission for UDB, not a part of the fact interface
 func (f Fact) Stringify() string {
 	return f.T.Stringify() + f.Fact
+}
+
+func (f Fact) Normalized() string {
+	return strings.ToUpper(f.Fact)
 }
 
 func UnstringifyFact(s string) (Fact, error) {
