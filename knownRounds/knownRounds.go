@@ -18,6 +18,8 @@ import (
 	"math"
 )
 
+const blockSize = 64
+
 type RoundCheckFunc func(id id.Round) bool
 
 // KnownRounds structure tracks which rounds are known and which are unknown.
@@ -126,7 +128,7 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 		// into the beginning of the buffer
 		copy(kr.bitStream, bitStream)
 	} else {
-		// If the passed in data is larger then the internal buffer, then return
+		// If the passed in data is larger than the internal buffer, then return
 		// an error
 		return errors.Errorf("KnownRounds bitStream size of %d is too small "+
 			"for passed in bit stream of size %d.",
@@ -408,6 +410,25 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	return buff.extend(numBlocks), abs(int(end - start))
 }
 
+// Truncate returns a subsample of the KnownRounds buffer from last checked.
+func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
+	if start<=kr.firstUnchecked{
+		return kr
+	}
+
+	// Return a buffer of the correct size and its length
+	newKr := &KnownRounds{
+		bitStream:      kr.bitStream.deepCopy(),
+		firstUnchecked: kr.firstUnchecked,
+		lastChecked:    kr.lastChecked,
+		fuPos:          kr.fuPos,
+	}
+
+	newKr.migrateFirstUnchecked(start)
+
+	return newKr
+}
+
 // Get the position of the bit in the bit stream for the given round ID.
 func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 	var delta int
@@ -417,7 +438,12 @@ func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 		delta = int(rid - kr.firstUnchecked)
 	}
 
-	return (kr.fuPos + delta) % kr.Len()
+	pos := (kr.fuPos + delta) % kr.Len()
+	if pos <0{
+		return kr.Len()+pos
+	}
+	return pos
+
 }
 
 // Len returns the max number of round IDs the buffer can hold.
