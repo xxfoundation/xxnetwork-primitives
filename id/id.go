@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"io"
@@ -110,6 +111,30 @@ func (id *ID) SetType(idType Type) {
 	}
 
 	id[ArrIDLen-1] = byte(idType)
+}
+
+// UnmarshalJSON is part of the json.Unmarshaler interface and allows IDs to be
+// marshaled into JSON.
+func (id *ID) UnmarshalJSON(b []byte) error {
+	var buff []byte
+	if err := json.Unmarshal(b, &buff); err != nil {
+		return err
+	}
+
+	newID, err := Unmarshal(buff)
+	if err != nil {
+		return err
+	}
+
+	*id = *newID
+
+	return nil
+}
+
+// MarshalJSON is part of the json.Marshaler interface and allows IDs to be
+// marshaled into JSON.
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(id.Marshal())
 }
 
 // NewRandomID generates a random ID using the passed in io.Reader r
