@@ -62,6 +62,22 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestUnmarshalString(t *testing.T) {
+	// Test values
+	expectedBytes := newRandomBytes(ArrIDLen, t)
+	testID := NewIdFromBytes(expectedBytes, t)
+
+	s := testID.String()
+
+	decoded, err := UnmarshalString(s)
+	if err != nil {
+		t.Errorf("UnmarshalString failed: %+v", err)
+	}
+	if !decoded.Cmp(testID) {
+		t.Errorf("Decoded (%+v) did not match original ID (%+v)", decoded, testID)
+	}
+}
+
 // Tests that Unmarshal() produces an error when the given data length is not
 // equal to the length of an ID and that the ID returned is nil.
 func TestUnmarshal_DataLengthError(t *testing.T) {

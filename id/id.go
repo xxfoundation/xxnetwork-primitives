@@ -57,6 +57,16 @@ func Unmarshal(data []byte) (*ID, error) {
 	return copyID(data), nil
 }
 
+// UnmarshalString unmarshalls the ID base64 string format into an ID object
+func UnmarshalString(data string) (*ID, error) {
+	decoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "Failed to decode base64 string %s into bytes", data)
+	}
+
+	return Unmarshal(decoded)
+}
+
 // Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
 // Marshal() and any changes made here will affect how Marshal() functions.
 func (id *ID) Bytes() []byte {
