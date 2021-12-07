@@ -13,9 +13,12 @@ package ndf
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/region"
+	"strconv"
 	"time"
 )
 
@@ -36,6 +39,15 @@ type NetworkDefinition struct {
 	CMIX          Group `json:"Cmix"`
 	AddressSpace  []AddressSpace
 	ClientVersion string
+
+	// IDs that bypass rate limiting
+	WhitelistedIds []string
+
+	// IPs that bypass rate limiting
+	WhitelistedIpAddresses []string
+
+	// Details on how gateways will rate limit clients
+	RateLimits RateLimiting
 }
 
 // Gateway contains the connection and identity information of a gateway on the
@@ -44,6 +56,14 @@ type Gateway struct {
 	ID             id.ID `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Bin            region.GeoBin
+}
+
+// RateLimiting contains details on how to rate limit clients.
+type RateLimiting struct {
+	Capacity     uint
+	LeakedTokens uint
+	LeakDuration uint64
 }
 
 // Node contains the connection and identity information of a node on the
@@ -52,14 +72,16 @@ type Node struct {
 	ID             id.ID `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Status
 }
 
 // Registration contains the connection information for the permissioning
 // server.
 type Registration struct {
-	Address        string
-	TlsCertificate string `json:"Tls_certificate"`
-	EllipticPubKey string
+	Address                   string
+	ClientRegistrationAddress string
+	TlsCertificate            string `json:"Tls_certificate"`
+	EllipticPubKey            string
 }
 
 // Notification contains the connection information for the notification bot.
@@ -91,6 +113,27 @@ type AddressSpace struct {
 	Timestamp time.Time
 }
 
+type Status uint8
+
+const (
+	Active = Status(iota)
+	Stale
+	NumTypes
+)
+
+func (s Status) String() string {
+	switch s {
+	case Active:
+		return "Active"
+	case Stale:
+		return "Stale"
+	case NumTypes:
+		return strconv.Itoa(int(NumTypes))
+	default:
+		return fmt.Sprintf("UNKNOWN STATUS TYPE: %d", s)
+	}
+}
+
 // String returns the JSON marshal of the Group as a string.
 func (g *Group) String() (string, error) {
 	data, err := json.Marshal(g)
@@ -102,8 +145,14 @@ func (g *Group) String() (string, error) {
 }
 
 // Marshal returns the JSON encoding of the NDF.
-func (ndf *NetworkDefinition) Marshal() ([]byte, error) {
-	return json.Marshal(ndf)
+func (ndf *NetworkDefinition) Marshal() (data []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Errorf("json error: %+v", r)
+		}
+	}()
+	data, err = json.Marshal(ndf)
+	return
 }
 
 // Unmarshal parses the JSON encoded data and returns the resulting
@@ -175,6 +224,16 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 	// Copy ClientVersion
 	newNDF.ClientVersion = ndf.ClientVersion
 
+	newNDF.WhitelistedIpAddresses = ndf.WhitelistedIpAddresses
+
+	newNDF.WhitelistedIds = ndf.WhitelistedIds
+
+	newNDF.RateLimits = RateLimiting{
+		Capacity:     ndf.RateLimits.Capacity,
+		LeakedTokens: ndf.RateLimits.LeakedTokens,
+		LeakDuration: ndf.RateLimits.LeakDuration,
+	}
+
 	return newNDF
 }
 
@@ -218,6 +277,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 		buff.Write(gw.ID.Bytes())
 		buff.WriteString(gw.Address)
 		buff.WriteString(gw.TlsCertificate)
+		buff.Write(gw.Bin.Bytes())
 	}
 
 	// Convert Nodes slice to byte slice
@@ -231,6 +291,10 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	buff.WriteString(ndf.Registration.Address)
 	buff.WriteString(ndf.Registration.TlsCertificate)
 	buff.WriteString(ndf.Registration.EllipticPubKey)
+
+	// Convert notification bot to byte slice
+	buff.WriteString(ndf.Notification.Address)
+	buff.WriteString(ndf.Notification.TlsCertificate)
 
 	// Convert UDB to byte slice
 	buff.Write(ndf.UDB.ID.Bytes())

@@ -19,6 +19,12 @@ var Permissioning = ID{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic),
 }
 
+// Authorizer is the ID for the authorizer (data is the string "authorizer").
+var Authorizer = ID{
+	97, 117, 116, 104, 111, 114, 105, 122, 101, 114, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic),
+}
+
 // NotificationBot is the ID for the notification bot (data is the string
 // "notification-bot").
 var NotificationBot = ID{
@@ -50,15 +56,24 @@ var UDB = ID{
 	0, 0, 0, 0, 0, 0, 0, byte(User),
 }
 
+// ClientRegistration is the ID for client registration (data is the string
+// "client-registration").
+var ClientRegistration = ID{
+	99, 108, 105, 101, 110, 116, 45, 114, 101, 103, 105, 115, 116, 114, 97, 116,
+	105, 111, 110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic),
+}
+
 // GetHardCodedIDs returns an array of all the hard coded IDs.
 func GetHardCodedIDs() (ids []ID) {
 	return []ID{
 		Permissioning,
+		Authorizer,
 		NotificationBot,
 		TempGateway,
 		ZeroUser,
 		DummyUser,
 		UDB,
+		ClientRegistration,
 	}
 }
 

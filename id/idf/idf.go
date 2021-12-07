@@ -32,10 +32,11 @@ const (
 // IdFile describes the information and structure for saving an ID and Salt to
 // a JSON file that is both human-readable and used for processing.
 type IdFile struct {
-	ID      id.ID             `json:"id"`
-	Type    string            `json:"type"`
-	Salt    [saltLen]byte     `json:"salt"`
-	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
+	ID        id.ID             `json:"id"`
+	Type      string            `json:"type"`
+	Salt      [saltLen]byte     `json:"salt"`
+	IdBytes   [id.ArrIDLen]byte `json:"idBytes"`
+	HexNodeID string            `json:"hexNodeID"`
 }
 
 // newIDF creates a new IdFile with the given 32-byte salt and id.ID. An error
@@ -51,11 +52,16 @@ func newIDF(salt []byte, genID id.ID) (IdFile, error) {
 		ID:      genID,
 		Type:    genID.GetType().String(),
 		Salt:    [saltLen]byte{},
-		IdBytes: genID,
+		IdBytes: [id.ArrIDLen]byte,
+		HexNodeID: genID.HexEncode(),
 	}
 
 	// Copy salt into the IdFile
 	copy(newIDF.Salt[:], salt)
+
+	// Copy ID bytes into the IdFile
+	copy(newIDF.IdBytes[:], genID.Bytes())
+
 
 	return newIDF, nil
 }
@@ -101,8 +107,8 @@ func LoadIDF(filePath string, salt []byte, genID id.ID) error {
 	return err
 }
 
-// loadIDF creates an IdFile from the salt and id.ID and returns it JSON
-// encoded.
+// loadIDF creates an IdFile from the salt and id.ID and returns its JSON
+// encoding.
 func loadIDF(salt []byte, genID id.ID) ([]byte, error) {
 	// Generate new IdFile object
 	idf, err := newIDF(salt, genID)

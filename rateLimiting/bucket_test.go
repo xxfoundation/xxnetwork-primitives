@@ -206,7 +206,7 @@ func TestBucket_Add(t *testing.T) {
 	for i, r := range testData {
 		time.Sleep(r.sleepTime * duration)
 
-		if !b.Add(r.tokensToAdd) {
+		if succes, _ := b.Add(r.tokensToAdd); !succes {
 			t.Errorf("Add(%d) added tokens past bucket capacity (round %d). "+
 				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
 		}
@@ -243,7 +243,7 @@ func TestBucket_Add_OverCapacity(t *testing.T) {
 	for i, r := range testData {
 		time.Sleep(r.sleepTime * duration)
 
-		if b.Add(r.tokensToAdd) != r.expectedAddReturn {
+		if success, _ := b.Add(r.tokensToAdd); success != r.expectedAddReturn {
 			t.Errorf("Add(%d) added tokens past bucket capacity (round %d). "+
 				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
 		}
@@ -294,7 +294,7 @@ func TestBucket_Add_DB(t *testing.T) {
 	for i, r := range testData {
 		time.Sleep(r.sleepTime * duration)
 
-		if !b.Add(r.tokensToAdd) {
+		if success, _ := b.Add(r.tokensToAdd); !success {
 			t.Errorf("Add(%d) added tokens past bucket capacity (round %d). "+
 				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
 		}
@@ -343,7 +343,7 @@ func TestBucket_Add_Whitelist(t *testing.T) {
 	for i, r := range testData {
 		time.Sleep(r.sleepTime * duration)
 
-		if !b.Add(r.tokensToAdd) {
+		if success, _ := b.Add(r.tokensToAdd); !success {
 			t.Errorf("Add(%d) failed on a whitelisted bucket (round %d). "+
 				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
 		}

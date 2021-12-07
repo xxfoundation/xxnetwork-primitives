@@ -17,16 +17,28 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"io"
+	"regexp"
 	"testing"
 )
 
 // ID data sizes
 const (
-	dataLen  = 32          // Length of the ID data in bytes
-	ArrIDLen = dataLen + 1 // Length of the full ID array in bytes
+	// dataLen is the length of the ID data in bytes.
+	dataLen  = 32
+
+	// ArrIDLen is the length of the full ID array in bytes.
+	ArrIDLen = dataLen + 1
+
+	// Alphanumeric contains the regular expression to search for an
+	// alphanumeric string.
+	Alphanumeric string = "^[a-zA-Z0-9]+$"
 )
+
+// regexAlphanumeric is the regex for searching for an alphanumeric string.
+var regexAlphanumeric = regexp.MustCompile(Alphanumeric)
 
 // Error strings
 const (
@@ -88,18 +100,28 @@ func (id ID) Cmp(x ID) int {
 	return bytes.Compare(id.Bytes(), x.Bytes())
 }
 
-// NewRandomID generates a random ID with the specified type.
+// NewRandomID generates a random ID using the passed in io.Reader r and sets
+// the ID to Type t. If the base64 string of the generated ID does not begin
+// with an alphanumeric character, then another ID is generated until the
+// encoding begins with an alphanumeric character.
 func NewRandomID(r io.Reader, t Type) (ID, error) {
-	// Generate random bytes
-	idBytes := make([]byte, ArrIDLen)
-	if _, err := r.Read(idBytes); err != nil {
-		return ID{}, errors.Errorf(readerErr, err)
+	for {
+		// Generate random bytes
+		idBytes := make([]byte, ArrIDLen)
+		if _, err := r.Read(idBytes); err != nil {
+			return ID{}, errors.Errorf(readerErr, err)
+		}
+
+		// Create ID from bytes and set the type
+		id := makeID(idBytes).SetType(t)
+
+		// Avoid the first character being a special character
+		base64Id := id.String()
+		if regexAlphanumeric.MatchString(string(base64Id[0])) {
+			return id, nil
+		}
 	}
 
-	// Create ID from bytes and set the type
-	id := makeID(idBytes).SetType(t)
-
-	return id, nil
 }
 
 // UnmarshalJSON is part of the json.Unmarshaler interface and allows IDs to be
@@ -175,6 +197,11 @@ func NewIdFromUInt(idUInt uint64, t Type, x interface{}) ID {
 
 	// Set ID type and return
 	return id.SetType(t)
+}
+
+// HexEncode encodes the ID to a hexadecimal string without 33rd type byte.
+func (id *ID) HexEncode() string {
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }
 
 // NewIdFromUInts converts the specified uint64 array into bytes and returns a
