@@ -55,7 +55,8 @@ func GetHardCodedIDs() (ids []ID) {
 	return []ID{
 		Permissioning,
 		NotificationBot,
-		TempGateway, ZeroUser,
+		TempGateway,
+		ZeroUser,
 		DummyUser,
 		UDB,
 	}
