@@ -49,10 +49,10 @@ func newIDF(salt []byte, genID id.ID) (IdFile, error) {
 
 	// Create new IdFile with the ID
 	newIDF := IdFile{
-		ID:      genID,
-		Type:    genID.GetType().String(),
-		Salt:    [saltLen]byte{},
-		IdBytes: [id.ArrIDLen]byte,
+		ID:        genID,
+		Type:      genID.GetType().String(),
+		Salt:      [saltLen]byte{},
+		IdBytes:   [id.ArrIDLen]byte{},
 		HexNodeID: genID.HexEncode(),
 	}
 
@@ -61,7 +61,6 @@ func newIDF(salt []byte, genID id.ID) (IdFile, error) {
 
 	// Copy ID bytes into the IdFile
 	copy(newIDF.IdBytes[:], genID.Bytes())
-
 
 	return newIDF, nil
 }
