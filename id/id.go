@@ -1,14 +1,15 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                                       //
-//                                                                                        //
-// Use of this source code is governed by a license that can be found in the LICENSE file //
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                           //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file                                                               //
+////////////////////////////////////////////////////////////////////////////////
 
-// Contains the generic ID type, which is a byte array that represents an entity
-// ID. The first bytes in the array contain the actual ID data while the last
-// byte contains the ID type, which is either generic, gateway, node, or user.
-// IDs can be hard coded or generated using a cryptographic function found in
-// crypto.
+// Package id contains the generic ID type, which is a byte array that
+// represents an entity ID. The first bytes in the array contain the actual ID
+// data while the last byte contains the ID type, which is either generic,
+// gateway, node, user, or group. IDs can be hard coded or generated using a
+// cryptographic function found in crypto.
 package id
 
 import (
@@ -176,7 +177,7 @@ func NewIdFromUInt(idUInt uint64, t Type, x interface{}) ID {
 	return id.SetType(t)
 }
 
-// NewIdFromUInt converts the specified uint64 array into bytes and returns a
+// NewIdFromUInts converts the specified uint64 array into bytes and returns a
 // new ID based off it with the specified ID type. Unlike NewIdFromUInt, the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.

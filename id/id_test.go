@@ -1,8 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                                       //
-//                                                                                        //
-// Use of this source code is governed by a license that can be found in the LICENSE file //
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                           //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file                                                               //
+////////////////////////////////////////////////////////////////////////////////
 
 package id
 
@@ -85,7 +86,8 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 	}
 }
 
-// Tests that ID.Bytes returns the ID as a byte slice and the data is a copy.
+// Tests that the byte slice returned by ID.Bytes matches the data in the
+// original ID and the data is a copy of the values and not the reference.
 func TestID_Bytes(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
 	testID := NewIdFromBytes(expected, t)
@@ -259,7 +261,7 @@ func TestNewIdFromBytes(t *testing.T) {
 	}
 }
 
-// Tests that an ID can be JSON marshaled and unmarshaled.
+// Tests that an ID can be JSON marshaled and unmarshalled.
 func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	testID := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
 
@@ -313,7 +315,7 @@ func TestNewIdFromBytes_TestError(t *testing.T) {
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromBytes(rngBytes(ArrIDLen, 42, t), nil)
 }
 
@@ -357,7 +359,7 @@ func TestNewIdFromString_TestError(t *testing.T) {
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromString("test", Generic, nil)
 }
 
@@ -386,7 +388,7 @@ func TestNewIdFromUInt_TestError(t *testing.T) {
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromUInt(rand.Uint64(), Generic, nil)
 }
 
@@ -420,7 +422,7 @@ func TestNewIdFromUInts_TestError(t *testing.T) {
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	newUint64s := [4]uint64{rand.Uint64(), rand.Uint64(),
 		rand.Uint64(), rand.Uint64()}
 	_ = NewIdFromUInts(newUint64s, Generic, nil)

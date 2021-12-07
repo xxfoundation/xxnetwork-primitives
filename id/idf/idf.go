@@ -1,8 +1,9 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                                       //
-//                                                                                        //
-// Use of this source code is governed by a license that can be found in the LICENSE file //
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2020 xx network SEZC                                           //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file                                                               //
+////////////////////////////////////////////////////////////////////////////////
 
 // Package idf contains the structure of the ID File. It holds a generated ID
 // and a salt (a 256-bit random number) in a JSON file. This file is used by
@@ -29,7 +30,7 @@ const (
 )
 
 // IdFile describes the information and structure for saving an ID and Salt to
-// a JSON file that is both human readable and used for processing.
+// a JSON file that is both human-readable and used for processing.
 type IdFile struct {
 	ID      id.ID             `json:"id"`
 	Type    string            `json:"type"`
@@ -37,7 +38,7 @@ type IdFile struct {
 	IdBytes [id.ArrIDLen]byte `json:"idBytes"`
 }
 
-// newIDF creates a a new IdFile with the given 32-byte salt and id.ID. An error
+// newIDF creates a new IdFile with the given 32-byte salt and id.ID. An error
 // is returned if the salt is not of the correct length.
 func newIDF(salt []byte, genID id.ID) (IdFile, error) {
 	// Check that the salt is of the correct length
