@@ -30,6 +30,16 @@ func TestNewFact(t *testing.T) {
 	}
 }
 
+// Test NewFact() returns error when a fact exceeds the maxFactCharacterLimit.
+func TestNewFact_ExceedMaxFactError(t *testing.T) {
+	// Expected error case
+	_, err := NewFact(Email, "devinputvalidation_devinputvalidation_devinputvalidation@elixxir.io")
+	if err == nil {
+		t.Fatalf("NewFact expected to fail due to the fact exceeding maximum character length")
+	}
+
+}
+
 // Test Stringify() creates a string of the Fact
 // The output is verified to work in the test below
 func TestFact_Stringify(t *testing.T) {
