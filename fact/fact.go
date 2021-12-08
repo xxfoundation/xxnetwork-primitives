@@ -58,6 +58,12 @@ func UnstringifyFact(s string) (Fact, error) {
 		return Fact{}, errors.New("stringified facts must at least " +
 			"have a type at the start")
 	}
+
+	if len(s) > maxFactCharacterLimit {
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
+			"for a fact (%d characters)", s, maxFactCharacterLimit)
+	}
+
 	T := s[:1]
 	fact := s[1:]
 	if len(fact) == 0 {
