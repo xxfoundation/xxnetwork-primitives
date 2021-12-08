@@ -15,6 +15,9 @@ import (
 	"strings"
 )
 
+// maxFactCharacterLimit is the maximum character length of a fact.
+const maxFactCharacterLimit = 64
+
 type Fact struct {
 	Fact string
 	T    FactType
@@ -24,6 +27,11 @@ type Fact struct {
 // fact type. If so, it returns a new fact object. If not, it returns a
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
+
+	if len(fact) > maxFactCharacterLimit {
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
+			"for a fact (%d characters)", fact, maxFactCharacterLimit)
+	}
 
 	f := Fact{
 		Fact: fact,
@@ -50,6 +58,12 @@ func UnstringifyFact(s string) (Fact, error) {
 		return Fact{}, errors.New("stringified facts must at least " +
 			"have a type at the start")
 	}
+
+	if len(s) > maxFactCharacterLimit {
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
+			"for a fact (%d characters)", s, maxFactCharacterLimit)
+	}
+
 	T := s[:1]
 	fact := s[1:]
 	if len(fact) == 0 {
