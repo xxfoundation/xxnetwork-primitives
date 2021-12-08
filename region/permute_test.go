@@ -11,7 +11,7 @@ import (
 func TestPermute(t *testing.T) {
 
 	const totalNodes = 3
-	nodeList := make([]*id.ID, totalNodes)
+	nodeList := make([]id.ID, totalNodes)
 
 	prng := rand.New(rand.NewSource(42))
 

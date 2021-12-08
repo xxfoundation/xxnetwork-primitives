@@ -8,15 +8,15 @@ import "gitlab.com/xx_network/primitives/id"
 // Based off of Heap's algorithm found here: https://en.wikipedia.org/wiki/Heap%27s_algorithm.
 // Runs n! time, but in place in terms of space. As of writing, we use this for permuting all
 // orders of a team, of which team size is small, justifying the high complexity
-func Permute(items []*id.ID) [][]*id.ID {
-	var helper func([]*id.ID, int)
-	var output [][]*id.ID
+func Permute(items []id.ID) [][]id.ID {
+	var helper func([]id.ID, int)
+	var output [][]id.ID
 
 	// Place inline to make appending output easier
-	helper = func(items []*id.ID, numItems int) {
+	helper = func(items []id.ID, numItems int) {
 		if numItems == 1 {
 			// Create a copy and append the copy to the output
-			ourCopy := make([]*id.ID, len(items))
+			ourCopy := make([]id.ID, len(items))
 			copy(ourCopy, items)
 			output = append(output, ourCopy)
 		} else {

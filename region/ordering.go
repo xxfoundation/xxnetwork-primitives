@@ -9,12 +9,12 @@ import (
 	"math"
 )
 
-func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string, countryToBins map[string]GeoBin, distanceLatency [12][12]int, rng io.Reader) ([]*id.ID, int, error) {
+func OrderNodeTeam(nodes []id.ID, countries map[id.ID]string, countryToBins map[string]GeoBin, distanceLatency [12][12]int, rng io.Reader) ([]id.ID, int, error) {
 	// Make all permutations of nodePermutation
 	permutations := Permute(nodes)
 	jww.DEBUG.Printf("Looking for most efficient teaming order")
 	optimalLatency := math.MaxInt32
-	var optimalTeams [][]*id.ID
+	var optimalTeams [][]id.ID
 	// TODO: consider a way to do this more efficiently? As of now,
 	//  for larger teams of 10 or greater it takes >2 seconds for round creation
 	//  but it runs in the microsecond range with 4 nodePermutation.
@@ -25,7 +25,7 @@ func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string, countryToBins map
 		for i := range nodePermutation {
 			thisNode := nodePermutation[i]
 			// Get the ordering for the current node
-			thisCounty, ok := countries[*thisNode]
+			thisCounty, ok := countries[thisNode]
 			if !ok {
 				return nil, 0, errors.Errorf("Unable to locate country for node %s: %v", thisNode, countries)
 			}
@@ -36,7 +36,7 @@ func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string, countryToBins map
 
 			// Get the ordering of the next node, circling back if at the last node
 			nextNode := nodePermutation[(i+1)%len(nodePermutation)]
-			nextCounty, ok := countries[*nextNode]
+			nextCounty, ok := countries[nextNode]
 			if !ok {
 				return nil, 0, errors.Errorf("Unable to locate country for node %s: %v", nextCounty, countries)
 			}
@@ -51,7 +51,7 @@ func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string, countryToBins map
 
 		// Replace with the best time and order found thus far
 		if totalLatency < optimalLatency {
-			optimalTeams = make([][]*id.ID, 0)
+			optimalTeams = make([][]id.ID, 0)
 			optimalTeams = append(optimalTeams, nodePermutation)
 			optimalLatency = totalLatency
 		} else if totalLatency == optimalLatency {

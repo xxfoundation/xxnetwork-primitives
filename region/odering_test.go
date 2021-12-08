@@ -26,7 +26,7 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 	const teamsize = 9
 
 	// Build the nodes
-	nodeList := make([]*id.ID, teamsize)
+	nodeList := make([]id.ID, teamsize)
 
 	rng := rand.New(rand.NewSource(42))
 
@@ -37,7 +37,7 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 	for i := uint64(0); i < uint64(len(nodeList)); i++ {
 		nid := id.NewIdFromUInt(i, id.Node, t)
 		nodeList[i] = nid
-		countryMap[*nid] = countries[i]
+		countryMap[nid] = countries[i]
 	}
 
 	start := time.Now()
@@ -64,7 +64,7 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 	var regionOrder []GeoBin
 	var regionOrderStr []string
 	for _, n := range bestOrdering {
-		order, _ := GetCountryBin(countryMap[*n])
+		order, _ := GetCountryBin(countryMap[n])
 		regionOrder = append(regionOrder, order)
 		regionOrderStr = append(regionOrderStr, order.String())
 	}
@@ -100,7 +100,7 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 	const teamsize = 5
 
 	// Build the nodes
-	nodeList := make([]*id.ID, teamsize)
+	nodeList := make([]id.ID, teamsize)
 
 	rng := rand.New(rand.NewSource(42))
 
@@ -111,7 +111,7 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 	for i := uint64(0); i < uint64(len(nodeList)); i++ {
 		nid := id.NewIdFromUInt(i, id.Node, t)
 		nodeList[i] = nid
-		countryMap[*nid] = countries[i]
+		countryMap[nid] = countries[i]
 	}
 
 	start := time.Now()
@@ -135,21 +135,21 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 			"\n\tReceived: %s", teamsize, expectedDuration, duration)
 	}
 
-	//var regionOrder []GeoBin
-	//var regionOrderStr []string
-	//for _, n := range bestOrdering {
+	// var regionOrder []GeoBin
+	// var regionOrderStr []string
+	// for _, n := range bestOrdering {
 	//	order, _ := GetCountryBin(countryMap[*n])
 	//	regionOrder = append(regionOrder, order)
 	//	regionOrderStr = append(regionOrderStr, order.String())
-	//}
+	// }
 	//
 	//
-	//for i := 0; i < len(bestOrdering)-1; i++ {
+	// for i := 0; i < len(bestOrdering)-1; i++ {
 	//	x :=  latencyTable[(regionOrder[i])][regionOrder[i+1]]
 	//	if x > 2 {
 	//		t.Fatalf("blah")
 	//	}
-	//}
+	// }
 
 }
 
@@ -177,7 +177,7 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 	}
 
 	// Build the nodes
-	nodeList := make([]*id.ID, testParams.TeamSize*2)
+	nodeList := make([]id.ID, testParams.TeamSize*2)
 	nodeStateList := make([]*node.State, testParams.TeamSize*2)
 
 	// Craft regions for nodes
