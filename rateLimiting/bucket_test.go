@@ -164,6 +164,30 @@ func TestBucket_IsFull(t *testing.T) {
 	}
 }
 
+// Tests that Bucket.IsFullOrWhitelist() returns false for a new Bucket and true for a
+// filled bucket or a white listed bucket.
+func TestBucket_IsFullOrWhitelist(t *testing.T) {
+	// Create new Bucket
+	b := CreateBucketFromLeakRatio(rand.Uint32()/2, rand.Float64(), nil)
+
+	if b.IsFull() {
+		t.Errorf("IsFull() returned incorrect value for new bucket."+
+			"\n\texpected: %v\n\treceived: %v", false, b.IsFull())
+	}
+	b.whitelist = true
+	if !b.IsFullOrWhitelist() {
+		t.Errorf("IsFullOrWhitelist() returned incorrect value for a filled bucket."+
+			"\n\texpected: %v\n\treceived: %v", true, b.IsFullOrWhitelist())
+	}
+
+	b.Add(b.capacity * 2)
+	if !b.IsFullOrWhitelist() {
+		t.Errorf("IsFullOrWhitelist() returned incorrect value for a filled bucket."+
+			"\n\texpected: %v\n\treceived: %v", true, b.IsFullOrWhitelist())
+	}
+
+}
+
 // Tests that Bucket.IsEmpty() returns true for a new Bucket and false for a
 // filled bucket.
 func TestBucket_IsEmpty(t *testing.T) {
@@ -178,8 +202,82 @@ func TestBucket_IsEmpty(t *testing.T) {
 	b.Add(b.capacity / 2)
 
 	if b.IsEmpty() {
-		t.Errorf("IsEmpty() returned incorrect value for a filled bucket."+
+		t.Errorf("IsEmptb.capacityy() returned incorrect value for a filled bucket."+
 			"\n\texpected: %v\n\treceived: %v", false, b.IsEmpty())
+	}
+}
+
+// Bucket.AddWithExternalParams() happy path.
+func TestBucket_AddWithExternalParams(t *testing.T) {
+	// Generate test data
+	testData := []struct {
+		tokensToAdd uint32
+		expectedRem uint32
+		sleepTime   time.Duration // Multiplied by duration defined below
+	}{
+		{9, 9, 0},
+		{7, 10, 2},
+		{10, 10, 5},
+		{0, 1, 3},
+	}
+
+	// Set up bucket with a leak rate of 3 per millisecond
+	duration := 60 * time.Millisecond
+	leakRate := 3.0 / float64(duration.Nanoseconds())
+	capacity := 10
+	b := CreateBucketFromLeakRatio(uint32(capacity), leakRate, nil)
+
+	// Add expected values and test
+	for i, r := range testData {
+		time.Sleep(r.sleepTime * duration)
+
+		if succes, _ := b.AddWithExternalParams(r.tokensToAdd, uint32(capacity), 3, duration); !succes {
+			t.Errorf("Add(%d) added tokens past bucket capacity (round %d). "+
+				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
+		}
+
+		if b.remaining != r.expectedRem {
+			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
+				"\n\texpected: %v\n\treceived: %v",
+				i, r.expectedRem, b.remaining)
+		}
+	}
+}
+
+// Tests that Bucket.AddWithExternalParams() returns false when adding tokens over capacity.
+func TestBucket_AddWithExternalParams_OverCapacity(t *testing.T) {
+	// Generate test data
+	testData := []struct {
+		tokensToAdd       uint32
+		expectedRem       uint32
+		expectedAddReturn bool
+		sleepTime         time.Duration // Multiplied by duration defined below
+	}{
+		{7, 7, true, 2},
+		{9, 11, false, 1},
+		{10, 16, false, 1},
+		{1, 7, true, 2},
+	}
+
+	// Set up bucket with a leak rate of 5 per millisecond
+	duration := 30 * time.Millisecond
+	leakRate := 5.0 / float64(duration.Nanoseconds())
+	capacity := 10
+	b := CreateBucketFromLeakRatio(uint32(capacity), leakRate, nil)
+
+	// Add expected values and test
+	for i, r := range testData {
+		time.Sleep(r.sleepTime * duration)
+
+		if success, _ := b.AddWithExternalParams(r.tokensToAdd, uint32(capacity), 5, duration); success != r.expectedAddReturn {
+			t.Errorf("Add(%d) added tokens past bucket capacity (round %d). "+
+				"[cap: %d, rem: %d]", r.tokensToAdd, i, b.capacity, b.remaining)
+		}
+
+		if b.remaining != r.expectedRem {
+			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
+				"\n\texpected: %v\n\treceived: %v", i, r.expectedRem, b.remaining)
+		}
 	}
 }
 

@@ -105,6 +105,8 @@ func (b *Bucket) IsFull() bool {
 	return b.remaining >= b.capacity
 }
 
+// IsFullOrWhitelist returns true if the bucket is overflowing (i.e. no remaining capacity
+// for additional tokens) or if the bucket is whitelisted.
 func (b *Bucket) IsFullOrWhitelist() bool {
 	b.Lock()
 	defer b.Unlock()
@@ -149,7 +151,10 @@ func (b *Bucket) Add(tokens uint32) (bool, bool) {
 	return b.whitelist || b.remaining <= b.capacity, b.whitelist
 }
 
-
+// AddWithExternalParams adds the specified number of tokens to the bucket given external
+// bucket parameters rather than the params specified in the bucket.
+// Returns true if the tokens were added; otherwise, returns false if there was insufficient
+// capacity to do so.
 func (b *Bucket) AddWithExternalParams(tokens, capacity, leakedTokens uint32,
 	duration time.Duration) (bool, bool) {
 	b.Lock()
