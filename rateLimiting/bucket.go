@@ -35,9 +35,14 @@ func CreateBucket(capacity, leaked uint32, leakDuration time.Duration,
 	addToDb func(uint32, int64)) *Bucket {
 
 	// Calculate the leak rate [tokens/nanosecond]
-	leakRate := float64(leaked) / float64(leakDuration.Nanoseconds())
+	leakRate := calculateLeakRate(leaked, leakDuration)
 
 	return CreateBucketFromLeakRatio(capacity, leakRate, addToDb)
+}
+
+func calculateLeakRate(leaked uint32, leakedDuration time.Duration) float64 {
+	return float64(leaked) / float64(leakedDuration.Nanoseconds())
+
 }
 
 // CreateBucketFromLeakRatio generates a new empty bucket.
@@ -95,9 +100,19 @@ func (b *Bucket) IsFull() bool {
 	defer b.Unlock()
 
 	// Update the number of remaining tokens
-	b.update()
+	b.update(b.leakRate)
 
 	return b.remaining >= b.capacity
+}
+
+func (b *Bucket) IsFullOrWhitelist() bool {
+	b.Lock()
+	defer b.Unlock()
+
+	// Update the number of remaining tokens
+	b.update(b.leakRate)
+
+	return b.whitelist || b.remaining >= b.capacity
 }
 
 // IsEmpty returns true if the bucket is empty.
@@ -106,7 +121,7 @@ func (b *Bucket) IsEmpty() bool {
 	defer b.Unlock()
 
 	// Update the number of remaining tokens
-	b.update()
+	b.update(b.leakRate)
 
 	return b.remaining == 0
 }
@@ -119,7 +134,7 @@ func (b *Bucket) Add(tokens uint32) (bool, bool) {
 	defer b.Unlock()
 
 	// Update the number of remaining tokens in the bucket prior to adding
-	b.update()
+	b.update(b.leakRate)
 
 	// Add the tokens to the bucket
 	b.remaining += tokens
@@ -134,12 +149,34 @@ func (b *Bucket) Add(tokens uint32) (bool, bool) {
 	return b.whitelist || b.remaining <= b.capacity, b.whitelist
 }
 
+
+func (b *Bucket) AddWithExternalParams(tokens, capacity, leakedTokens uint32,
+	duration time.Duration) (bool, bool) {
+	b.Lock()
+	defer b.Unlock()
+
+	// Update the number of remaining tokens in the bucket prior to adding
+	b.update(calculateLeakRate(leakedTokens, duration))
+
+	// Add the tokens to the bucket
+	b.remaining += tokens
+
+	// If using the database, then update the remaining in the database bucket
+	if b.addToDb != nil {
+		b.addToDb(b.remaining, b.lastUpdate)
+	}
+
+	// If the tokens went over capacity, then return false, unless the bucket is
+	// whitelisted
+	return b.whitelist || b.remaining <= capacity, b.whitelist
+}
+
 func (b *Bucket) AddWithoutOverflow(tokens uint32) (bool, bool) {
 	b.Lock()
 	defer b.Unlock()
 
 	// Update the number of remaining tokens in the bucket prior to adding
-	b.update()
+	b.update(b.leakRate)
 
 	addOK := b.remaining <= b.capacity
 
@@ -159,14 +196,14 @@ func (b *Bucket) AddWithoutOverflow(tokens uint32) (bool, bool) {
 // update updates the number of remaining tokens in the bucket. It subtracts the
 // number of leaked tokens since lastUpdate from the remaining number of tokens.
 // This function is not thread safe. It must be called with a locked mutex.
-func (b *Bucket) update() {
+func (b *Bucket) update(leakRate float64) {
 	updateTime := time.Now().UnixNano()
 
 	// Calculate the time elapsed since the last update, in nanoseconds
 	elapsedTime := updateTime - b.lastUpdate
 
 	// Calculate the number of tokens that have leaked over the elapsed time
-	tokensLeaked := uint32(float64(elapsedTime) * b.leakRate)
+	tokensLeaked := uint32(float64(elapsedTime) * leakRate)
 
 	// Update the number of remaining tokens in the bucket
 	if tokensLeaked > b.remaining {
