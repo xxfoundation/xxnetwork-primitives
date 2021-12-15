@@ -73,6 +73,20 @@ func CreateBucketFromParams(params *BucketParams,
 	}
 }
 
+// CreateBucketFromDB creates a bucket from parameters of a stored Bucket.
+func CreateBucketFromDB(capacity, leaked uint32, leakDuration time.Duration,
+	inBucket uint32, timestamp int64, addToDb func(uint32, int64)) *Bucket {
+	return &Bucket{
+		capacity:   capacity,
+		remaining:  inBucket,
+		leakRate:   float64(leaked) / float64(leakDuration.Nanoseconds()),
+		lastUpdate: timestamp,
+		locked:     false,
+		whitelist:  false,
+		addToDb:    addToDb,
+	}
+}
+
 // Capacity returns the max number of tokens allowed in the bucket.
 func (b *Bucket) Capacity() uint32 {
 	return b.capacity
