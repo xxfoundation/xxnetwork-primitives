@@ -5,12 +5,13 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-// package excludedRounds contains a wrapper for the set object which is thread-safe
+// package ExcludedRounds contains a wrapper for the set object which is thread-safe
 
 package excludedRounds
 
 import (
 	"github.com/golang-collections/collections/set"
+	"gitlab.com/xx_network/primitives/id"
 	"sync"
 )
 
@@ -20,11 +21,18 @@ type ExcludedRounds struct {
 	sync.RWMutex
 }
 
-func (e *ExcludedRounds) Has(element interface{}) bool {
+func New() *ExcludedRounds {
+	return &ExcludedRounds{
+		xr:      set.New(nil),
+		RWMutex: sync.RWMutex{},
+	}
+}
+
+func (e *ExcludedRounds) Has(rid id.Round) bool {
 	e.RLock()
 	defer e.RUnlock()
 
-	return e.xr.Has(element)
+	return e.xr.Has(rid)
 }
 
 func (e *ExcludedRounds) Insert(element interface{}) {
