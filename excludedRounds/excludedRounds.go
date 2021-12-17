@@ -35,9 +35,16 @@ func (e *ExcludedRounds) Has(rid id.Round) bool {
 	return e.xr.Has(rid)
 }
 
-func (e *ExcludedRounds) Insert(element interface{}) {
+func (e *ExcludedRounds) Insert(rid id.Round) {
 	e.Lock()
 	defer e.Unlock()
 
-	e.xr.Insert(element)
+	e.xr.Insert(rid)
+}
+
+func (e *ExcludedRounds) Remove(rid id.Round) {
+	e.Lock()
+	defer e.Unlock()
+
+	e.xr.Remove(rid)
 }
