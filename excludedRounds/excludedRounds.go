@@ -55,3 +55,10 @@ func (e *ExcludedRounds) Union(other *set.Set) *set.Set {
 
 	return e.xr.Union(other)
 }
+
+func (e *ExcludedRounds) Len() int {
+	e.RLock()
+	defer e.RUnlock()
+
+	return e.xr.Len()
+}
