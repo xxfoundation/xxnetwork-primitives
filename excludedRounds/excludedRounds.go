@@ -48,3 +48,10 @@ func (e *ExcludedRounds) Remove(rid id.Round) {
 
 	e.xr.Remove(rid)
 }
+
+func (e *ExcludedRounds) Union(other *set.Set) *set.Set {
+	e.RLock()
+	defer e.RUnlock()
+
+	return e.xr.Union(other)
+}
