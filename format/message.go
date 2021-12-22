@@ -200,8 +200,12 @@ func (m Message) GetRawContentsSize() int {
 // GetRawContents returns the exact contents of the message. This field crosses
 // over the group barrier and the setter of this is responsible for ensuring the
 // underlying payloads are within the group.
+// flips the first bit to 0 on return
 func (m Message) GetRawContents() []byte {
-	return copyByteSlice(m.rawContents)
+	newRaw := copyByteSlice(m.rawContents)
+	clearFirstBit(newRaw)
+	newRaw[m.GetPrimeByteLen()] &= 0b01111111
+	return newRaw
 }
 
 // SetRawContents sets the raw contents of the message. This field crosses over
@@ -220,8 +224,11 @@ func (m Message) SetRawContents(c []byte) {
 }
 
 // GetKeyFP gets the key Fingerprint
+// flips the first bit to 0 on return
 func (m Message) GetKeyFP() Fingerprint {
-	return NewFingerprint(m.keyFP)
+	newFP :=NewFingerprint(m.keyFP)
+	clearFirstBit(newFP[:])
+	return newFP
 }
 
 // SetKeyFP sets the key Fingerprint. Checks that the first bit of the Key
@@ -236,8 +243,11 @@ func (m Message) SetKeyFP(fp Fingerprint) {
 }
 
 // GetMac gets the MAC.
+// flips the first bit to 0 on return
 func (m Message) GetMac() []byte {
-	return copyByteSlice(m.mac)
+	newMac := copyByteSlice(m.mac)
+	clearFirstBit(newMac)
+	return newMac
 }
 
 // SetMac sets the MAC. Checks that the first bit of the MAC is 0, otherwise it
@@ -330,4 +340,24 @@ func (m Message) GoString() string {
 		", ephemeralRID:" + ephID +
 		", identityFP:" + identityFP +
 		", contents:" + fmt.Sprintf("%q", m.GetContents()) + "}"
+}
+
+// SetGroupBits allows the first and second bits to be set in the payload.
+// This should be used with code which determines if the bit can be set
+// to 1 before proceeding.
+func (m Message) SetGroupBits(bitA, bitB bool) {
+	setFirstBit(m.payloadA, bitA)
+	setFirstBit(m.payloadB, bitB)
+}
+
+func setFirstBit(b []byte, bit bool){
+	if bit{
+		b[0] |= 0b10000000
+	}else{
+		b[0] &= 0b01111111
+	}
+}
+
+func clearFirstBit(b []byte){
+	b[0] = 0b01111111 & b[0]
 }
