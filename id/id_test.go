@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -299,6 +300,50 @@ func TestID_SetType_NilError(t *testing.T) {
 	}()
 
 	id.SetType(Generic)
+}
+
+// Tests that an ID can be JSON marshaled and unmarshalled.
+func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
+	testID := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
+
+	jsonData, err := json.Marshal(testID)
+	if err != nil {
+		t.Errorf("json.Marshal returned an error: %+v", err)
+	}
+
+	newID := &ID{}
+	err = json.Unmarshal(jsonData, newID)
+	if err != nil {
+		t.Errorf("json.Unmarshal returned an error: %+v", err)
+	}
+
+	if *testID != *newID {
+		t.Errorf("Failed the JSON marshal and unmarshal ID."+
+			"\noriginal ID: %s\nreceived ID: %s", testID, newID)
+	}
+}
+
+// Error path: supplied data is invalid JSON.
+func TestID_UnmarshalJSON_JsonUnmarshalError(t *testing.T) {
+	expectedErr := "invalid character"
+	id := ID{}
+	err := id.UnmarshalJSON([]byte("invalid JSON"))
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("UnmarshalJSON failed to return the expected error for "+
+			"invalid JSON.\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
+}
+
+// Error path: supplied data is valid JSON but an invalid ID.
+func TestID_UnmarshalJSON_IdUnmarshalError(t *testing.T) {
+	expectedErr := fmt.Sprintf("Failed to unmarshal ID: length of data "+
+		"must be %d, length received is %d", ArrIDLen, 0)
+	id := ID{}
+	err := id.UnmarshalJSON([]byte("\"\""))
+	if err == nil || !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("UnmarshalJSON failed to return the expected error for "+
+			"invalid ID.\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
 }
 
 // Tests that NewRandomID returns the expected IDs for a given PRNG.
@@ -598,4 +643,20 @@ func (prng *alphaNumericPRNG) Read(p []byte) (n int, err error) {
 		copy(p, hardcodedAlphaNumeric)
 		return len(p), nil
 	}
+}
+
+// Generates a byte slice of the specified length containing random numbers.
+func rngBytes(length int, seed int64, t *testing.T) []byte {
+	prng := rand.New(rand.NewSource(seed))
+
+	// Create new byte slice of the correct size
+	idBytes := make([]byte, length)
+
+	// Create random bytes
+	_, err := prng.Read(idBytes)
+	if err != nil {
+		t.Fatalf("Failed to generate random bytes: %+v", err)
+	}
+
+	return idBytes
 }
