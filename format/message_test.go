@@ -8,6 +8,7 @@ package format
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -323,6 +324,8 @@ func TestMessage_SetContents_ContentsTooLargeError(t *testing.T) {
 func TestMessage_GetRawContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
+
+
 	expectedLen := (2 * MinimumPrimeSize) - RecipientIDLen
 
 	if msg.GetRawContentsSize() != expectedLen {
@@ -352,11 +355,26 @@ func TestMessage_GetRawContents(t *testing.T) {
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
 
+	//make sure the 1st and middle+1 bits are 1
+	msg.payloadA[0] |= 0b10000000
+	msg.payloadB[0] |= 0b10000000
+
 	rawContents := msg.GetRawContents()
 	if !bytes.Equal(expectedRawContents, rawContents) {
 		t.Errorf("GetRawContents() did not return the expected raw contents."+
 			"\nexpected: %s\nreceived: %s", expectedRawContents, rawContents)
 	}
+
+	if rawContents[0]&0b10000000 !=0{
+		t.Errorf("First bit not set to zero")
+	}
+
+	fmt.Println(rawContents[msg.GetPrimeByteLen()])
+
+	if rawContents[msg.GetPrimeByteLen()]&0b10000000 !=0{
+		t.Errorf("middle plus one bit not set to zero")
+	}
+
 }
 
 // Happy path.
@@ -422,6 +440,7 @@ func TestMessage_SetRawContents_LengthError(t *testing.T) {
 func TestMessage_GetKeyFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	keyFP := NewFingerprint(makeAndFillSlice(IdentityFPLen, 'e'))
+	msg.keyFP[0] |= 0b10000000
 	copy(msg.keyFP, keyFP.Bytes())
 
 	if keyFP != msg.GetKeyFP() {
@@ -433,6 +452,10 @@ func TestMessage_GetKeyFP(t *testing.T) {
 	keyFP[2] = 'x'
 	if msg.identityFP[2] == 'x' {
 		t.Error("GetKeyFP() failed to make a copy of keyFP.")
+	}
+
+	if msg.GetKeyFP()[0]&0b10000000 !=0{
+		t.Errorf("First bit not set to zero")
 	}
 }
 
@@ -469,6 +492,7 @@ func TestMessage_GetMac(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	mac := makeAndFillSlice(MacLen, 'm')
 	copy(msg.mac, mac)
+	msg.mac[0]|=0b10000000
 
 	if !bytes.Equal(mac, msg.GetMac()) {
 		t.Errorf("GetMac() failed to get the correct MAC."+
@@ -479,6 +503,10 @@ func TestMessage_GetMac(t *testing.T) {
 	mac[2] = 'x'
 	if msg.mac[2] == 'x' {
 		t.Error("GetMac() failed to make a copy of mac.")
+	}
+
+	if msg.GetMac()[0]&0b10000000 !=0{
+		t.Errorf("First bit not set to zero")
 	}
 }
 
@@ -686,6 +714,81 @@ func TestMessage_GoString_EmptyMessage(t *testing.T) {
 		t.Errorf("GoString() returned incorrect string."+
 			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
 	}
+}
+
+
+func TestMessage_SetGroupBits(t *testing.T) {
+
+	var msgsToTest []Message
+
+	for i:=0;i<2;i++{
+		for j:=0;j<2;j++{
+			msg := generateMsg()
+			if i ==1{
+				msg.payloadA[0] |= 0b10000000
+			}
+			if j == 1{
+				msg.payloadB[0] |= 0b10000000
+			}
+			msgsToTest = append(msgsToTest, msg)
+		}
+	}
+
+	count := 0
+	for _, msg := range msgsToTest{
+		for i:=0;i<2;i++{
+			for j:=0;j<2;j++ {
+				msg.SetGroupBits(i==1,j==1)
+				if int(msg.payloadA[0])>>7!=i{
+					t.Errorf("first group bit not set. Expected %t, " +
+						"got: %t on test %d-A", i==1, int(msg.payloadA[0])>>8==1, count)
+				}
+				if int(msg.payloadB[0])>>7!=j{
+					t.Errorf("second group bit not set. Expected %t, " +
+						"got: %t on test %d-B", j==1, int(msg.payloadB[0])>>8==1, count)
+				}
+				count++
+			}
+		}
+	}
+}
+
+func TestSetFirstBit(t *testing.T)  {
+	b := []byte{0,0,0}
+	setFirstBit(b,true)
+	if b[0]!=0b10000000{
+		t.Errorf("first bit didnt set")
+	}
+
+	b = []byte{255,0,0}
+	setFirstBit(b,false)
+	if b[0]!=0b01111111{
+		t.Errorf("first bit didnt get unset set")
+	}
+}
+
+
+func generateMsg()Message{
+	msg := NewMessage(MinimumPrimeSize)
+
+	// Created expected data
+	var expectedRawContents []byte
+	keyFP := makeAndFillSlice(KeyFPLen, 'a')
+	mac := makeAndFillSlice(MacLen, 'b')
+	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'c')
+	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
+	expectedRawContents = append(expectedRawContents, keyFP...)
+	expectedRawContents = append(expectedRawContents, contents1...)
+	expectedRawContents = append(expectedRawContents, mac...)
+	expectedRawContents = append(expectedRawContents, contents2...)
+
+	// Copy contents into message
+	copy(msg.keyFP, keyFP)
+	copy(msg.mac, mac)
+	copy(msg.contents1, contents1)
+	copy(msg.contents2, contents2)
+
+	return msg
 }
 
 // makeAndFillSlice creates a slice of the specified size filled with the

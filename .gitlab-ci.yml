@@ -1,16 +1,8 @@
-# From: https://about.gitlab.com/2017/09/21/how-to-create-ci-cd-pipeline-with-autodeploy-to-kubernetes-using-gitlab-and-helm/
-
 cache:
   untracked: true
   key: "$CI_BUILD_REF_NAME"
   paths:
     - vendor/
-
-variables:
-  REPO_DIR: gitlab.com/elixxir
-  REPO_NAME: primitives
-  DOCKER_IMAGE: elixxirlabs/cuda-go:go1.16-cuda11.1
-  MIN_CODE_COVERAGE: "85.0"
 
 before_script:
   - go version || echo "Go executable not found."
