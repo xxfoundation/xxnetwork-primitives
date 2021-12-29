@@ -10,9 +10,11 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
+	"errors"
 	"fmt"
-	jww "github.com/spf13/jwalterweatherman"
 	"strconv"
+
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (
@@ -65,6 +67,7 @@ type Message struct {
 	payloadB []byte
 
 	keyFP        []byte
+	version      []byte
 	contents1    []byte
 	mac          []byte
 	contents2    []byte
@@ -92,7 +95,8 @@ func NewMessage(numPrimeBytes int) Message {
 		payloadB: data[numPrimeBytes:],
 
 		keyFP:     data[:KeyFPLen],
-		contents1: data[KeyFPLen:numPrimeBytes],
+		version:   data[KeyFPLen : KeyFPLen+1],
+		contents1: data[1+KeyFPLen : numPrimeBytes],
 
 		mac:          data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
@@ -105,17 +109,24 @@ func NewMessage(numPrimeBytes int) Message {
 
 // Marshal marshals the message into a byte slice.
 func (m *Message) Marshal() []byte {
-	return copyByteSlice(append([]byte{messagePayloadVersion}, m.data...))
+	return copyByteSlice(m.data)
 }
 
 // Unmarshal unmarshalls a byte slice into a new Message.
-func Unmarshal(b []byte) Message {
-	if b[0] != messagePayloadVersion {
-		panic("Message payload version mismatch")
+func Unmarshal(b []byte) (Message, error) {
+	m := NewMessage(len(b) / 2)
+	copy(m.data, b)
+
+	if m.Version() != messagePayloadVersion {
+		return Message{}, errors.New("encoded Message version mismatch")
 	}
-	m := NewMessage(len(b[1:]) / 2)
-	copy(m.data, b[1:])
-	return m
+
+	return m, nil
+}
+
+// Version returns the encoding version.
+func (m *Message) Version() byte {
+	return m.version[0]
 }
 
 // Copy returns a copy of the message.

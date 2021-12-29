@@ -106,7 +106,11 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 	m.SetPayloadB(payload)
 
 	messageData := m.Marshal()
-	newMsg := Unmarshal(messageData)
+	newMsg, err := Unmarshal(messageData)
+
+	if err != nil {
+		t.Errorf("Unmarshal failure: %#v", err)
+	}
 
 	if !reflect.DeepEqual(m, newMsg) {
 		t.Errorf("Failed to Marshal() and Unmarshal() message."+
@@ -324,8 +328,6 @@ func TestMessage_SetContents_ContentsTooLargeError(t *testing.T) {
 func TestMessage_GetRawContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-
-
 	expectedLen := (2 * MinimumPrimeSize) - RecipientIDLen
 
 	if msg.GetRawContentsSize() != expectedLen {
@@ -365,13 +367,13 @@ func TestMessage_GetRawContents(t *testing.T) {
 			"\nexpected: %s\nreceived: %s", expectedRawContents, rawContents)
 	}
 
-	if rawContents[0]&0b10000000 !=0{
+	if rawContents[0]&0b10000000 != 0 {
 		t.Errorf("First bit not set to zero")
 	}
 
 	fmt.Println(rawContents[msg.GetPrimeByteLen()])
 
-	if rawContents[msg.GetPrimeByteLen()]&0b10000000 !=0{
+	if rawContents[msg.GetPrimeByteLen()]&0b10000000 != 0 {
 		t.Errorf("middle plus one bit not set to zero")
 	}
 
@@ -454,7 +456,7 @@ func TestMessage_GetKeyFP(t *testing.T) {
 		t.Error("GetKeyFP() failed to make a copy of keyFP.")
 	}
 
-	if msg.GetKeyFP()[0]&0b10000000 !=0{
+	if msg.GetKeyFP()[0]&0b10000000 != 0 {
 		t.Errorf("First bit not set to zero")
 	}
 }
@@ -492,7 +494,7 @@ func TestMessage_GetMac(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	mac := makeAndFillSlice(MacLen, 'm')
 	copy(msg.mac, mac)
-	msg.mac[0]|=0b10000000
+	msg.mac[0] |= 0b10000000
 
 	if !bytes.Equal(mac, msg.GetMac()) {
 		t.Errorf("GetMac() failed to get the correct MAC."+
@@ -505,7 +507,7 @@ func TestMessage_GetMac(t *testing.T) {
 		t.Error("GetMac() failed to make a copy of mac.")
 	}
 
-	if msg.GetMac()[0]&0b10000000 !=0{
+	if msg.GetMac()[0]&0b10000000 != 0 {
 		t.Errorf("First bit not set to zero")
 	}
 }
@@ -716,18 +718,17 @@ func TestMessage_GoString_EmptyMessage(t *testing.T) {
 	}
 }
 
-
 func TestMessage_SetGroupBits(t *testing.T) {
 
 	var msgsToTest []Message
 
-	for i:=0;i<2;i++{
-		for j:=0;j<2;j++{
+	for i := 0; i < 2; i++ {
+		for j := 0; j < 2; j++ {
 			msg := generateMsg()
-			if i ==1{
+			if i == 1 {
 				msg.payloadA[0] |= 0b10000000
 			}
-			if j == 1{
+			if j == 1 {
 				msg.payloadB[0] |= 0b10000000
 			}
 			msgsToTest = append(msgsToTest, msg)
@@ -735,17 +736,17 @@ func TestMessage_SetGroupBits(t *testing.T) {
 	}
 
 	count := 0
-	for _, msg := range msgsToTest{
-		for i:=0;i<2;i++{
-			for j:=0;j<2;j++ {
-				msg.SetGroupBits(i==1,j==1)
-				if int(msg.payloadA[0])>>7!=i{
-					t.Errorf("first group bit not set. Expected %t, " +
-						"got: %t on test %d-A", i==1, int(msg.payloadA[0])>>8==1, count)
+	for _, msg := range msgsToTest {
+		for i := 0; i < 2; i++ {
+			for j := 0; j < 2; j++ {
+				msg.SetGroupBits(i == 1, j == 1)
+				if int(msg.payloadA[0])>>7 != i {
+					t.Errorf("first group bit not set. Expected %t, "+
+						"got: %t on test %d-A", i == 1, int(msg.payloadA[0])>>8 == 1, count)
 				}
-				if int(msg.payloadB[0])>>7!=j{
-					t.Errorf("second group bit not set. Expected %t, " +
-						"got: %t on test %d-B", j==1, int(msg.payloadB[0])>>8==1, count)
+				if int(msg.payloadB[0])>>7 != j {
+					t.Errorf("second group bit not set. Expected %t, "+
+						"got: %t on test %d-B", j == 1, int(msg.payloadB[0])>>8 == 1, count)
 				}
 				count++
 			}
@@ -753,22 +754,21 @@ func TestMessage_SetGroupBits(t *testing.T) {
 	}
 }
 
-func TestSetFirstBit(t *testing.T)  {
-	b := []byte{0,0,0}
-	setFirstBit(b,true)
-	if b[0]!=0b10000000{
+func TestSetFirstBit(t *testing.T) {
+	b := []byte{0, 0, 0}
+	setFirstBit(b, true)
+	if b[0] != 0b10000000 {
 		t.Errorf("first bit didnt set")
 	}
 
-	b = []byte{255,0,0}
-	setFirstBit(b,false)
-	if b[0]!=0b01111111{
+	b = []byte{255, 0, 0}
+	setFirstBit(b, false)
+	if b[0] != 0b01111111 {
 		t.Errorf("first bit didnt get unset set")
 	}
 }
 
-
-func generateMsg()Message{
+func generateMsg() Message {
 	msg := NewMessage(MinimumPrimeSize)
 
 	// Created expected data
