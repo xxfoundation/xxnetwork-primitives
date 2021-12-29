@@ -25,6 +25,8 @@ const (
 	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
 	AssociatedDataSize = KeyFPLen + MacLen + RecipientIDLen
+
+	messagePayloadVersion = 0
 )
 
 /*
@@ -103,13 +105,16 @@ func NewMessage(numPrimeBytes int) Message {
 
 // Marshal marshals the message into a byte slice.
 func (m *Message) Marshal() []byte {
-	return copyByteSlice(m.data)
+	return copyByteSlice(append([]byte{messagePayloadVersion}, m.data...))
 }
 
 // Unmarshal unmarshalls a byte slice into a new Message.
 func Unmarshal(b []byte) Message {
-	m := NewMessage(len(b) / 2)
-	copy(m.data, b)
+	if b[0] != messagePayloadVersion {
+		panic("Message payload version mismatch")
+	}
+	m := NewMessage(len(b[1:]) / 2)
+	copy(m.data, b[1:])
 	return m
 }
 
@@ -226,7 +231,7 @@ func (m Message) SetRawContents(c []byte) {
 // GetKeyFP gets the key Fingerprint
 // flips the first bit to 0 on return
 func (m Message) GetKeyFP() Fingerprint {
-	newFP :=NewFingerprint(m.keyFP)
+	newFP := NewFingerprint(m.keyFP)
 	clearFirstBit(newFP[:])
 	return newFP
 }
@@ -350,14 +355,14 @@ func (m Message) SetGroupBits(bitA, bitB bool) {
 	setFirstBit(m.payloadB, bitB)
 }
 
-func setFirstBit(b []byte, bit bool){
-	if bit{
+func setFirstBit(b []byte, bit bool) {
+	if bit {
 		b[0] |= 0b10000000
-	}else{
+	} else {
 		b[0] &= 0b01111111
 	}
 }
 
-func clearFirstBit(b []byte){
+func clearFirstBit(b []byte) {
 	b[0] = 0b01111111 & b[0]
 }
