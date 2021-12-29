@@ -66,7 +66,8 @@ func TestNewMessage(t *testing.T) {
 		payloadA:     make([]byte, numPrimeBytes),
 		payloadB:     make([]byte, numPrimeBytes),
 		keyFP:        make([]byte, KeyFPLen),
-		contents1:    make([]byte, numPrimeBytes-KeyFPLen),
+		version:      make([]byte, 1),
+		contents1:    make([]byte, numPrimeBytes-KeyFPLen-1),
 		mac:          make([]byte, MacLen),
 		contents2:    make([]byte, numPrimeBytes-MacLen-RecipientIDLen),
 		ephemeralRID: make([]byte, EphemeralRIDLen),
@@ -104,6 +105,7 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 	m.SetPayloadA(payload)
 	prng.Read(payload)
 	m.SetPayloadB(payload)
+	copy(m.version, []byte{messagePayloadVersion})
 
 	messageData := m.Marshal()
 	newMsg, err := Unmarshal(messageData)
