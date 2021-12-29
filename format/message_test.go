@@ -124,7 +124,7 @@ func TestMessage_Copy(t *testing.T) {
 
 	msgCopy := msg.Copy()
 
-	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize-1)
 	copy(contents, "test")
 	msgCopy.SetContents(contents)
 
@@ -245,17 +245,17 @@ func TestMessage_SetPayloadB_LengthError(t *testing.T) {
 func TestMessage_ContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize {
+	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize-1 {
 		t.Errorf("ContentsSize() returned the wrong content size."+
 			"\nexpected: %d\nreceived: %d",
-			MinimumPrimeSize*2-AssociatedDataSize, msg.ContentsSize())
+			MinimumPrimeSize*2-AssociatedDataSize-1, msg.ContentsSize())
 	}
 }
 
 // Happy path.
 func TestMessage_GetContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	copy(msg.contents1, contents[:len(msg.contents1)])
 	copy(msg.contents2, contents[len(msg.contents1):])
@@ -271,7 +271,7 @@ func TestMessage_GetContents(t *testing.T) {
 // Happy path: set contents that is large enough to fit in both contents.
 func TestMessage_SetContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	msg.SetContents(contents)
 
@@ -291,7 +291,7 @@ func TestMessage_SetContents(t *testing.T) {
 // Happy path: set contents that is small enough to fit in the first contents.
 func TestMessage_SetContents_ShortContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize-KeyFPLen-1, 'a')
 
 	msg.SetContents(contents)
 
@@ -344,9 +344,10 @@ func TestMessage_GetRawContents(t *testing.T) {
 	var expectedRawContents []byte
 	keyFP := makeAndFillSlice(KeyFPLen, 'a')
 	mac := makeAndFillSlice(MacLen, 'b')
-	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'c')
+	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen-1, 'c')
 	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
 	expectedRawContents = append(expectedRawContents, keyFP...)
+	expectedRawContents = append(expectedRawContents, byte(messagePayloadVersion))
 	expectedRawContents = append(expectedRawContents, contents1...)
 	expectedRawContents = append(expectedRawContents, mac...)
 	expectedRawContents = append(expectedRawContents, contents2...)
@@ -354,6 +355,7 @@ func TestMessage_GetRawContents(t *testing.T) {
 	// Copy contents into message
 	copy(msg.keyFP, keyFP)
 	copy(msg.mac, mac)
+	copy(msg.version, []byte{messagePayloadVersion})
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
 
@@ -648,12 +650,12 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 // Tests that digests come out correctly and are diffrent
 func TestMessage_Digest(t *testing.T) {
 
-	expectedA := "0mavRePQa3DZ9S4t9DRB"
-	expectedB := "OVN1Ykbzc2BhAKUGjtYX"
+	expectedA := "zzfUL4m2rbDhqemRBFAb"
+	expectedB := "EJfjHEZksCydtWJE3BIs"
 
 	msgA := NewMessage(MinimumPrimeSize)
 
-	contentsA := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contentsA := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	msgA.SetContents(contentsA)
 
@@ -666,7 +668,7 @@ func TestMessage_Digest(t *testing.T) {
 
 	msgB := NewMessage(MinimumPrimeSize)
 
-	contentsB := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'b')
+	contentsB := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'b')
 
 	msgB.SetContents(contentsB)
 
@@ -691,13 +693,13 @@ func TestMessage_GoString(t *testing.T) {
 	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
 	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
 	msg.SetIdentityFP(makeAndFillSlice(IdentityFPLen, 'f'))
-	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'g'))
+	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
 	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
 		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
 		"ephemeralRID:7306357456645743973, " +
 		"identityFP:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
-		"contents:\"ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
+		"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
 
 	if expected != msg.GoString() {
 		t.Errorf("GoString() returned incorrect string."+

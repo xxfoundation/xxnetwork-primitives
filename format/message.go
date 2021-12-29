@@ -10,7 +10,6 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -118,14 +117,14 @@ func Unmarshal(b []byte) (Message, error) {
 	copy(m.data, b)
 
 	if m.Version() != messagePayloadVersion {
-		return Message{}, errors.New("encoded Message version mismatch")
+		return Message{}, fmt.Errorf("message encoding version mismatch, got %d expected %d", m.Version(), messagePayloadVersion)
 	}
 
 	return m, nil
 }
 
 // Version returns the encoding version.
-func (m *Message) Version() byte {
+func (m *Message) Version() uint8 {
 	return m.version[0]
 }
 
@@ -175,7 +174,7 @@ func (m Message) SetPayloadB(payload []byte) {
 
 // ContentsSize returns the maximum size of the contents.
 func (m Message) ContentsSize() int {
-	return len(m.data) - AssociatedDataSize
+	return len(m.data) - AssociatedDataSize - 1
 }
 
 // GetContents returns the exact contents of the message. This size of the
