@@ -23,7 +23,7 @@ func TestMessage_Smoke(t *testing.T) {
 	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
 	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'g')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
 	msg.SetKeyFP(fp)
