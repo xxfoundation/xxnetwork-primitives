@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestExcludedRounds(t *testing.T) {
+func TestSet(t *testing.T) {
 	xr := New()
 	rid1 := id.Round(400)
 	if xr.Has(rid1) {

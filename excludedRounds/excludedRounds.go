@@ -5,60 +5,23 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-// package ExcludedRounds contains a wrapper for the set object which is thread-safe
-
 package excludedRounds
 
 import (
-	"github.com/golang-collections/collections/set"
 	"gitlab.com/xx_network/primitives/id"
-	"sync"
 )
 
-// ExcludedRounds struct contains a set of rounds to be excluded from cmix
-type ExcludedRounds struct {
-	xr *set.Set
-	sync.RWMutex
-}
+// ExcludedRounds is a list of rounds that are excluded from sending on.
+type ExcludedRounds interface {
+	// Has indicates if the round is in the list.
+	Has(rid id.Round) bool
 
-func New() *ExcludedRounds {
-	return &ExcludedRounds{
-		xr:      set.New(nil),
-		RWMutex: sync.RWMutex{},
-	}
-}
+	// Insert adds the round to the list.
+	Insert(rid id.Round)
 
-func (e *ExcludedRounds) Has(rid id.Round) bool {
-	e.RLock()
-	defer e.RUnlock()
+	// Remove deletes the round from the list.
+	Remove(rid id.Round)
 
-	return e.xr.Has(rid)
-}
-
-func (e *ExcludedRounds) Insert(rid id.Round) {
-	e.Lock()
-	defer e.Unlock()
-
-	e.xr.Insert(rid)
-}
-
-func (e *ExcludedRounds) Remove(rid id.Round) {
-	e.Lock()
-	defer e.Unlock()
-
-	e.xr.Remove(rid)
-}
-
-func (e *ExcludedRounds) Union(other *set.Set) *set.Set {
-	e.RLock()
-	defer e.RUnlock()
-
-	return e.xr.Union(other)
-}
-
-func (e *ExcludedRounds) Len() int {
-	e.RLock()
-	defer e.RUnlock()
-
-	return e.xr.Len()
+	// Len returns the number of rounds in the list.
+	Len() int
 }
