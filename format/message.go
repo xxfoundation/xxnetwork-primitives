@@ -40,15 +40,15 @@ const (
 |                 payloadA                 |                         payloadB                        |
 |              primeSize bits              |                     primeSize bits                      |
 +---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |      Contents1      | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
-|  1 bit  | 255 bits |       *below*       |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
+| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
+|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
 + --------+----------+---------------------+---------+-------+-----------+--------------+------------+
 |                              Raw Contents                              |
 |                    2*primeSize - recipientID bits                      |
 +------------------------------------------------------------------------+
 
 * size: size in bits of the data which is stored
-* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize
+* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
 * Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
 * the size of the data in the two contents fields is stored within the "size" field
 
