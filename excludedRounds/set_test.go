@@ -12,11 +12,11 @@ import (
 	"testing"
 )
 
-func TestSet(t *testing.T) {
-	xr := New()
+func Test_NewSet(t *testing.T) {
+	xr := NewSet()
 	rid1 := id.Round(400)
 	if xr.Has(rid1) {
-		t.Errorf("New excluded rounds set should not have anything in it")
+		t.Errorf("NewSet excluded rounds set should not have anything in it")
 	}
 	xr.Insert(rid1)
 	if !xr.Has(rid1) {
