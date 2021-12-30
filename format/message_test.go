@@ -15,6 +15,32 @@ import (
 	"time"
 )
 
+func TestMessage_Version(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	// Generate message parts
+	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
+	mac := makeAndFillSlice(MacLen, 'd')
+	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
+	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
+
+	// Set message parts
+	msg.SetKeyFP(fp)
+	msg.SetMac(mac)
+	msg.SetEphemeralRID(ephemeralRID)
+	msg.SetIdentityFP(identityFP)
+	msg.SetContents(contents)
+
+	copy(msg.version, []byte{123})
+
+	msgBytes := msg.Marshal()
+	_, err := Unmarshal(msgBytes)
+	if err == nil {
+		t.Error("version detection fail")
+	}
+}
+
 func TestMessage_Smoke(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
