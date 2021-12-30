@@ -116,9 +116,11 @@ func Unmarshal(b []byte) (Message, error) {
 	m := NewMessage(len(b) / 2)
 	copy(m.data, b)
 
-	if m.Version() != messagePayloadVersion {
-		return Message{}, fmt.Errorf("message encoding version mismatch, got %d expected %d", m.Version(), messagePayloadVersion)
-	}
+	// if m.Version() != messagePayloadVersion {
+	// 	return Message{}, fmt.Errorf(
+	// 		"message encoding version mismatch, got %d expected %d",
+	// 		m.Version(), messagePayloadVersion)
+	// }
 
 	return m, nil
 }
