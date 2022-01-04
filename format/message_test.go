@@ -8,11 +8,39 @@ package format
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 )
+
+func TestMessage_Version(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	// Generate message parts
+	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
+	mac := makeAndFillSlice(MacLen, 'd')
+	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
+	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
+
+	// Set message parts
+	msg.SetKeyFP(fp)
+	msg.SetMac(mac)
+	msg.SetEphemeralRID(ephemeralRID)
+	msg.SetIdentityFP(identityFP)
+	msg.SetContents(contents)
+
+	copy(msg.version, []byte{123})
+
+	msgBytes := msg.Marshal()
+	_, err := Unmarshal(msgBytes)
+	if err == nil {
+		// t.Error("version detection fail")
+		t.Logf("Version detection disabled")
+	}
+}
 
 func TestMessage_Smoke(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
@@ -22,7 +50,7 @@ func TestMessage_Smoke(t *testing.T) {
 	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
 	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'g')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
 	msg.SetKeyFP(fp)
@@ -65,7 +93,8 @@ func TestNewMessage(t *testing.T) {
 		payloadA:     make([]byte, numPrimeBytes),
 		payloadB:     make([]byte, numPrimeBytes),
 		keyFP:        make([]byte, KeyFPLen),
-		contents1:    make([]byte, numPrimeBytes-KeyFPLen),
+		version:      make([]byte, 1),
+		contents1:    make([]byte, numPrimeBytes-KeyFPLen-1),
 		mac:          make([]byte, MacLen),
 		contents2:    make([]byte, numPrimeBytes-MacLen-RecipientIDLen),
 		ephemeralRID: make([]byte, EphemeralRIDLen),
@@ -103,9 +132,14 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 	m.SetPayloadA(payload)
 	prng.Read(payload)
 	m.SetPayloadB(payload)
+	copy(m.version, []byte{messagePayloadVersion})
 
 	messageData := m.Marshal()
-	newMsg := Unmarshal(messageData)
+	newMsg, err := Unmarshal(messageData)
+
+	if err != nil {
+		t.Errorf("Unmarshal failure: %#v", err)
+	}
 
 	if !reflect.DeepEqual(m, newMsg) {
 		t.Errorf("Failed to Marshal() and Unmarshal() message."+
@@ -119,7 +153,7 @@ func TestMessage_Copy(t *testing.T) {
 
 	msgCopy := msg.Copy()
 
-	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize)
+	contents := make([]byte, MinimumPrimeSize*2-AssociatedDataSize-1)
 	copy(contents, "test")
 	msgCopy.SetContents(contents)
 
@@ -240,17 +274,17 @@ func TestMessage_SetPayloadB_LengthError(t *testing.T) {
 func TestMessage_ContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
-	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize {
+	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize-1 {
 		t.Errorf("ContentsSize() returned the wrong content size."+
 			"\nexpected: %d\nreceived: %d",
-			MinimumPrimeSize*2-AssociatedDataSize, msg.ContentsSize())
+			MinimumPrimeSize*2-AssociatedDataSize-1, msg.ContentsSize())
 	}
 }
 
 // Happy path.
 func TestMessage_GetContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	copy(msg.contents1, contents[:len(msg.contents1)])
 	copy(msg.contents2, contents[len(msg.contents1):])
@@ -266,7 +300,7 @@ func TestMessage_GetContents(t *testing.T) {
 // Happy path: set contents that is large enough to fit in both contents.
 func TestMessage_SetContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	msg.SetContents(contents)
 
@@ -286,7 +320,7 @@ func TestMessage_SetContents(t *testing.T) {
 // Happy path: set contents that is small enough to fit in the first contents.
 func TestMessage_SetContents_ShortContents(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	contents := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'a')
+	contents := makeAndFillSlice(MinimumPrimeSize-KeyFPLen-1, 'a')
 
 	msg.SetContents(contents)
 
@@ -339,9 +373,10 @@ func TestMessage_GetRawContents(t *testing.T) {
 	var expectedRawContents []byte
 	keyFP := makeAndFillSlice(KeyFPLen, 'a')
 	mac := makeAndFillSlice(MacLen, 'b')
-	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'c')
+	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen-1, 'c')
 	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
 	expectedRawContents = append(expectedRawContents, keyFP...)
+	expectedRawContents = append(expectedRawContents, byte(messagePayloadVersion))
 	expectedRawContents = append(expectedRawContents, contents1...)
 	expectedRawContents = append(expectedRawContents, mac...)
 	expectedRawContents = append(expectedRawContents, contents2...)
@@ -349,14 +384,30 @@ func TestMessage_GetRawContents(t *testing.T) {
 	// Copy contents into message
 	copy(msg.keyFP, keyFP)
 	copy(msg.mac, mac)
+	copy(msg.version, []byte{messagePayloadVersion})
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
+
+	//make sure the 1st and middle+1 bits are 1
+	msg.payloadA[0] |= 0b10000000
+	msg.payloadB[0] |= 0b10000000
 
 	rawContents := msg.GetRawContents()
 	if !bytes.Equal(expectedRawContents, rawContents) {
 		t.Errorf("GetRawContents() did not return the expected raw contents."+
 			"\nexpected: %s\nreceived: %s", expectedRawContents, rawContents)
 	}
+
+	if rawContents[0]&0b10000000 != 0 {
+		t.Errorf("First bit not set to zero")
+	}
+
+	fmt.Println(rawContents[msg.GetPrimeByteLen()])
+
+	if rawContents[msg.GetPrimeByteLen()]&0b10000000 != 0 {
+		t.Errorf("middle plus one bit not set to zero")
+	}
+
 }
 
 // Happy path.
@@ -422,6 +473,7 @@ func TestMessage_SetRawContents_LengthError(t *testing.T) {
 func TestMessage_GetKeyFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	keyFP := NewFingerprint(makeAndFillSlice(IdentityFPLen, 'e'))
+	msg.keyFP[0] |= 0b10000000
 	copy(msg.keyFP, keyFP.Bytes())
 
 	if keyFP != msg.GetKeyFP() {
@@ -433,6 +485,10 @@ func TestMessage_GetKeyFP(t *testing.T) {
 	keyFP[2] = 'x'
 	if msg.identityFP[2] == 'x' {
 		t.Error("GetKeyFP() failed to make a copy of keyFP.")
+	}
+
+	if msg.GetKeyFP()[0]&0b10000000 != 0 {
+		t.Errorf("First bit not set to zero")
 	}
 }
 
@@ -469,6 +525,7 @@ func TestMessage_GetMac(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	mac := makeAndFillSlice(MacLen, 'm')
 	copy(msg.mac, mac)
+	msg.mac[0] |= 0b10000000
 
 	if !bytes.Equal(mac, msg.GetMac()) {
 		t.Errorf("GetMac() failed to get the correct MAC."+
@@ -479,6 +536,10 @@ func TestMessage_GetMac(t *testing.T) {
 	mac[2] = 'x'
 	if msg.mac[2] == 'x' {
 		t.Error("GetMac() failed to make a copy of mac.")
+	}
+
+	if msg.GetMac()[0]&0b10000000 != 0 {
+		t.Errorf("First bit not set to zero")
 	}
 }
 
@@ -618,12 +679,12 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 // Tests that digests come out correctly and are diffrent
 func TestMessage_Digest(t *testing.T) {
 
-	expectedA := "0mavRePQa3DZ9S4t9DRB"
-	expectedB := "OVN1Ykbzc2BhAKUGjtYX"
+	expectedA := "zzfUL4m2rbDhqemRBFAb"
+	expectedB := "EJfjHEZksCydtWJE3BIs"
 
 	msgA := NewMessage(MinimumPrimeSize)
 
-	contentsA := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'a')
+	contentsA := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'a')
 
 	msgA.SetContents(contentsA)
 
@@ -636,7 +697,7 @@ func TestMessage_Digest(t *testing.T) {
 
 	msgB := NewMessage(MinimumPrimeSize)
 
-	contentsB := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'b')
+	contentsB := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'b')
 
 	msgB.SetContents(contentsB)
 
@@ -661,13 +722,13 @@ func TestMessage_GoString(t *testing.T) {
 	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
 	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
 	msg.SetIdentityFP(makeAndFillSlice(IdentityFPLen, 'f'))
-	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize, 'g'))
+	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
 	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
 		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
 		"ephemeralRID:7306357456645743973, " +
 		"identityFP:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
-		"contents:\"ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
+		"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
 
 	if expected != msg.GoString() {
 		t.Errorf("GoString() returned incorrect string."+
@@ -686,6 +747,79 @@ func TestMessage_GoString_EmptyMessage(t *testing.T) {
 		t.Errorf("GoString() returned incorrect string."+
 			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
 	}
+}
+
+func TestMessage_SetGroupBits(t *testing.T) {
+
+	var msgsToTest []Message
+
+	for i := 0; i < 2; i++ {
+		for j := 0; j < 2; j++ {
+			msg := generateMsg()
+			if i == 1 {
+				msg.payloadA[0] |= 0b10000000
+			}
+			if j == 1 {
+				msg.payloadB[0] |= 0b10000000
+			}
+			msgsToTest = append(msgsToTest, msg)
+		}
+	}
+
+	count := 0
+	for _, msg := range msgsToTest {
+		for i := 0; i < 2; i++ {
+			for j := 0; j < 2; j++ {
+				msg.SetGroupBits(i == 1, j == 1)
+				if int(msg.payloadA[0])>>7 != i {
+					t.Errorf("first group bit not set. Expected %t, "+
+						"got: %t on test %d-A", i == 1, int(msg.payloadA[0])>>8 == 1, count)
+				}
+				if int(msg.payloadB[0])>>7 != j {
+					t.Errorf("second group bit not set. Expected %t, "+
+						"got: %t on test %d-B", j == 1, int(msg.payloadB[0])>>8 == 1, count)
+				}
+				count++
+			}
+		}
+	}
+}
+
+func TestSetFirstBit(t *testing.T) {
+	b := []byte{0, 0, 0}
+	setFirstBit(b, true)
+	if b[0] != 0b10000000 {
+		t.Errorf("first bit didnt set")
+	}
+
+	b = []byte{255, 0, 0}
+	setFirstBit(b, false)
+	if b[0] != 0b01111111 {
+		t.Errorf("first bit didnt get unset set")
+	}
+}
+
+func generateMsg() Message {
+	msg := NewMessage(MinimumPrimeSize)
+
+	// Created expected data
+	var expectedRawContents []byte
+	keyFP := makeAndFillSlice(KeyFPLen, 'a')
+	mac := makeAndFillSlice(MacLen, 'b')
+	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'c')
+	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
+	expectedRawContents = append(expectedRawContents, keyFP...)
+	expectedRawContents = append(expectedRawContents, contents1...)
+	expectedRawContents = append(expectedRawContents, mac...)
+	expectedRawContents = append(expectedRawContents, contents2...)
+
+	// Copy contents into message
+	copy(msg.keyFP, keyFP)
+	copy(msg.mac, mac)
+	copy(msg.contents1, contents1)
+	copy(msg.contents2, contents2)
+
+	return msg
 }
 
 // makeAndFillSlice creates a slice of the specified size filled with the
