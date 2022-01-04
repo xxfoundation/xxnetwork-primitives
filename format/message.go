@@ -111,17 +111,26 @@ func (m *Message) Marshal() []byte {
 	return copyByteSlice(m.data)
 }
 
-// Unmarshal unmarshalls a byte slice into a new Message.
-func Unmarshal(b []byte) (Message, error) {
+func unmarshal(b []byte) Message {
 	m := NewMessage(len(b) / 2)
 	copy(m.data, b)
+	return m
+}
 
-	// if m.Version() != messagePayloadVersion {
-	// 	return Message{}, fmt.Errorf(
-	// 		"message encoding version mismatch, got %d expected %d",
-	// 		m.Version(), messagePayloadVersion)
-	// }
+// UnmarshalCiphertext unmarshalls an encrypted message
+// without checking the version number.
+func UnmarshalCiphertext(b []byte) Message {
+	return unmarshal(b)
+}
 
+// Unmarshal unmarshalls a byte slice into a new Message.
+func Unmarshal(b []byte) (Message, error) {
+	m := unmarshal(b)
+	if m.Version() != messagePayloadVersion {
+		return Message{}, fmt.Errorf(
+			"message encoding version mismatch, got %d expected %d",
+			m.Version(), messagePayloadVersion)
+	}
 	return m, nil
 }
 
