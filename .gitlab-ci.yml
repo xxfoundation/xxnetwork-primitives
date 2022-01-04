@@ -27,7 +27,7 @@ stages:
 
 build:
   stage: build
-  image: elixxirlabs/cuda-go:go1.16-cuda11.1
+  image: $DOCKER_IMAGE
   script:
     - git clean -ffdx
     - go mod vendor -v

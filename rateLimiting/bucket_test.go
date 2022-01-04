@@ -7,6 +7,7 @@
 package rateLimiting
 
 import (
+	"bytes"
 	"encoding/json"
 	"math/rand"
 	"reflect"
@@ -67,6 +68,47 @@ func TestCreateBucket(t *testing.T) {
 	if b.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketFromLeakRatio() generated Bucket with incorrect leak rate."+
 			"\n\texpected: %v\n\treceived: %v", expectedLeakRate, b.leakRate)
+	}
+}
+
+// Test that CreateBucketFromDB() produces expected bucket.
+func TestCreateBucketFromDB(t *testing.T) {
+	// Setup expected values
+	expectedCapacity := rand.Uint32()
+	expectedLeaked := rand.Uint32()
+	expectedLeakDuration := time.Duration(rand.Uint32())
+	expectedInBucket := rand.Uint32()
+	timestamp := time.Now().UnixNano()
+	addToDb := func(a uint32, b int64) {}
+
+	testBucket := CreateBucketFromDB(expectedCapacity,
+		expectedLeaked, expectedLeakDuration, expectedInBucket,
+		timestamp, addToDb)
+
+	expectedBucket := &Bucket{
+		capacity:   expectedCapacity,
+		remaining:  expectedInBucket,
+		leakRate:   float64(expectedLeaked) / float64(expectedLeakDuration.Nanoseconds()),
+		lastUpdate: timestamp,
+		locked:     false,
+		whitelist:  false,
+		addToDb:    addToDb,
+	}
+
+	expectedJson, err := expectedBucket.MarshalJSON()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	testJson, err := testBucket.MarshalJSON()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if !bytes.Equal(expectedJson, testJson) {
+		t.Errorf("CreateBucketFromDB() produced an incorrect bucket."+
+			"\n\texepcted: %+v\n\treceived: %+v", expectedBucket, testBucket)
+
 	}
 }
 
