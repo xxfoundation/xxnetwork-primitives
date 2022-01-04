@@ -11,8 +11,9 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	jww "github.com/spf13/jwalterweatherman"
 	"strconv"
+
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (
@@ -25,6 +26,8 @@ const (
 	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
 	AssociatedDataSize = KeyFPLen + MacLen + RecipientIDLen
+
+	messagePayloadVersion = 0
 )
 
 /*
@@ -36,15 +39,15 @@ const (
 |                 payloadA                 |                         payloadB                        |
 |              primeSize bits              |                     primeSize bits                      |
 +---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |      Contents1      | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
-|  1 bit  | 255 bits |       *below*       |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
+| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
+|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
 + --------+----------+---------------------+---------+-------+-----------+--------------+------------+
 |                              Raw Contents                              |
 |                    2*primeSize - recipientID bits                      |
 +------------------------------------------------------------------------+
 
 * size: size in bits of the data which is stored
-* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize
+* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
 * Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
 * the size of the data in the two contents fields is stored within the "size" field
 
@@ -63,6 +66,7 @@ type Message struct {
 	payloadB []byte
 
 	keyFP        []byte
+	version      []byte
 	contents1    []byte
 	mac          []byte
 	contents2    []byte
@@ -90,7 +94,8 @@ func NewMessage(numPrimeBytes int) Message {
 		payloadB: data[numPrimeBytes:],
 
 		keyFP:     data[:KeyFPLen],
-		contents1: data[KeyFPLen:numPrimeBytes],
+		version:   data[KeyFPLen : KeyFPLen+1],
+		contents1: data[1+KeyFPLen : numPrimeBytes],
 
 		mac:          data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
@@ -107,10 +112,22 @@ func (m *Message) Marshal() []byte {
 }
 
 // Unmarshal unmarshalls a byte slice into a new Message.
-func Unmarshal(b []byte) Message {
+func Unmarshal(b []byte) (Message, error) {
 	m := NewMessage(len(b) / 2)
 	copy(m.data, b)
-	return m
+
+	// if m.Version() != messagePayloadVersion {
+	// 	return Message{}, fmt.Errorf(
+	// 		"message encoding version mismatch, got %d expected %d",
+	// 		m.Version(), messagePayloadVersion)
+	// }
+
+	return m, nil
+}
+
+// Version returns the encoding version.
+func (m *Message) Version() uint8 {
+	return m.version[0]
 }
 
 // Copy returns a copy of the message.
@@ -159,7 +176,7 @@ func (m Message) SetPayloadB(payload []byte) {
 
 // ContentsSize returns the maximum size of the contents.
 func (m Message) ContentsSize() int {
-	return len(m.data) - AssociatedDataSize
+	return len(m.data) - AssociatedDataSize - 1
 }
 
 // GetContents returns the exact contents of the message. This size of the
@@ -226,7 +243,7 @@ func (m Message) SetRawContents(c []byte) {
 // GetKeyFP gets the key Fingerprint
 // flips the first bit to 0 on return
 func (m Message) GetKeyFP() Fingerprint {
-	newFP :=NewFingerprint(m.keyFP)
+	newFP := NewFingerprint(m.keyFP)
 	clearFirstBit(newFP[:])
 	return newFP
 }
@@ -350,14 +367,14 @@ func (m Message) SetGroupBits(bitA, bitB bool) {
 	setFirstBit(m.payloadB, bitB)
 }
 
-func setFirstBit(b []byte, bit bool){
-	if bit{
+func setFirstBit(b []byte, bit bool) {
+	if bit {
 		b[0] |= 0b10000000
-	}else{
+	} else {
 		b[0] &= 0b01111111
 	}
 }
 
-func clearFirstBit(b []byte){
+func clearFirstBit(b []byte) {
 	b[0] = 0b01111111 & b[0]
 }
