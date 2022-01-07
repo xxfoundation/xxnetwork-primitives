@@ -20,14 +20,12 @@ func TestMessage_Version(t *testing.T) {
 
 	// Generate message parts
 	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
-	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
 	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
 	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
 	msg.SetKeyFP(fp)
-	msg.SetMac(mac)
 	msg.SetEphemeralRID(ephemeralRID)
 	msg.SetIdentityFP(identityFP)
 	msg.SetContents(contents)
@@ -47,14 +45,12 @@ func TestMessage_Smoke(t *testing.T) {
 
 	// Generate message parts
 	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
-	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
 	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
 	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
 	msg.SetKeyFP(fp)
-	msg.SetMac(mac)
 	msg.SetEphemeralRID(ephemeralRID)
 	msg.SetIdentityFP(identityFP)
 	msg.SetContents(contents)
@@ -62,11 +58,6 @@ func TestMessage_Smoke(t *testing.T) {
 	if !bytes.Equal(fp.Bytes(), msg.keyFP) {
 		t.Errorf("keyFp data was corrupted.\nexpected: %+v\nreceived: %+v",
 			fp.Bytes(), msg.keyFP)
-	}
-
-	if !bytes.Equal(mac, msg.mac) {
-		t.Errorf("MAC data was corrupted.\nexpected: %+v\nreceived: %+v",
-			mac, msg.mac)
 	}
 
 	if !bytes.Equal(ephemeralRID, msg.ephemeralRID) {
@@ -95,8 +86,7 @@ func TestNewMessage(t *testing.T) {
 		keyFP:        make([]byte, KeyFPLen),
 		version:      make([]byte, 1),
 		contents1:    make([]byte, numPrimeBytes-KeyFPLen-1),
-		mac:          make([]byte, MacLen),
-		contents2:    make([]byte, numPrimeBytes-MacLen-RecipientIDLen),
+		contents2:    make([]byte, numPrimeBytes-RecipientIDLen),
 		ephemeralRID: make([]byte, EphemeralRIDLen),
 		identityFP:   make([]byte, IdentityFPLen),
 		rawContents:  make([]byte, 2*numPrimeBytes-RecipientIDLen),
@@ -330,7 +320,7 @@ func TestMessage_SetContents_ShortContents(t *testing.T) {
 			contents[:len(msg.contents1)], msg.contents1)
 	}
 
-	expectedContents2 := make([]byte, MinimumPrimeSize-MacLen-EphemeralRIDLen-IdentityFPLen)
+	expectedContents2 := make([]byte, MinimumPrimeSize-EphemeralRIDLen-IdentityFPLen)
 	if !bytes.Equal(msg.contents2, expectedContents2) {
 		t.Errorf("SetContents() did not set contents2 correctly."+
 			"\nexpected: %+v\nreceived: %+v", expectedContents2, msg.contents2)
@@ -372,18 +362,15 @@ func TestMessage_GetRawContents(t *testing.T) {
 	// Created expected data
 	var expectedRawContents []byte
 	keyFP := makeAndFillSlice(KeyFPLen, 'a')
-	mac := makeAndFillSlice(MacLen, 'b')
 	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen-1, 'c')
-	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
+	contents2 := makeAndFillSlice(MinimumPrimeSize-RecipientIDLen, 'd')
 	expectedRawContents = append(expectedRawContents, keyFP...)
 	expectedRawContents = append(expectedRawContents, byte(messagePayloadVersion))
 	expectedRawContents = append(expectedRawContents, contents1...)
-	expectedRawContents = append(expectedRawContents, mac...)
 	expectedRawContents = append(expectedRawContents, contents2...)
 
 	// Copy contents into message
 	copy(msg.keyFP, keyFP)
-	copy(msg.mac, mac)
 	copy(msg.version, []byte{messagePayloadVersion})
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
@@ -417,15 +404,13 @@ func TestMessage_SetRawContents(t *testing.T) {
 	sp := make([]byte, spLen)
 
 	fp := makeAndFillSlice(len(msg.keyFP), 'f')
-	mac := makeAndFillSlice(len(msg.mac), 'm')
 	c1 := makeAndFillSlice(len(msg.contents1), 'a')
 	c2 := makeAndFillSlice(len(msg.contents2), 'b')
 
 	copy(sp[:KeyFPLen], fp)
-	copy(sp[MinimumPrimeSize:MinimumPrimeSize+MacLen], mac)
 
 	copy(sp[KeyFPLen:MinimumPrimeSize], c1)
-	copy(sp[MinimumPrimeSize+MacLen:2*MinimumPrimeSize-RecipientIDLen], c2)
+	copy(sp[MinimumPrimeSize:2*MinimumPrimeSize-RecipientIDLen], c2)
 
 	msg.SetRawContents(sp)
 
@@ -433,12 +418,6 @@ func TestMessage_SetRawContents(t *testing.T) {
 		bytes.Contains(msg.keyFP, []byte("m")) || !bytes.Contains(msg.keyFP, []byte("f")) {
 		t.Errorf("Setting raw payload failed, key fingerprint contains "+
 			"wrong data: %s", msg.keyFP)
-	}
-
-	if bytes.Contains(msg.mac, []byte("a")) || bytes.Contains(msg.mac, []byte("b")) ||
-		!bytes.Contains(msg.mac, []byte("m")) || bytes.Contains(msg.mac, []byte("f")) {
-		t.Errorf("Setting raw payload failed, mac contains "+
-			"wrong data: %s", msg.mac)
 	}
 
 	if !bytes.Contains(msg.contents1, []byte("a")) || bytes.Contains(msg.contents1, []byte("b")) ||
@@ -518,73 +497,6 @@ func TestMessage_SetKeyFP_FirstBitError(t *testing.T) {
 	}()
 
 	msg.SetKeyFP(fp)
-}
-
-// Happy path.
-func TestMessage_GetMac(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-	mac := makeAndFillSlice(MacLen, 'm')
-	copy(msg.mac, mac)
-	msg.mac[0] |= 0b10000000
-
-	if !bytes.Equal(mac, msg.GetMac()) {
-		t.Errorf("GetMac() failed to get the correct MAC."+
-			"\nexpected: %+v\nreceived: %+v", mac, msg.GetMac())
-	}
-
-	// Ensure that the data is copied
-	mac[2] = 'x'
-	if msg.mac[2] == 'x' {
-		t.Error("GetMac() failed to make a copy of mac.")
-	}
-
-	if msg.GetMac()[0]&0b10000000 != 0 {
-		t.Errorf("First bit not set to zero")
-	}
-}
-
-// Happy path.
-func TestMessage_SetMac(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-	mac := makeAndFillSlice(MacLen, 'm')
-
-	msg.SetMac(mac)
-
-	if !bytes.Equal(mac, msg.mac) {
-		t.Errorf("SetMac() failed to set the MAC."+
-			"\nexpected: %+v\nreceived: %+v", mac, msg.mac)
-	}
-}
-
-// Error path: first bit of provided data is not 0.
-func TestMessage_SetMac_FirstBitError(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-	mac := make([]byte, MacLen)
-	mac[0] = 0b11111111
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("SetMac() failed to panic when the first bit of the " +
-				"provided data is not 0.")
-		}
-	}()
-
-	msg.SetMac(mac)
-}
-
-// Error path: the length of the provided data is incorrect.
-func TestMessage_SetMac_LenError(t *testing.T) {
-	msg := NewMessage(MinimumPrimeSize)
-	mac := makeAndFillSlice(MacLen+1, 'm')
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("SetMac() failed to panic when the length of the provided " +
-				"MAC is wrong.")
-		}
-	}()
-
-	msg.SetMac(mac)
 }
 
 // Happy path.
@@ -719,13 +631,11 @@ func TestMessage_GoString(t *testing.T) {
 	// Create message
 	msg := NewMessage(MinimumPrimeSize)
 	msg.SetKeyFP(NewFingerprint(makeAndFillSlice(KeyFPLen, 'c')))
-	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
 	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
 	msg.SetIdentityFP(makeAndFillSlice(IdentityFPLen, 'f'))
 	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
 	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
-		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
 		"ephemeralRID:7306357456645743973, " +
 		"identityFP:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
 		"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
@@ -741,7 +651,7 @@ func TestMessage_GoString_EmptyMessage(t *testing.T) {
 
 	msg := Message{}
 
-	expected := "format.Message{keyFP:<nil>, MAC:<nil>, ephemeralRID:<nil>, identityFP:<nil>, contents:\"\"}"
+	expected := "format.Message{keyFP:<nil>, ephemeralRID:<nil>, identityFP:<nil>, contents:\"\"}"
 
 	if expected != msg.GoString() {
 		t.Errorf("GoString() returned incorrect string."+
@@ -805,17 +715,14 @@ func generateMsg() Message {
 	// Created expected data
 	var expectedRawContents []byte
 	keyFP := makeAndFillSlice(KeyFPLen, 'a')
-	mac := makeAndFillSlice(MacLen, 'b')
 	contents1 := makeAndFillSlice(MinimumPrimeSize-KeyFPLen, 'c')
-	contents2 := makeAndFillSlice(MinimumPrimeSize-MacLen-RecipientIDLen, 'd')
+	contents2 := makeAndFillSlice(MinimumPrimeSize-RecipientIDLen, 'd')
 	expectedRawContents = append(expectedRawContents, keyFP...)
 	expectedRawContents = append(expectedRawContents, contents1...)
-	expectedRawContents = append(expectedRawContents, mac...)
 	expectedRawContents = append(expectedRawContents, contents2...)
 
 	// Copy contents into message
 	copy(msg.keyFP, keyFP)
-	copy(msg.mac, mac)
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
 

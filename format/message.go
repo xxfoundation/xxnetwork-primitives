@@ -23,7 +23,7 @@ const (
 	IdentityFPLen   = 25
 	RecipientIDLen  = EphemeralRIDLen + IdentityFPLen
 
-	MinimumPrimeSize = 2*MacLen + RecipientIDLen
+	MinimumPrimeSize = 2*MacLen + RecipientIDLen // NOTE(david): why is this derived from the maclen and recipeintidlen?
 
 	AssociatedDataSize = KeyFPLen + MacLen + RecipientIDLen
 
@@ -39,8 +39,8 @@ const (
 |                 payloadA                 |                         payloadB                        |
 |              primeSize bits              |                     primeSize bits                      |
 +---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
-|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
+| grpBitA |  keyFP   |version| Contents1   | grpBitB |     Contents2     | ephemeralRID | identityFP |
+|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  |      *below*      |   64 bits    |  200 bits  |
 + --------+----------+---------------------+---------+-------+-----------+--------------+------------+
 |                              Raw Contents                              |
 |                    2*primeSize - recipientID bits                      |
@@ -48,7 +48,8 @@ const (
 
 * size: size in bits of the data which is stored
 * Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
-* Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
+* AEADOverheadLen = 16 bytes
+* Contents2 size = primeSize - grpBitBSize - AEADOverheadLen - RecipientIDLen - timestampSize
 * the size of the data in the two contents fields is stored within the "size" field
 
 /////Adherence to the group/////////////////////////////////////////////////////
@@ -68,7 +69,6 @@ type Message struct {
 	keyFP        []byte
 	version      []byte
 	contents1    []byte
-	mac          []byte
 	contents2    []byte
 	ephemeralRID []byte // Ephemeral reception ID
 	identityFP   []byte // Identity fingerprint
@@ -97,7 +97,6 @@ func NewMessage(numPrimeBytes int) Message {
 		version:   data[KeyFPLen : KeyFPLen+1],
 		contents1: data[1+KeyFPLen : numPrimeBytes],
 
-		mac:          data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
 		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-IdentityFPLen],
 		identityFP:   data[2*numPrimeBytes-IdentityFPLen:],
@@ -259,30 +258,6 @@ func (m Message) SetKeyFP(fp Fingerprint) {
 	copy(m.keyFP, fp.Bytes())
 }
 
-// GetMac gets the MAC.
-// flips the first bit to 0 on return
-func (m Message) GetMac() []byte {
-	newMac := copyByteSlice(m.mac)
-	clearFirstBit(newMac)
-	return newMac
-}
-
-// SetMac sets the MAC. Checks that the first bit of the MAC is 0, otherwise it
-// panics.
-func (m Message) SetMac(mac []byte) {
-	if len(mac) != MacLen {
-		jww.ERROR.Panicf("Failed to set Message MAC: length must be %d, "+
-			"length of received data is %d.", MacLen, len(mac))
-	}
-
-	if mac[0]>>7 != 0 {
-		jww.ERROR.Panicf("Failed to set Message MAC: first bit of provided " +
-			"data must be zero.")
-	}
-
-	copy(m.mac, mac)
-}
-
 // GetEphemeralRID returns the ephemeral recipient ID.
 func (m Message) GetEphemeralRID() []byte {
 	return copyByteSlice(m.ephemeralRID)
@@ -330,14 +305,10 @@ func copyByteSlice(s []byte) []byte {
 	return c
 }
 
-// GoString returns the Message key fingerprint, MAC, ephemeral recipient ID,
+// GoString returns the Message key fingerprint, ephemeral recipient ID,
 // identity fingerprint, and contents as a string. This functions satisfies the
 // fmt.GoStringer interface.
 func (m Message) GoString() string {
-	mac := "<nil>"
-	if len(m.mac) > 0 {
-		mac = base64.StdEncoding.EncodeToString(m.GetMac())
-	}
 	keyFP := "<nil>"
 	if len(m.keyFP) > 0 {
 		keyFP = m.GetKeyFP().String()
@@ -353,7 +324,6 @@ func (m Message) GoString() string {
 
 	return "format.Message{" +
 		"keyFP:" + keyFP +
-		", MAC:" + mac +
 		", ephemeralRID:" + ephID +
 		", identityFP:" + identityFP +
 		", contents:" + fmt.Sprintf("%q", m.GetContents()) + "}"
