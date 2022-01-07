@@ -32,16 +32,16 @@ const (
 
 /*
                             Message Structure (not to scale)
-+----------------------------------------------------------------------------------------------------+
-|                                               Message                                              |
-|                                          2*primeSize bits                                          |
-+------------------------------------------+---------------------------------------------------------+
-|                 payloadA                 |                         payloadB                        |
-|              primeSize bits              |                     primeSize bits                      |
-+---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |version| Contents1   | grpBitB |     Contents2     | ephemeralRID | identityFP |
-|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  |      *below*      |   64 bits    |  200 bits  |
-+ --------+----------+---------------------+---------+-------+-----------+--------------+------------+
++--------------------------------------------------------------------------------------------------------+
+|                                               Message                                                  |
+|                                          2*primeSize bits                                              |
++------------------------------------------+-------------------------------------------------------------+
+|                 payloadA                 |                         payloadB                            |
+|              primeSize bits              |                     primeSize bits                          |
++---------+----------+---------------------+---------+----------+------------+--------------+------------+
+| grpBitA |  keyFP   |version| Contents1   | grpBitB | reserved | Contents2  | ephemeralRID | identityFP |
+|  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 7 bits   |  *below*   |   64 bits    |  200 bits  |
++ --------+----------+---------------------+---------+----------+------------+--------------+------------+
 |                              Raw Contents                              |
 |                    2*primeSize - recipientID bits                      |
 +------------------------------------------------------------------------+
@@ -69,6 +69,7 @@ type Message struct {
 	keyFP        []byte
 	version      []byte
 	contents1    []byte
+	reserved     []byte
 	contents2    []byte
 	ephemeralRID []byte // Ephemeral reception ID
 	identityFP   []byte // Identity fingerprint
@@ -97,6 +98,7 @@ func NewMessage(numPrimeBytes int) Message {
 		version:   data[KeyFPLen : KeyFPLen+1],
 		contents1: data[1+KeyFPLen : numPrimeBytes],
 
+		reserved:     data[numPrimeBytes : numPrimeBytes+ReservedLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
 		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-IdentityFPLen],
 		identityFP:   data[2*numPrimeBytes-IdentityFPLen:],
