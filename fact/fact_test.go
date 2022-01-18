@@ -59,7 +59,7 @@ func TestFact_Stringify(t *testing.T) {
 
 // Test the UnstringifyFact function creates a Fact from a string
 // NOTE: this test does not pass, with error "Unknown Fact FactType: Etesting"
-func TestFact_UnstringifyFact(t *testing.T) {
+func TestUnstringifyFact(t *testing.T) {
 	// Expected fact from above test
 	e := Fact{
 		Fact: "devinputvalidation@elixxir.io",
@@ -78,6 +78,36 @@ func TestFact_UnstringifyFact(t *testing.T) {
 
 	if !reflect.DeepEqual(e, f) {
 		t.Errorf("The returned Fact did not match the expected Fact")
+	}
+}
+
+// Test error cases of UnstringifyFact
+func TestUnstringifyFact_Error(t *testing.T) {
+	// Construct string that is too short
+	fStr := ""
+
+	// Unstringify fact that is too short
+	_, err := UnstringifyFact(fStr)
+	if err == nil {
+		t.Errorf("UnstringifyFact should not accept fact string (%s) with length (%d)", fStr, len(fStr))
+	}
+
+	// Construct fact that only has a type
+	fStr = "E"
+
+	_, err = UnstringifyFact(fStr)
+	if err == nil {
+		t.Errorf("UnstringifyFact should not accept fact string (%s) with length (%d)", fStr, len(fStr))
+	}
+
+	// Construct fact past maxFactCharacterLimit
+	for i := 0; i < maxFactCharacterLimit; i++ {
+		fStr += "t"
+	}
+
+	_, err = UnstringifyFact(fStr)
+	if err == nil {
+		t.Errorf("UnstringifyFact should not accept fact string (%s) with length (%d)", fStr, len(fStr))
 	}
 }
 
@@ -150,4 +180,29 @@ func TestValidateFact_PhoneNumber(t *testing.T) {
 	// if err == nil {
 	// 	t.Errorf("Expected error path: should not be able to validate US number with UK country code")
 	// }
+}
+
+func TestValidateFact_Nickname(t *testing.T) {
+	// Valid Fact
+	validFact := Fact{
+		Fact: "validNickname",
+		T:    Nickname,
+	}
+
+	// Happy path with valid nickname
+	err := ValidateFact(validFact)
+	if err != nil {
+		t.Errorf("Unexpected error in happy path: %v", err)
+	}
+
+	invalidFact := Fact{
+		Fact: "12",
+		T:    Nickname,
+	}
+
+	err = ValidateFact(invalidFact)
+	if err == nil {
+		t.Errorf("Invalid fact should not be validated. Nickname %q is too short", invalidFact.Fact)
+	}
+
 }

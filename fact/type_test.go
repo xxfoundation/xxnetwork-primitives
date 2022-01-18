@@ -13,8 +13,8 @@ import (
 
 func TestFactType_String(t *testing.T) {
 	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone, FactType(200)}
-	Strs := []string{"Username", "Email", "Phone", "Unknown Fact FactType: 200"}
+	FTs := []FactType{Username, Email, Phone, Nickname, FactType(200)}
+	Strs := []string{"Username", "Email", "Phone", "Nickname", "Unknown Fact FactType: 200"}
 	for i, ft := range FTs {
 		if FactType.String(ft) != Strs[i] {
 			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.String(ft), Strs[i])
@@ -24,8 +24,8 @@ func TestFactType_String(t *testing.T) {
 
 func TestFactType_Stringify(t *testing.T) {
 	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone}
-	Strs := []string{"U", "E", "P"}
+	FTs := []FactType{Username, Email, Phone, Nickname}
+	Strs := []string{"U", "E", "P", "N"}
 	for i, ft := range FTs {
 		if FactType.Stringify(ft) != Strs[i] {
 			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.Stringify(ft), Strs[i])
@@ -33,10 +33,22 @@ func TestFactType_Stringify(t *testing.T) {
 	}
 }
 
+func TestFactType_Stringify_Error(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Stringify() did not panic when the FactType passed in is unknown.")
+		}
+
+	}()
+
+	// Test that an unknown FactType results in a Panic
+	FactType.Stringify(FactType(200))
+}
+
 func TestFactType_Unstringify(t *testing.T) {
 	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone}
-	Strs := []string{"U", "E", "P"}
+	FTs := []FactType{Username, Email, Phone, Nickname}
+	Strs := []string{"U", "E", "P", "N"}
 	for i, ft := range FTs {
 		gotft, err := UnstringifyFactType(Strs[i])
 		if err != nil {
