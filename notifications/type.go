@@ -12,7 +12,7 @@ import "fmt"
 // Provider indicates the notification provider that will be called at the
 // higher level. There are different notifications providers for different
 // mobile operating systems. The specific provider is enumerated below.
-type Provider uint8
+type Provider uint32
 
 // Enumeration of different mobile OSes.
 const (
