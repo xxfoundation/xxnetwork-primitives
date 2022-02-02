@@ -16,7 +16,8 @@ type Provider uint32
 
 // Enumeration of different mobile OSes.
 const (
-	APNS = Provider(iota)
+	UNKNOWN = Provider(iota) // Unknown is the unfilled zero field.
+	APNS
 	FCM
 	HUAWEI
 )
