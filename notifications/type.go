@@ -25,6 +25,8 @@ const (
 // Stringer to get the name of the Provider.
 func (t Provider) String() string {
 	switch t {
+	case UNKNOWN:
+		return "Unknown or unspecified notifications provider"
 	case APNS:
 		return "APNS"
 	case FCM:
