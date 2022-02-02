@@ -9,20 +9,20 @@ package notifications
 
 import "fmt"
 
-// Type indicates the notification code path that will be followed.
-// There are different notification logic in the higher levels for different
-// mobile operating systems. The mobile OSes are enumerated below.
-type Type uint8
+// Provider indicates the notification provider that will be called at the
+// higher level. There are different notifications providers for different
+// mobile operating systems. The specific provider is enumerated below.
+type Provider uint8
 
 // Enumeration of different mobile OSes.
 const (
-	APNS = Type(iota)
+	APNS = Provider(iota)
 	FCM
 	HUAWEI
 )
 
-// Stringer to get the name of the Type.
-func (t Type) String() string {
+// Stringer to get the name of the Provider.
+func (t Provider) String() string {
 	switch t {
 	case APNS:
 		return "APNS"
