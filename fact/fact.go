@@ -72,7 +72,7 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 	ft, err := UnstringifyFactType(T)
 	if err != nil {
-		return Fact{}, err
+		return Fact{}, errors.WithMessagef(err, "Failed to unstringify fact type for %q", s)
 	}
 
 	return NewFact(ft, fact)
