@@ -16,8 +16,8 @@ type ExcludedRounds interface {
 	// Has indicates if the round is in the list.
 	Has(rid id.Round) bool
 
-	// Insert adds the round to the list.
-	Insert(rid id.Round)
+	// Insert adds the round to the list. Returns true if the round was added.
+	Insert(rid id.Round) bool
 
 	// Remove deletes the round from the list.
 	Remove(rid id.Round)
