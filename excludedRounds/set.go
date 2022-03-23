@@ -35,11 +35,16 @@ func (e *Set) Has(rid id.Round) bool {
 	return e.xr.Has(rid)
 }
 
-func (e *Set) Insert(rid id.Round) {
+func (e *Set) Insert(rid id.Round) bool {
 	e.Lock()
 	defer e.Unlock()
 
+	if e.xr.Has(rid) {
+		return false
+	}
+
 	e.xr.Insert(rid)
+	return true
 }
 
 func (e *Set) Remove(rid id.Round) {
