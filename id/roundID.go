@@ -6,4 +6,25 @@
 
 package id
 
+import (
+	"encoding/binary"
+	"strconv"
+)
+
 type Round uint64
+
+func (rid Round) Marshal() []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(rid))
+	return b
+}
+
+func UnmarshalRound(b []byte) Round {
+	return Round(binary.LittleEndian.Uint64(b))
+}
+
+// String returns the string representation of the Round ID. This functions
+// adheres to the fmt.Stringer interface.
+func (rid Round) String() string {
+	return strconv.FormatUint(uint64(rid), 10)
+}
