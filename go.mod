@@ -1,5 +1,7 @@
 module gitlab.com/xx_network/primitives
 
+go 1.17
+
 require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -8,4 +10,4 @@ require (
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )
 
-go 1.13
+require golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect

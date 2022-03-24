@@ -18,6 +18,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"io"
 	"regexp"
