@@ -16,7 +16,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"encoding/hex"
 	"encoding/json"
 	"github.com/pkg/errors"
@@ -28,7 +27,7 @@ import (
 // ID data sizes
 const (
 	// dataLen is the length of the ID data in bytes.
-	dataLen  = 32
+	dataLen = 32
 
 	// ArrIDLen is the length of the full ID array in bytes.
 	ArrIDLen = dataLen + 1
@@ -85,13 +84,13 @@ func (id ID) String() string {
 
 // GetType returns the ID's type (last byte of the array).
 func (id ID) GetType() Type {
-	return Type(id[ArrIDLen-1])
+	return id[ArrIDLen-1]
 }
 
 // SetType returns a copy of the ID with the specified ID type set.
 func (id ID) SetType(t Type) ID {
 	newID := id
-	newID[ArrIDLen-1] = byte(t)
+	newID[ArrIDLen-1] = t
 	return newID
 }
 
