@@ -13,12 +13,14 @@ import (
 
 type Round uint64
 
+// Marshal serialises the Round ID into a byte slice.
 func (rid Round) Marshal() []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(rid))
 	return b
 }
 
+// UnmarshalRound deserializes the byte slice into a Round ID.
 func UnmarshalRound(b []byte) Round {
 	return Round(binary.LittleEndian.Uint64(b))
 }
