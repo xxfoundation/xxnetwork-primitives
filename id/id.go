@@ -84,13 +84,13 @@ func (id ID) String() string {
 
 // GetType returns the ID's type (last byte of the array).
 func (id ID) GetType() Type {
-	return id[ArrIDLen-1]
+	return Type(id[ArrIDLen-1])
 }
 
 // SetType returns a copy of the ID with the specified ID type set.
 func (id ID) SetType(t Type) ID {
 	newID := id
-	newID[ArrIDLen-1] = t
+	newID[ArrIDLen-1] = byte(t)
 	return newID
 }
 
