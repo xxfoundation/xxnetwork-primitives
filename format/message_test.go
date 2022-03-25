@@ -29,7 +29,7 @@ func TestMessage_Version(t *testing.T) {
 	msg.SetKeyFP(fp)
 	msg.SetMac(mac)
 	msg.SetEphemeralRID(ephemeralRID)
-	msg.SetIdentityFP(identityFP)
+	msg.SetSIH(identityFP)
 	msg.SetContents(contents)
 
 	copy(msg.version, []byte{123})
@@ -56,7 +56,7 @@ func TestMessage_Smoke(t *testing.T) {
 	msg.SetKeyFP(fp)
 	msg.SetMac(mac)
 	msg.SetEphemeralRID(ephemeralRID)
-	msg.SetIdentityFP(identityFP)
+	msg.SetSIH(identityFP)
 	msg.SetContents(contents)
 
 	if !bytes.Equal(fp.Bytes(), msg.keyFP) {
@@ -74,9 +74,9 @@ func TestMessage_Smoke(t *testing.T) {
 			ephemeralRID, msg.ephemeralRID)
 	}
 
-	if !bytes.Equal(identityFP, msg.identityFP) {
-		t.Errorf("identityFP data was corrupted.\nexpected: %+v\nreceived: %+v",
-			identityFP, msg.identityFP)
+	if !bytes.Equal(identityFP, msg.sih) {
+		t.Errorf("sih data was corrupted.\nexpected: %+v\nreceived: %+v",
+			identityFP, msg.sih)
 	}
 
 	if !bytes.Equal(contents, append(msg.contents1, msg.contents2...)) {
@@ -98,7 +98,7 @@ func TestNewMessage(t *testing.T) {
 		mac:          make([]byte, MacLen),
 		contents2:    make([]byte, numPrimeBytes-MacLen-RecipientIDLen),
 		ephemeralRID: make([]byte, EphemeralRIDLen),
-		identityFP:   make([]byte, IdentityFPLen),
+		sih:          make([]byte, IdentityFPLen),
 		rawContents:  make([]byte, 2*numPrimeBytes-RecipientIDLen),
 	}
 
@@ -483,7 +483,7 @@ func TestMessage_GetKeyFP(t *testing.T) {
 
 	// Ensure that the data is copied
 	keyFP[2] = 'x'
-	if msg.identityFP[2] == 'x' {
+	if msg.sih[2] == 'x' {
 		t.Error("GetKeyFP() failed to make a copy of keyFP.")
 	}
 
@@ -636,17 +636,17 @@ func TestMessage_SetEphemeralRID_LengthError(t *testing.T) {
 func TestMessage_GetIdentityFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	identityFP := makeAndFillSlice(IdentityFPLen, 'e')
-	copy(msg.identityFP, identityFP)
+	copy(msg.sih, identityFP)
 
-	if !bytes.Equal(identityFP, msg.GetIdentityFP()) {
-		t.Errorf("GetIdentityFP() failed to get the correct identityFP."+
-			"\nexpected: %+v\nreceived: %+v", identityFP, msg.GetIdentityFP())
+	if !bytes.Equal(identityFP, msg.GetSIH()) {
+		t.Errorf("GetSIH() failed to get the correct sih."+
+			"\nexpected: %+v\nreceived: %+v", identityFP, msg.GetSIH())
 	}
 
 	// Ensure that the data is copied
 	identityFP[2] = 'x'
-	if msg.identityFP[2] == 'x' {
-		t.Error("GetIdentityFP() failed to make a copy of identityFP.")
+	if msg.sih[2] == 'x' {
+		t.Error("GetSIH() failed to make a copy of sih.")
 	}
 }
 
@@ -655,10 +655,10 @@ func TestMessage_SetIdentityFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	identityFP := makeAndFillSlice(IdentityFPLen, 'e')
 
-	msg.SetIdentityFP(identityFP)
-	if !bytes.Equal(identityFP, msg.identityFP) {
-		t.Errorf("SetIdentityFP() failed to set the identityFP."+
-			"\nexpected: %+v\nreceived: %+v", identityFP, msg.identityFP)
+	msg.SetSIH(identityFP)
+	if !bytes.Equal(identityFP, msg.sih) {
+		t.Errorf("SetSIH() failed to set the sih."+
+			"\nexpected: %+v\nreceived: %+v", identityFP, msg.sih)
 	}
 }
 
@@ -668,12 +668,12 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetIdentityFP() failed to panic when the length of " +
+			t.Errorf("SetSIH() failed to panic when the length of " +
 				"the provided data is incorrect.")
 		}
 	}()
 
-	msg.SetIdentityFP(make([]byte, IdentityFPLen*2))
+	msg.SetSIH(make([]byte, IdentityFPLen*2))
 }
 
 // Tests that digests come out correctly and are diffrent
@@ -721,13 +721,13 @@ func TestMessage_GoString(t *testing.T) {
 	msg.SetKeyFP(NewFingerprint(makeAndFillSlice(KeyFPLen, 'c')))
 	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
 	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
-	msg.SetIdentityFP(makeAndFillSlice(IdentityFPLen, 'f'))
+	msg.SetSIH(makeAndFillSlice(IdentityFPLen, 'f'))
 	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
 	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
 		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
 		"ephemeralRID:7306357456645743973, " +
-		"identityFP:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
+		"sih:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
 		"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
 
 	if expected != msg.GoString() {
@@ -741,7 +741,7 @@ func TestMessage_GoString_EmptyMessage(t *testing.T) {
 
 	msg := Message{}
 
-	expected := "format.Message{keyFP:<nil>, MAC:<nil>, ephemeralRID:<nil>, identityFP:<nil>, contents:\"\"}"
+	expected := "format.Message{keyFP:<nil>, MAC:<nil>, ephemeralRID:<nil>, sih:<nil>, contents:\"\"}"
 
 	if expected != msg.GoString() {
 		t.Errorf("GoString() returned incorrect string."+
