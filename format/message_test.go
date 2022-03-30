@@ -22,7 +22,7 @@ func TestMessage_Version(t *testing.T) {
 	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
 	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
-	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
+	identityFP := makeAndFillSlice(SIHLen, 'f')
 	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
@@ -49,7 +49,7 @@ func TestMessage_Smoke(t *testing.T) {
 	fp := NewFingerprint(makeAndFillSlice(KeyFPLen, 'c'))
 	mac := makeAndFillSlice(MacLen, 'd')
 	ephemeralRID := makeAndFillSlice(EphemeralRIDLen, 'e')
-	identityFP := makeAndFillSlice(IdentityFPLen, 'f')
+	identityFP := makeAndFillSlice(SIHLen, 'f')
 	contents := makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g')
 
 	// Set message parts
@@ -98,7 +98,7 @@ func TestNewMessage(t *testing.T) {
 		mac:          make([]byte, MacLen),
 		contents2:    make([]byte, numPrimeBytes-MacLen-RecipientIDLen),
 		ephemeralRID: make([]byte, EphemeralRIDLen),
-		sih:          make([]byte, IdentityFPLen),
+		sih:          make([]byte, SIHLen),
 		rawContents:  make([]byte, 2*numPrimeBytes-RecipientIDLen),
 	}
 
@@ -330,7 +330,7 @@ func TestMessage_SetContents_ShortContents(t *testing.T) {
 			contents[:len(msg.contents1)], msg.contents1)
 	}
 
-	expectedContents2 := make([]byte, MinimumPrimeSize-MacLen-EphemeralRIDLen-IdentityFPLen)
+	expectedContents2 := make([]byte, MinimumPrimeSize-MacLen-EphemeralRIDLen-SIHLen)
 	if !bytes.Equal(msg.contents2, expectedContents2) {
 		t.Errorf("SetContents() did not set contents2 correctly."+
 			"\nexpected: %+v\nreceived: %+v", expectedContents2, msg.contents2)
@@ -472,7 +472,7 @@ func TestMessage_SetRawContents_LengthError(t *testing.T) {
 // Happy path.
 func TestMessage_GetKeyFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	keyFP := NewFingerprint(makeAndFillSlice(IdentityFPLen, 'e'))
+	keyFP := NewFingerprint(makeAndFillSlice(SIHLen, 'e'))
 	msg.keyFP[0] |= 0b10000000
 	copy(msg.keyFP, keyFP.Bytes())
 
@@ -495,7 +495,7 @@ func TestMessage_GetKeyFP(t *testing.T) {
 // Happy path.
 func TestMessage_SetKeyFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	fp := NewFingerprint(makeAndFillSlice(IdentityFPLen, 'e'))
+	fp := NewFingerprint(makeAndFillSlice(SIHLen, 'e'))
 
 	msg.SetKeyFP(fp)
 
@@ -635,7 +635,7 @@ func TestMessage_SetEphemeralRID_LengthError(t *testing.T) {
 // Happy path.
 func TestMessage_GetIdentityFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	identityFP := makeAndFillSlice(IdentityFPLen, 'e')
+	identityFP := makeAndFillSlice(SIHLen, 'e')
 	copy(msg.sih, identityFP)
 
 	if !bytes.Equal(identityFP, msg.GetSIH()) {
@@ -653,7 +653,7 @@ func TestMessage_GetIdentityFP(t *testing.T) {
 // Happy path.
 func TestMessage_SetIdentityFP(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
-	identityFP := makeAndFillSlice(IdentityFPLen, 'e')
+	identityFP := makeAndFillSlice(SIHLen, 'e')
 
 	msg.SetSIH(identityFP)
 	if !bytes.Equal(identityFP, msg.sih) {
@@ -673,14 +673,14 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 		}
 	}()
 
-	msg.SetSIH(make([]byte, IdentityFPLen*2))
+	msg.SetSIH(make([]byte, SIHLen*2))
 }
 
 // Tests that digests come out correctly and are diffrent
 func TestMessage_Digest(t *testing.T) {
 
-	expectedA := "zzfUL4m2rbDhqemRBFAb"
-	expectedB := "EJfjHEZksCydtWJE3BIs"
+	expectedA := "/9SqCYEP3uUixw1ua1D7"
+	expectedB := "v+183UhPfK61KCNeSClT"
 
 	msgA := NewMessage(MinimumPrimeSize)
 
@@ -721,7 +721,7 @@ func TestMessage_GoString(t *testing.T) {
 	msg.SetKeyFP(NewFingerprint(makeAndFillSlice(KeyFPLen, 'c')))
 	msg.SetMac(makeAndFillSlice(MacLen, 'd'))
 	msg.SetEphemeralRID(makeAndFillSlice(EphemeralRIDLen, 'e'))
-	msg.SetSIH(makeAndFillSlice(IdentityFPLen, 'f'))
+	msg.SetSIH(makeAndFillSlice(SIHLen, 'f'))
 	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
 	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +

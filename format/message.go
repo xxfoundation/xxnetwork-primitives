@@ -7,10 +7,10 @@
 package format
 
 import (
-	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"golang.org/x/crypto/blake2b"
 	"strconv"
 
 	jww "github.com/spf13/jwalterweatherman"
@@ -314,10 +314,15 @@ func (m Message) SetSIH(identityFP []byte) {
 	copy(m.sih, identityFP)
 }
 
-// gets a digest of the message contents, primarily used for debugging
+// Digest gets a digest of the message contents, primarily used for debugging
 func (m Message) Digest() string {
-	h := md5.New()
-	h.Write(m.GetContents())
+	return DigestContents(m.GetContents())
+}
+
+// DigestContents - message.Digest that works without the message format
+func DigestContents(c []byte) string {
+	h, _ := blake2b.New256(nil)
+	h.Write(c)
 	d := h.Sum(nil)
 	digest := base64.StdEncoding.EncodeToString(d[:15])
 	return digest[:20]
