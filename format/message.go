@@ -7,10 +7,10 @@
 package format
 
 import (
-	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"golang.org/x/crypto/blake2b"
 	"strconv"
 
 	jww "github.com/spf13/jwalterweatherman"
@@ -20,8 +20,8 @@ const (
 	KeyFPLen        = 32
 	MacLen          = 32
 	EphemeralRIDLen = 8
-	IdentityFPLen   = 25
-	RecipientIDLen  = EphemeralRIDLen + IdentityFPLen
+	SIHLen          = 25
+	RecipientIDLen  = EphemeralRIDLen + SIHLen
 
 	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
@@ -39,7 +39,7 @@ const (
 |                 payloadA                 |                         payloadB                        |
 |              primeSize bits              |                     primeSize bits                      |
 +---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
+| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID |    SIH     |
 |  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
 + --------+----------+---------------------+---------+-------+-----------+--------------+------------+
 |                              Raw Contents                              |
@@ -71,7 +71,7 @@ type Message struct {
 	mac          []byte
 	contents2    []byte
 	ephemeralRID []byte // Ephemeral reception ID
-	identityFP   []byte // Identity fingerprint
+	sih          []byte // Service Identification Hash
 
 	rawContents []byte
 }
@@ -99,8 +99,8 @@ func NewMessage(numPrimeBytes int) Message {
 
 		mac:          data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
-		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-IdentityFPLen],
-		identityFP:   data[2*numPrimeBytes-IdentityFPLen:],
+		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-SIHLen],
+		sih:          data[2*numPrimeBytes-SIHLen:],
 
 		rawContents: data[:2*numPrimeBytes-RecipientIDLen],
 	}
@@ -298,26 +298,31 @@ func (m Message) SetEphemeralRID(ephemeralRID []byte) {
 	copy(m.ephemeralRID, ephemeralRID)
 }
 
-// GetIdentityFP return the identity fingerprint.
-func (m Message) GetIdentityFP() []byte {
-	return copyByteSlice(m.identityFP)
+// GetSIH return the Service Identification Hash.
+func (m Message) GetSIH() []byte {
+	return copyByteSlice(m.sih)
 }
 
-// SetIdentityFP sets the identity fingerprint, which should be generated via
+// SetSIH sets the Service Identification Hash, which should be generated via
 // fingerprint.IdentityFP.
-func (m Message) SetIdentityFP(identityFP []byte) {
-	if len(identityFP) != IdentityFPLen {
-		jww.ERROR.Panicf("Failed to set Message identity fingerprint: length "+
+func (m Message) SetSIH(identityFP []byte) {
+	if len(identityFP) != SIHLen {
+		jww.ERROR.Panicf("Failed to set Service Identification Hash: length "+
 			"must be %d, length of received data is %d.",
-			IdentityFPLen, len(identityFP))
+			SIHLen, len(identityFP))
 	}
-	copy(m.identityFP, identityFP)
+	copy(m.sih, identityFP)
 }
 
-// gets a digest of the message contents, primarily used for debugging
+// Digest gets a digest of the message contents, primarily used for debugging
 func (m Message) Digest() string {
-	h := md5.New()
-	h.Write(m.GetContents())
+	return DigestContents(m.GetContents())
+}
+
+// DigestContents - message.Digest that works without the message format
+func DigestContents(c []byte) string {
+	h, _ := blake2b.New256(nil)
+	h.Write(c)
 	d := h.Sum(nil)
 	digest := base64.StdEncoding.EncodeToString(d[:15])
 	return digest[:20]
@@ -346,16 +351,16 @@ func (m Message) GoString() string {
 	if len(m.ephemeralRID) > 0 {
 		ephID = strconv.FormatUint(binary.BigEndian.Uint64(m.GetEphemeralRID()), 10)
 	}
-	identityFP := "<nil>"
-	if len(m.identityFP) > 0 {
-		identityFP = base64.StdEncoding.EncodeToString(m.GetIdentityFP())
+	sih := "<nil>"
+	if len(m.sih) > 0 {
+		sih = base64.StdEncoding.EncodeToString(m.GetSIH())
 	}
 
 	return "format.Message{" +
 		"keyFP:" + keyFP +
 		", MAC:" + mac +
 		", ephemeralRID:" + ephID +
-		", identityFP:" + identityFP +
+		", sih:" + sih +
 		", contents:" + fmt.Sprintf("%q", m.GetContents()) + "}"
 }
 
