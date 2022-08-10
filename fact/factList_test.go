@@ -8,6 +8,7 @@
 package fact
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -33,5 +34,31 @@ func TestFactList_StringifyUnstringify(t *testing.T) {
 	}
 	if !reflect.DeepEqual(actual, expected) {
 		t.Error("fact lists weren't equal")
+	}
+}
+
+// Tests that a FactList can be JSON marshalled and unmarshalled.
+func TestFactList_JSON(t *testing.T) {
+	fl := FactList{
+		{"devUsername", Username},
+		{"devinputvalidation@elixxir.io", Email},
+		{"6502530000US", Phone},
+		{"name", Nickname},
+	}
+
+	out, err := json.Marshal(fl)
+	if err != nil {
+		t.Errorf("Failed to marshal FactList: %+v", err)
+	}
+
+	var newFactList FactList
+	err = json.Unmarshal(out, &newFactList)
+	if err != nil {
+		t.Errorf("Failed to unmarshal FactList: %+v", err)
+	}
+
+	if !reflect.DeepEqual(fl, newFactList) {
+		t.Errorf("Marshalled and unmarshalled FactList does not match original."+
+			"\nexpected: %+v\nreceived: %+v", fl, newFactList)
 	}
 }
