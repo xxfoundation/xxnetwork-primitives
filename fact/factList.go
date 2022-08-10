@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+// FactList is a list of Fact. This type can be JSON marshalled and
+// unmarshalled.
 type FactList []Fact
 
 const factDelimiter = ","

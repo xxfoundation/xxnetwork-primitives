@@ -18,9 +18,17 @@ import (
 // maxFactCharacterLimit is the maximum character length of a fact.
 const maxFactCharacterLimit = 64
 
+// Fact represents a piece of user-identifying information. This structure can
+// be JSON marshalled and unmarshalled.
+//
+// JSON example:
+//  {
+//    "Fact": "john@example.com",
+//    "T": 1
+//  }
 type Fact struct {
-	Fact string
-	T    FactType
+	Fact string   `json:"Fact"`
+	T    FactType `json:"T"`
 }
 
 // NewFact checks if the inputted information is a valid fact on the

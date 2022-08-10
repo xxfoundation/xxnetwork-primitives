@@ -8,6 +8,7 @@
 package fact
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -150,4 +151,28 @@ func TestValidateFact_PhoneNumber(t *testing.T) {
 	// if err == nil {
 	// 	t.Errorf("Expected error path: should not be able to validate US number with UK country code")
 	// }
+}
+
+// Tests that a Fact can be JSON marshalled and unmarshalled.
+func TestFact_JSON(t *testing.T) {
+	f := Fact{
+		Fact: "devinputvalidation@elixxir.io",
+		T:    Email,
+	}
+
+	out, err := json.Marshal(f)
+	if err != nil {
+		t.Errorf("Failed to marshal Fact: %+v", err)
+	}
+
+	var newFact Fact
+	err = json.Unmarshal(out, &newFact)
+	if err != nil {
+		t.Errorf("Failed to unmarshal Fact: %+v", err)
+	}
+
+	if f != newFact {
+		t.Errorf("Marshalled and unmarshalled fact does not match original."+
+			"\nexpected: %+v\nreceived: %+v", f, newFact)
+	}
 }
