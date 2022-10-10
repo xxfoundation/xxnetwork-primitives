@@ -36,13 +36,22 @@ type TimeSource interface {
 // this function be recalled.
 func SetTimeSource(nowFunc TimeSource) {
 	Now = func() time.Time {
+		// Read the offset value atomically (for thread safety)
 		timeToOffset := time.Duration(atomic.LoadInt64(&offset))
-		return time.Unix(0, nowFunc.NowMs()*int64(time.Millisecond)).Add(timeToOffset)
+
+		// Get the current time using the passed in time source
+		currentTime := nowFunc.NowMs() * int64(time.Millisecond)
+
+		// Parse the time into Golang's library (time.Time)
+		parsedTime := time.Unix(0, currentTime)
+
+		// Add the offset to the time retrieved via the time source
+		return parsedTime.Add(timeToOffset)
 	}
 }
 
 // SetOffset sets the internal offset variable atomically. All calls to Now()
-// will have this offset *added* to the result. Negative offsets are accepted
+// will have this offset added to the result. Negative offsets are accepted
 // and will reduce the result of the call to Now().
 func SetOffset(timeToOffset time.Duration) {
 	atomic.StoreInt64(&offset, timeToOffset.Nanoseconds())
