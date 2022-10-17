@@ -90,10 +90,11 @@ type Notification struct {
 // UDB contains the ID, public key in PEM format, address, and DH public key for
 // user discovery.
 type UDB struct {
-	ID       []byte `json:"Id"`
-	Cert     string `json:"Cert"`
-	Address  string `json:"Address"`
-	DhPubKey []byte `json:"DhPubKey"`
+	ID                          []byte `json:"Id"`
+	Cert                        string `json:"Cert"`
+	Address                     string `json:"Address"`
+	DhPubKey                    []byte `json:"DhPubKey"`
+	ChannelSigningPubKeyEd25519 []byte `json:"ChannelSigningPubKeyEd25519"`
 }
 
 // Group contains the information used to reconstruct a cyclic group.
@@ -191,13 +192,15 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 
 	// Copy UD
 	newNDF.UDB = UDB{
-		ID:       make([]byte, len(ndf.UDB.ID)),
-		Cert:     ndf.UDB.Cert,
-		Address:  ndf.UDB.Address,
-		DhPubKey: make([]byte, len(ndf.UDB.DhPubKey)),
+		ID:                          make([]byte, len(ndf.UDB.ID)),
+		Cert:                        ndf.UDB.Cert,
+		Address:                     ndf.UDB.Address,
+		DhPubKey:                    make([]byte, len(ndf.UDB.DhPubKey)),
+		ChannelSigningPubKeyEd25519: make([]byte, len(ndf.UDB.ChannelSigningPubKeyEd25519)),
 	}
 	copy(newNDF.UDB.ID, ndf.UDB.ID)
 	copy(newNDF.UDB.DhPubKey, ndf.UDB.DhPubKey)
+	copy(newNDF.UDB.ChannelSigningPubKeyEd25519, ndf.UDB.ChannelSigningPubKeyEd25519)
 
 	// Copy E2E group
 	newNDF.E2E = Group{
@@ -296,6 +299,7 @@ func (ndf *NetworkDefinition) Serialize() []byte {
 	b = append(b, []byte(ndf.UDB.Cert)...)
 	b = append(b, ndf.UDB.Address...)
 	b = append(b, ndf.UDB.DhPubKey...)
+	b = append(b, ndf.UDB.ChannelSigningPubKeyEd25519...)
 
 	// Convert E2E to byte slice
 	b = append(b, []byte(ndf.E2E.Prime)...)
