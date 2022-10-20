@@ -49,7 +49,7 @@ func TestWeights(t *testing.T) {
 		fmt.Printf("Current:%d, weight:%d\n", current, weights[current])
 	}
 
-	fmt.Printf("FinalList:%v,", weights)
+	fmt.Printf("FinalList:%v,\n", weights)
 
 }
 

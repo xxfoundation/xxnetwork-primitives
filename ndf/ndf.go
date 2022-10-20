@@ -179,9 +179,10 @@ func (ndf *NetworkDefinition) DeepCopy() *NetworkDefinition {
 
 	// Copy Registration
 	newNDF.Registration = Registration{
-		Address:        ndf.Registration.Address,
-		TlsCertificate: ndf.Registration.TlsCertificate,
-		EllipticPubKey: ndf.Registration.EllipticPubKey,
+		Address:                   ndf.Registration.Address,
+		TlsCertificate:            ndf.Registration.TlsCertificate,
+		EllipticPubKey:            ndf.Registration.EllipticPubKey,
+		ClientRegistrationAddress: ndf.Registration.ClientRegistrationAddress,
 	}
 
 	// Copy Notification
