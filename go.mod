@@ -10,7 +10,7 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.2.1
-	gitlab.com/xx_network/primitives v0.0.4-0.20221017171439-42169a3e5c0d
+	gitlab.com/xx_network/primitives v0.0.4-0.20221025000548-492f78b26609
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
