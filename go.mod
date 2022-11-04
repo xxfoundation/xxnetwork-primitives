@@ -1,6 +1,6 @@
 module gitlab.com/elixxir/primitives
 
-go 1.13
+go 1.19
 
 require (
 	github.com/badoux/checkmail v1.2.1
