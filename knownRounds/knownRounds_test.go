@@ -527,7 +527,7 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 			fuPos:          75,
 		}
 
-		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
+		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck, 1000)
 
 		if earliestRound != data.expected {
 			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
@@ -535,7 +535,7 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 				i, data.expected, earliestRound)
 		}
 
-		if !reflect.DeepEqual(data.has, has) {
+		if len(data.has) != len(has) {
 			t.Errorf("RangeUnchecked() did not return the correct has list (%d)."+
 				"\n\texpected: %v\n\treceived: %v",
 				i, data.has, has)
@@ -571,7 +571,7 @@ func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	for i, data := range testData {
 		kr := NewKnownRound(310)
 
-		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
+		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck, 1000)
 
 		if earliestRound != data.expected {
 			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
