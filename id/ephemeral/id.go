@@ -8,16 +8,17 @@
 package ephemeral
 
 import (
-	"bytes"
 	"crypto"
+	"crypto/hmac"
 	"encoding/binary"
 	"fmt"
-	"github.com/pkg/errors"
-	"gitlab.com/xx_network/primitives/id"
 	"hash"
 	"io"
 	"math"
 	"time"
+
+	"github.com/pkg/errors"
+	"gitlab.com/xx_network/primitives/id"
 )
 
 const Period = int64(time.Hour * 24)
@@ -201,7 +202,7 @@ func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id
 // Returns true if reserved, false if non-reserved
 func IsReserved(eid Id) bool {
 	for _, r := range ReservedIDs {
-		if bytes.Equal(eid[:], r[:]) {
+		if hmac.Equal(eid[:], r[:]) {
 			return true
 		}
 	}
