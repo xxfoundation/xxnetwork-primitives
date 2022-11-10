@@ -26,6 +26,8 @@ github.com/ttacon/libphonenumber v1.2.1 h1:fzOfY5zUADkCkbIafAed11gL1sW+bJ26p6zWL
 github.com/ttacon/libphonenumber v1.2.1/go.mod h1:E0TpmdVMq5dyVlQ7oenAkhsLu86OkUl+yR4OAxyEg/M=
 gitlab.com/xx_network/primitives v0.0.4-0.20221104175439-f0d440beacd9 h1:XE7OBn2gYmfLudiaWOl6LzYblZZqYIsScrSzJqPwymY=
 gitlab.com/xx_network/primitives v0.0.4-0.20221104175439-f0d440beacd9/go.mod h1:rP/2IsqIFHapuIB4mstXKItvwoJRQ9Wlms/NGeutHsk=
+gitlab.com/xx_network/primitives v0.0.4-0.20221110180011-fd6ea3058225 h1:TAn87e6Zt9KwcSnWKyIul5eu8T0RHY9FDubCGs3G0dw=
+gitlab.com/xx_network/primitives v0.0.4-0.20221110180011-fd6ea3058225/go.mod h1:rP/2IsqIFHapuIB4mstXKItvwoJRQ9Wlms/NGeutHsk=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad h1:DN0cp81fZ3njFcrLCytUHRSUkqBjfTo4Tx9RJTWs0EY=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
