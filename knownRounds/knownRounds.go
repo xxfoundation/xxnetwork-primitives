@@ -286,7 +286,7 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 // RangeUnchecked runs the passed function over all rounds starting with oldest
 // unknown and ending with
 func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
-	roundCheck func(id id.Round) bool) (id.Round, []id.Round, []id.Round) {
+	roundCheck func(id id.Round) bool, maxPickups int) (id.Round, []id.Round, []id.Round) {
 
 	newestRound := kr.lastChecked
 
@@ -299,7 +299,9 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 	}
 
 	earliestRound := kr.lastChecked + 1
-	var has, unknown []id.Round
+	var unknown []id.Round
+
+	has := make([]id.Round, 0, maxPickups)
 
 	// If the oldest unknown round is outside the range we attempting to check,
 	// then skip checking
@@ -331,6 +333,14 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 		// earliest round, then set it to the earliest round
 		if hasRound {
 			has = append(has, i)
+			//do not pickup too many messages at once
+			if len(has)>=maxPickups{
+				nextRound := i+1
+				if (nextRound)<earliestRound{
+					earliestRound = nextRound
+				}
+				break
+			}
 		}
 	}
 
