@@ -107,9 +107,23 @@ func NewMessage(numPrimeBytes int) Message {
 	}
 }
 
-// Marshal marshals the message into a byte slice.
+// Marshal marshals the message into a byte slice. Use this when
+// sending over the wire or other socket connection. Do not use this
+// if you ever want to compare a marshalled message with itself, because
+// both the Ephemeral ID and SIH are modified on each send attempt.
 func (m *Message) Marshal() []byte {
 	return copyByteSlice(m.data)
+}
+
+// MarshalImmutable marshals the message into a byte slice. Note that the
+// Ephemeral ID and the SIH both change every time a message is
+// sent. This function 0's those fields to guarantee that the same
+// message will be byte idendical with itself when Marshalled.
+func (m *Message) MarshalImmutable() []byte {
+	newM := m.Copy()
+	newM.SetEphemeralID(make([]byte, EphemeralRIDLen))
+	newM.SetSIH(make([]byte, SIHLen))
+	return newM.data
 }
 
 // Unmarshal unmarshalls a byte slice into a new Message.
