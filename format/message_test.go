@@ -148,6 +148,36 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 	}
 }
 
+func TestMessage_Marshal_UnmarshalImmutable(t *testing.T) {
+	m := NewMessage(256)
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	payload := make([]byte, 256)
+	prng.Read(payload)
+	m.SetPayloadA(payload)
+	prng.Read(payload)
+	m.SetPayloadB(payload)
+	copy(m.version, []byte{messagePayloadVersion})
+
+	m.ephemeralRID[0] = 42
+	m.sih[0] = 42
+
+	messageData := m.MarshalImmutable()
+	newMsg, err := Unmarshal(messageData)
+
+	if err != nil {
+		t.Errorf("Unmarshal failure: %#v", err)
+	}
+
+	if newMsg.ephemeralRID[0] != 0 {
+		t.Errorf("MarshalImmutable did not clear EphemeralRID: %v != 0",
+			newMsg.ephemeralRID)
+	}
+	if newMsg.sih[0] != 0 {
+		t.Errorf("MarshalImmutable did not clear SIH: %v != 0",
+			newMsg.sih)
+	}
+}
+
 // Happy path.
 func TestMessage_Copy(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)

@@ -121,7 +121,7 @@ func (m *Message) Marshal() []byte {
 // message will be byte idendical with itself when Marshalled.
 func (m *Message) MarshalImmutable() []byte {
 	newM := m.Copy()
-	newM.SetEphemeralID(make([]byte, EphemeralRIDLen))
+	newM.SetEphemeralRID(make([]byte, EphemeralRIDLen))
 	newM.SetSIH(make([]byte, SIHLen))
 	return newM.data
 }
