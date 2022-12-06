@@ -14,7 +14,7 @@ import (
 
 // DomainName is the registered domain to be used for calculation of
 // unique Gateway DNS addresses by authorizer, gateway, and client.
-const DomainName = "elixxirnode.io"
+const DomainName = "xxnode.io"
 
 // GetGatewayDns returns the DNS name for the given marshalled GwId.
 func GetGatewayDns(gwId []byte) string {
