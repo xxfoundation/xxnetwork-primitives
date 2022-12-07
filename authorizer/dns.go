@@ -26,6 +26,9 @@ const (
 // GetGatewayDns returns the DNS name for the given marshalled GwId.
 // Truncates
 func GetGatewayDns(gwId []byte) string {
-	return fmt.Sprintf("%s.%s",
-		base64.URLEncoding.EncodeToString(gwId)[:maxGwIdLength], DomainName)
+	encoded := base64.URLEncoding.EncodeToString(gwId)
+	if len(encoded) > maxGwIdLength {
+		encoded = encoded[:maxGwIdLength]
+	}
+	return fmt.Sprintf("%s.%s", encoded, DomainName)
 }
