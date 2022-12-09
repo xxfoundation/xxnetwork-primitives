@@ -17,6 +17,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Tests that Marshal() returns the correct byte slice of an ID and that it is a
@@ -322,6 +324,23 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 		t.Errorf("Failed the JSON marshal and unmarshal ID."+
 			"\noriginal ID: %s\nreceived ID: %s", testID, newID)
 	}
+}
+
+// Tests that an ID can be JSON marshaled and unmarshalled.
+func TestID_TextMarshal_TextUnmarshal(t *testing.T) {
+	testID := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
+
+	testMap := make(map[ID]int)
+	testMap[*testID] = 8675309
+
+	jsonData, err := json.Marshal(testMap)
+	require.NoError(t, err)
+
+	newMap := make(map[ID]int)
+	err = json.Unmarshal(jsonData, &newMap)
+	require.NoError(t, err)
+
+	require.Equal(t, testMap[*testID], newMap[*testID])
 }
 
 // Error path: supplied data is invalid JSON.

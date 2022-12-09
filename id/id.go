@@ -17,11 +17,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"io"
 	"regexp"
 	"testing"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (
@@ -136,6 +137,21 @@ func (id *ID) UnmarshalJSON(b []byte) error {
 // marshaled into JSON.
 func (id ID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(id.Marshal())
+}
+
+// MarshalText implements encoding.TextMarshaler for json.Marshal compatibility
+// This lets you marshal it as part of a map, for example.
+func (id ID) MarshalText() (text []byte, err error) {
+	return []byte(base64.RawStdEncoding.EncodeToString(id[:])), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler for
+// json.Unmarshal compatibility
+// This lets you unemmarshal it as part of a map, for example.
+func (id ID) UnmarshalText(text []byte) error {
+	idBytes, err := base64.RawStdEncoding.DecodeString(string(text))
+	copy(id[:], idBytes)
+	return err
 }
 
 // NewRandomID generates a random ID using the passed in io.Reader r
