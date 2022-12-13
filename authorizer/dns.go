@@ -8,7 +8,7 @@
 package authorizer
 
 import (
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -26,7 +26,7 @@ const (
 // GetGatewayDns returns the DNS name for the given marshalled GwId.
 // Truncates
 func GetGatewayDns(gwId []byte) string {
-	encoded := base64.URLEncoding.EncodeToString(gwId)
+	encoded := hex.EncodeToString(gwId)
 	if len(encoded) > maxGwIdLength {
 		encoded = encoded[:maxGwIdLength]
 	}
