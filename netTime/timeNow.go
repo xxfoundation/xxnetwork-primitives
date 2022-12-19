@@ -36,9 +36,6 @@ type TimeSource interface {
 // this function be recalled.
 func SetTimeSource(nowFunc TimeSource) {
 	Now = func() time.Time {
-		// Read the offset value atomically (for thread safety)
-		timeToOffset := time.Duration(atomic.LoadInt64(&offset))
-
 		// Get the current time using the passed in time source
 		currentTime := nowFunc.NowMs() * int64(time.Millisecond)
 
@@ -46,7 +43,7 @@ func SetTimeSource(nowFunc TimeSource) {
 		parsedTime := time.Unix(0, currentTime)
 
 		// Add the offset to the time retrieved via the time source
-		return parsedTime.Add(timeToOffset)
+		return parsedTime.Add(getOffset())
 	}
 }
 
@@ -55,6 +52,11 @@ func SetTimeSource(nowFunc TimeSource) {
 // will reduce the result of the call to [Now].
 func SetOffset(timeToOffset time.Duration) {
 	atomic.StoreInt64(&offset, timeToOffset.Nanoseconds())
+}
+
+// getOffset returns the offset duration. This function is thread safe.
+func getOffset() time.Duration {
+	return time.Duration(atomic.LoadInt64(&offset)) * time.Nanosecond
 }
 
 // Since returns the time elapsed since t. It is shorthand for
