@@ -23,13 +23,6 @@ func NewTimer(d time.Duration) *Timer {
 	return &Timer{time.NewTimer(d + getOffset())}
 }
 
-// Stop prevents the Timer from firing. It returns true if the call stops the
-// timer, false if the timer has already expired or been stopped. Refer to
-// [time.Timer.Stop] for more information.
-func (t *Timer) Stop() bool {
-	return t.Stop()
-}
-
 // Reset changes the timer to expire after duration d. It returns true if the
 // timer had been active, false if the timer had expired or been stopped. Refer
 // to [time/Timer.Reset] for more information.
