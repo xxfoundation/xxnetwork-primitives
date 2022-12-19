@@ -68,8 +68,7 @@ func TestSetOffset(t *testing.T) {
 
 	if offset != expected {
 		t.Fatalf("SetOffset failed to set the offset variable."+
-			"\nExpected: %v"+
-			"\nReceived: %v", expected, offset)
+			"\nexpected: %d\nreceived: %d", expected, offset)
 	}
 }
 
@@ -95,9 +94,7 @@ func TestNow_SetOffset_Positive(t *testing.T) {
 	// Ensure expected value matches received value
 	if received != expected {
 		t.Fatalf("Now did not return a time adjusted for the offset."+
-			"\nExpected: %v"+
-			"\nReceived: %v",
-			expected, received)
+			"\nexpected: %d\nreceived: %d", expected, received)
 	}
 }
 
@@ -121,8 +118,6 @@ func TestNow_SetOffset_Negative(t *testing.T) {
 	// Ensure expected value matches received value
 	if received != expected {
 		t.Fatalf("Now did not return a time adjusted for the offset."+
-			"\nExpected: %v"+
-			"\nReceived: %v",
-			expected, received)
+			"\nexpected: %d\nreceived: %d", expected, received)
 	}
 }
