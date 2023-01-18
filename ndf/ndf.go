@@ -69,6 +69,7 @@ type Node struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Ed25519        []byte
 	Status
 }
 
