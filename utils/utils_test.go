@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mitchellh/go-homedir"
+	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -515,6 +516,84 @@ func TestDirExists_NoDirError(t *testing.T) {
 	if exists {
 		t.Errorf("DirExists found a directroy when one does not exist")
 	}
+}
+
+// Tests that GetLastModified will return an accurate last modified timestamp.
+func TestGetLastModified(t *testing.T) {
+	path := "test.txt"
+	data := []byte("Test string.")
+
+	// Delete the test file at the end
+	defer func() {
+		require.NoError(t, os.RemoveAll(path))
+
+	}()
+
+	// Record approximately when we are writing to file
+	firstWriteTimestamp := time.Now()
+
+	// Write to file
+	require.NoError(t, WriteFile(path, data, FilePerms, FilePerms))
+
+	// Retrieve the last modification of the file
+	lastModified, err := GetLastModified(path)
+	require.NoError(t, err)
+
+	// The last modified timestamp should not differ by more than a few
+	// milliseconds from the timestamp taken before the write operation took
+	// place.
+	require.True(t, lastModified.Sub(firstWriteTimestamp) < 2*time.Millisecond ||
+		lastModified.Sub(firstWriteTimestamp) > 2*time.Millisecond)
+
+	// Retrieve modified timestamp again
+	newLastModified, err := GetLastModified(path)
+	require.NoError(t, err)
+
+	// Ensure last modified does not change arbitrarily
+	require.Equal(t, newLastModified, lastModified)
+}
+
+// Tests that GetLastModified will update after a write operation to a file.
+func TestGetLastModified_Update(t *testing.T) {
+
+	path := "test.txt"
+	data := []byte("Test string.")
+
+	// Delete the test file at the end
+	defer func() {
+		require.NoError(t, os.RemoveAll(path))
+
+	}()
+
+	// Write to file
+	require.NoError(t, WriteFile(path, data, FilePerms, FilePerms))
+
+	// Retrieve the last modification of the file
+	lastModified, err := GetLastModified(path)
+	require.NoError(t, err)
+
+	time.Sleep(50 * time.Millisecond)
+
+	// Record timestamp of second write
+	secondWriteTimestamp := time.Now()
+
+	// Write again to the same file path
+	newData := []byte("New data")
+	require.NoError(t, WriteFile(path, newData, FilePerms, FilePerms))
+
+	// Retrieve last modified after re-writing to file
+	newLastModified, err := GetLastModified(path)
+	require.NoError(t, err)
+
+	// Ensure last modified has been updated, and is not returning an old value
+	require.NotEqual(t, newLastModified, lastModified)
+
+	// The last modified timestamp should not differ by more than a few
+	// milliseconds from the timestamp taken before the write operation took
+	// place.
+	require.True(t, lastModified.Sub(secondWriteTimestamp) < 2*time.Millisecond ||
+		lastModified.Sub(secondWriteTimestamp) > 2*time.Millisecond)
+
 }
 
 // Tests that Test_exist correctly finds a file that exists and returns the
