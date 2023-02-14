@@ -24,12 +24,8 @@ github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 h1:5u+EJUQiosu3JFX0
 github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2/go.mod h1:4kyMkleCiLkgY6z8gK5BkI01ChBtxR0ro3I1ZDcGM3w=
 github.com/ttacon/libphonenumber v1.2.1 h1:fzOfY5zUADkCkbIafAed11gL1sW+bJ26p6zWLBMElR4=
 github.com/ttacon/libphonenumber v1.2.1/go.mod h1:E0TpmdVMq5dyVlQ7oenAkhsLu86OkUl+yR4OAxyEg/M=
-gitlab.com/xx_network/primitives v0.0.4-0.20221104175439-f0d440beacd9 h1:XE7OBn2gYmfLudiaWOl6LzYblZZqYIsScrSzJqPwymY=
-gitlab.com/xx_network/primitives v0.0.4-0.20221104175439-f0d440beacd9/go.mod h1:rP/2IsqIFHapuIB4mstXKItvwoJRQ9Wlms/NGeutHsk=
-gitlab.com/xx_network/primitives v0.0.4-0.20221110180011-fd6ea3058225 h1:TAn87e6Zt9KwcSnWKyIul5eu8T0RHY9FDubCGs3G0dw=
-gitlab.com/xx_network/primitives v0.0.4-0.20221110180011-fd6ea3058225/go.mod h1:rP/2IsqIFHapuIB4mstXKItvwoJRQ9Wlms/NGeutHsk=
-gitlab.com/xx_network/primitives v0.0.4-0.20221219230308-4b5550a9247d h1:D9hEtiQ7xj0yFBkDkb4X4S95RfNoeXxtB1eE4UuFHtk=
-gitlab.com/xx_network/primitives v0.0.4-0.20221219230308-4b5550a9247d/go.mod h1:wUxbEBGOBJZ/RkAiVAltlC1uIlIrU0dE113Nq7HiOhw=
+gitlab.com/xx_network/primitives v0.0.4-0.20230203173415-81c2cb07da44 h1:vNm76SCeKZiCaVL0rCIcqDxMzSVL50g3XO6dQYN8r3Q=
+gitlab.com/xx_network/primitives v0.0.4-0.20230203173415-81c2cb07da44/go.mod h1:wUxbEBGOBJZ/RkAiVAltlC1uIlIrU0dE113Nq7HiOhw=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad h1:DN0cp81fZ3njFcrLCytUHRSUkqBjfTo4Tx9RJTWs0EY=
 golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
