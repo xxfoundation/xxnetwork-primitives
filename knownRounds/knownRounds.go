@@ -283,8 +283,74 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 	}
 }
 
-// RangeUnchecked runs the passed function over all rounds starting with oldest
-// unknown and ending with
+// RangeUncheckedReverse will return the newest rounds. This is the reverse of
+// RangeUnchecked.
+func (kr *KnownRounds) RangeUncheckedReverse(oldestUnknown id.Round,
+	threshold uint, roundCheck func(id id.Round) bool, maxPickups int) (id.Round,
+	[]id.Round, []id.Round) {
+	newestRound := kr.lastChecked
+
+	// Calculate how far back we should go back to check rounds
+	// If the newest round is smaller than the threshold, then our oldest round
+	// is zero. But the earliest round ID is 1.
+	oldestPossibleEarliestRound := id.Round(1)
+	if newestRound > id.Round(threshold) {
+		oldestPossibleEarliestRound = newestRound - id.Round(threshold)
+	}
+
+	earliestRound := kr.lastChecked + 1
+	var unknown []id.Round
+
+	has := make([]id.Round, 0, maxPickups)
+
+	// If the oldest unknown round is outside the range we are attempting to
+	// check, then skip checking
+	if oldestUnknown > kr.lastChecked {
+		jww.TRACE.Printf("RangeUnchecked: oldestUnknown (%d) > kr.lastChecked (%d)",
+			oldestUnknown, kr.lastChecked)
+		return oldestUnknown, nil, nil
+	}
+
+	// loop through all rounds from the oldest unknown to the last checked round
+	// and check them, if possible
+	for i := kr.lastChecked; i >= oldestUnknown; i-- {
+
+		// if the source does not know about the round, set that round as
+		// unknown and don't check it
+		if !kr.Checked(i) {
+			if i < oldestPossibleEarliestRound {
+				unknown = append(unknown, i)
+			} else if i < earliestRound {
+				earliestRound = i
+			}
+			continue
+		}
+
+		// check the round
+		hasRound := roundCheck(i)
+
+		// if checking is not complete and the round is earlier than the
+		// earliest round, then set it to the earliest round
+		if hasRound {
+			has = append(has, i)
+			//do not pickup too many messages at once
+			if len(has) >= maxPickups {
+				nextRound := i + 1
+				if (nextRound) < earliestRound {
+					earliestRound = nextRound
+				}
+				break
+			}
+		}
+	}
+
+	// return the next round
+	return earliestRound, has, unknown
+
+}
+
+// RangeUnchecked runs the passed function over all rounds starting with the oldest
+// unknown and ending with the last checked round within KnownRounds.
 func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 	roundCheck func(id id.Round) bool, maxPickups int) (id.Round, []id.Round, []id.Round) {
 
@@ -334,9 +400,9 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 		if hasRound {
 			has = append(has, i)
 			//do not pickup too many messages at once
-			if len(has)>=maxPickups{
-				nextRound := i+1
-				if (nextRound)<earliestRound{
+			if len(has) >= maxPickups {
+				nextRound := i + 1
+				if (nextRound) < earliestRound {
 					earliestRound = nextRound
 				}
 				break
@@ -422,7 +488,7 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 
 // Truncate returns a subsample of the KnownRounds buffer from last checked.
 func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
-	if start<=kr.firstUnchecked{
+	if start <= kr.firstUnchecked {
 		return kr
 	}
 
@@ -449,8 +515,8 @@ func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 	}
 
 	pos := (kr.fuPos + delta) % kr.Len()
-	if pos <0{
-		return kr.Len()+pos
+	if pos < 0 {
+		return kr.Len() + pos
 	}
 	return pos
 

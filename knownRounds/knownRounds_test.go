@@ -10,6 +10,7 @@ package knownRounds
 import (
 	"bytes"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"gitlab.com/xx_network/primitives/id"
 	"math"
 	"math/rand"
@@ -494,6 +495,58 @@ func TestKnownRounds_Forward_NewKR(t *testing.T) {
 	}
 }
 
+// Happy path of KnownRounds.RangeUncheckedReverse.
+func TestKnownRounds_RangeUncheckedReverse(t *testing.T) {
+	// Generate test round IDs and expected buffers
+	testData := []struct {
+		oldestUnknown, expected id.Round
+		has, unknown            []id.Round
+	}{
+		{55, 141, makeRange(55, 127), makeRangeReverse(128, 140)},
+		{65, 141, makeRange(65, 127), makeRangeReverse(128, 140)},
+		{75, 141, makeRange(75, 127), makeRangeReverse(128, 140)},
+		{85, 141, makeRange(85, 127), makeRangeReverse(128, 140)},
+		{191, 191, nil, nil},
+		{192, 192, nil, nil},
+		{292, 292, nil, nil},
+	}
+	roundCheck := func(id id.Round) bool {
+		return true
+	}
+
+	// Bitstream = 0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000
+	//                            ^ firstUnchecked, fuPos (position 75)
+	//                                                   ^ lastChecked (position 191)
+	//                                       ^-^ unknown (position 128 - 140)
+	//                           ^-----^ has (position 64 - 127)
+	//                     xx also has (position 55 - 63), outside defined buffer
+	for i, data := range testData {
+		kr := KnownRounds{
+			bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
+			firstUnchecked: 75,
+			lastChecked:    191,
+			fuPos:          75,
+		}
+
+		earliestRound, has, unknown := kr.RangeUncheckedReverse(data.oldestUnknown, 50, roundCheck, 1000)
+
+
+
+		require.Equalf(t, earliestRound, data.expected,
+			fmt.Sprintf("RangeUncheckedReverse() did not return the correct " +
+				"round (%d).", i)
+
+
+		require.Equalf(t, len(data.has), len(has),
+			fmt.Sprintf("RangeUncheckedReverse() did not return the correct " +
+				"has list (%d).", i))
+
+		require.Equalf(t, data.unknown, unknown,
+			fmt.Sprintf("RangeUncheckedReverse() did not return the correct " +
+				"unknown list (%d).", i))
+	}
+}
+
 // Test happy path of KnownRounds.RangeUnchecked().
 func TestKnownRounds_RangeUnchecked(t *testing.T) {
 	// Generate test round IDs and expected buffers
@@ -913,9 +966,17 @@ func makeRandomUint64Slice(n int, prng *rand.Rand) []uint64 {
 }
 
 func makeRange(min, max int) []id.Round {
-	a := make([]id.Round, max-min+1)
+	a := make([]id.Round, abs(max-min)+1)
 	for i := range a {
 		a[i] = id.Round(min + i)
+	}
+	return a
+}
+
+func makeRangeReverse(min, max int) []id.Round {
+	a := make([]id.Round, abs(max-min)+1)
+	for i := range a {
+		a[i] = id.Round(max - i)
 	}
 	return a
 }
