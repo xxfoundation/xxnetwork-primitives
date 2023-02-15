@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const (
@@ -30,15 +31,15 @@ const (
 
 // ExpandPath replaces the '~' character with the user's home directory and
 // cleans the path using the following rules:
-//	1. Replace multiple Separator elements with a single one.
-//	2. Eliminate each . path name element (the current directory).
-//	3. Eliminate each inner .. path name element (the parent directory)
-//	   along with the non-.. element that precedes it.
-//	4. Eliminate .. elements that begin a rooted path: that is, replace
-//	   "/.." by "/" at the beginning of a path, assuming Separator is '/'.
-//	5. The returned path ends in a slash only if it represents a root
-//	   directory.
-//	6. Any occurrences of slash are replaced by Separator.
+//  1. Replace multiple Separator elements with a single one.
+//  2. Eliminate each . path name element (the current directory).
+//  3. Eliminate each inner .. path name element (the parent directory)
+//     along with the non-.. element that precedes it.
+//  4. Eliminate .. elements that begin a rooted path: that is, replace
+//     "/.." by "/" at the beginning of a path, assuming Separator is '/'.
+//  5. The returned path ends in a slash only if it represents a root
+//     directory.
+//  6. Any occurrences of slash are replaced by Separator.
 func ExpandPath(path string) (string, error) {
 	// If the path is empty, then return nothing
 	if path == "" {
@@ -151,6 +152,17 @@ func DirExists(path string) bool {
 
 	// Check if the file is a directory
 	return exists && info.IsDir()
+}
+
+// GetLastModified returns the time the file was last modified.
+func GetLastModified(path string) (time.Time, error) {
+	// Get file description information and path errors
+	info, err := os.Stat(path)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return info.ModTime(), nil
 }
 
 // exists checks if a file or directory exists at the specified path and also
