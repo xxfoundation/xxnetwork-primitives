@@ -165,6 +165,24 @@ func GetLastModified(path string) (time.Time, error) {
 	return info.ModTime(), nil
 }
 
+// ReadDir reads the named directory, returning all its directory entries
+// sorted by filename.
+func ReadDir(path string) ([]string, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]string, 0)
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			files = append(files, entry.Name())
+		}
+	}
+
+	return files, nil
+}
+
 // exists checks if a file or directory exists at the specified path and also
 // returns the file's FileInfo.
 func exists(path string) (os.FileInfo, bool) {
