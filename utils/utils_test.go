@@ -553,6 +553,20 @@ func TestGetLastModified(t *testing.T) {
 	require.Equal(t, newLastModified, lastModified)
 }
 
+// ReadDir unit test.
+func TestReadDir(t *testing.T) {
+	files, err := ReadDir("./")
+	require.NoError(t, err)
+
+	// NOTE: This test uses the files in the utils package as expected values.
+	//       If at any point files are added or moved, refactor this list
+	//       accordingly.
+	var expectedFiles = []string{"gen.go", "net.go", "net_test.go",
+		"privNet.go", "utils.go", "utils_test.go"}
+
+	require.Equal(t, expectedFiles, files)
+}
+
 // Tests that GetLastModified will update after a write operation to a file.
 func TestGetLastModified_Update(t *testing.T) {
 
