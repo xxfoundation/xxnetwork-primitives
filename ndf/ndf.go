@@ -69,6 +69,7 @@ type Node struct {
 	ID             []byte `json:"Id"`
 	Address        string
 	TlsCertificate string `json:"Tls_certificate"`
+	Ed25519        []byte
 	Status
 }
 
@@ -242,7 +243,7 @@ func (ndf *NetworkDefinition) StripNdf() *NetworkDefinition {
 	// Remove address and TLS cert for every node.
 	var strippedNodes []Node
 	for _, node := range ndf.Nodes {
-		strippedNodes = append(strippedNodes, Node{ID: node.ID, Status: node.Status})
+		strippedNodes = append(strippedNodes, Node{ID: node.ID, Status: node.Status, Ed25519: node.Ed25519})
 	}
 
 	// Create a new NetworkDefinition with the stripped information
