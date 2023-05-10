@@ -547,6 +547,73 @@ func TestNewIdFromString_TestError(t *testing.T) {
 	_ = NewIdFromString("test", Generic, nil)
 }
 
+// Tests that NewIdFromBase64String creates an ID, that when base 64 encoded,
+// looks similar to the passed in string.
+func TestNewIdFromBase64String(t *testing.T) {
+	tests := []struct{ base64String, expected string }{
+		{"Test 1", "Test+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"[Test  2]", "Test+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 3]$$%", "Test+3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 4+/]$$%", "Test+4+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"Test 55555555555555555555555555555555555555", "Test+55555555555555555555555555555555555555E"},
+		{"Test 66666666666666666666666666666666666666666", "Test+66666666666666666666666666666666666666E"},
+		{"", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+	}
+
+	for i, tt := range tests {
+		newID := NewIdFromBase64String(tt.base64String, Group, t)
+
+		b64 := base64.StdEncoding.EncodeToString(newID.Marshal())
+		if tt.expected != b64 {
+			t.Errorf("Incorrect base 64 encoding for string %q (%d)."+
+				"\nexpected: %s\nreceived: %s",
+				tt.base64String, i, tt.expected, b64)
+		}
+	}
+	//
+	//
+	// // Test values
+	// expectedIdString := "TestIDStringOfCorrectLength"
+	// expectedType := Group
+	// expectedID := new(ID)
+	// copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
+	//
+	// strs := []string{
+	// 	"test",
+	// 	`"test"`,
+	// 	`Question ?`,
+	// 	`open   angle bracket <`,
+	// 	`close angle bracket >`,
+	// 	`slash /`,
+	// 	`slash \`,
+	// }
+	// for i, str := range strs {
+	// 	escaped := url.QueryEscape(str)
+	// 	escaped = whitespaceRegex.ReplaceAllString(str, "+")
+	// 	escaped = nonBase64Regex.ReplaceAllString(escaped, "")
+	// 	fmt.Printf("%2d. %s\n    %s\n", i, str, escaped)
+	// }
+	//
+	// // Create the ID and check its contents
+	// newID := NewIdFromBase64String(expectedIdString, expectedType, t)
+	//
+	// // Check if the new ID matches the expected ID
+	// if !expectedID.Cmp(newID) {
+	// 	t.Errorf("NewIdFromString() produced an ID with the incorrect data."+
+	// 		"\n\texpected: %v\n\treceived: %v", expectedID[:], newID[:])
+	// }
+	//
+	// // Check if the original string is still in the first 32 bytes
+	// newIdString := string(newID.Bytes()[:ArrIDLen-1])
+	// if expectedIdString != newIdString {
+	// 	t.Errorf("NewIdFromString() did not correctly convert the original "+
+	// 		"string to bytes.\n\texpected string: %#v\n\treceived string: %#v"+
+	// 		"\n\texpected bytes: %v\n\treceived bytes: %v",
+	// 		expectedIdString, newIdString,
+	// 		[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
+	// }
+}
+
 // Tests that NewIdFromUInt() creates a new ID with the correct contents by
 // converting the ID back into a uint and comparing it to the original.
 func TestNewIdFromUInt(t *testing.T) {
