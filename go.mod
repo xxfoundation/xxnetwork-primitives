@@ -10,6 +10,7 @@ require (
 	github.com/ttacon/libphonenumber v1.2.1
 	gitlab.com/xx_network/primitives v0.0.4-0.20230203173415-81c2cb07da44
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	gopkg.in/gographics/imagick.v3 v3.4.2
 )
 
 require (
