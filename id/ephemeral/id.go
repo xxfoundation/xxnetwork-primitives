@@ -11,7 +11,7 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"encoding/binary"
-	"fmt"
+	"encoding/json"
 	"hash"
 	"io"
 	"math"
@@ -21,35 +21,39 @@ import (
 	"gitlab.com/xx_network/primitives/id"
 )
 
-const Period = int64(time.Hour * 24)
-const NumOffsets int64 = 1 << 16
-const NsPerOffset = Period / NumOffsets
+const (
+	// IdLen is the length of an ephemeral [Id].
+	IdLen = 8
 
-// Ephemeral Ids reserved for specific actions:
-// All zero's denote a dummy ID
-// All one's denote a payment
+	Period            = int64(time.Hour * 24)
+	NumOffsets  int64 = 1 << 16
+	NsPerOffset       = Period / NumOffsets
+)
+
+// ReservedIDs are ephemeral IDs reserved for specific actions:
+//   - All zeros denote a dummy ID
+//   - All ones denote a payment
 var ReservedIDs = []Id{
-	{0, 0, 0, 0, 0, 0, 0, 0},
-	{1, 1, 1, 1, 1, 1, 1, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0}, // Dummy ID
+	{1, 1, 1, 1, 1, 1, 1, 1}, // Payment
 }
 
-// Ephemeral ID type alias
-type Id [8]byte
+// Id is the ephemeral ID type.
+type Id [IdLen]byte
 
-// Ephemeral Id object which contains the ID
-// and the start and end time for the salt window
+// ProtoIdentity contains the ID and the start and end time for the salt window.
 type ProtoIdentity struct {
 	Id    Id
 	Start time.Time
 	End   time.Time
 }
 
-// Return ephemeral ID as a uint64
+// UInt64 returns the ephemeral ID as a uint64.
 func (eid *Id) UInt64() uint64 {
 	return binary.BigEndian.Uint64(eid[:])
 }
 
-// Return ephemeral ID as an int64
+// Int64 returns the ephemeral ID as an int64.
 func (eid *Id) Int64() int64 {
 	ux := binary.BigEndian.Uint64(eid[:])
 	x := int64(ux >> 1)
@@ -59,20 +63,19 @@ func (eid *Id) Int64() int64 {
 	return x
 }
 
-// Clear an ID down to the correct size
+// Clear reduces an ID down to the correct size.
 func (eid Id) Clear(size uint) Id {
-	newId := Id{}
+	var newId Id
 	var mask uint64 = math.MaxUint64 >> (64 - size)
 	maskedId := binary.BigEndian.Uint64(eid[:]) & mask
 	binary.BigEndian.PutUint64(newId[:], maskedId)
 	return newId
 }
 
-// Fill cleared bits of an ID with random data from passed in rng
-// Accepts the size of the ID in bits & an RNG reader
+// Fill sets the bits of an ID with random data from passed in rng. The size of
+// the ID is in bits.
 func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
-	newId := Id{}
-	rand := Id{}
+	var newId, rand Id
 	_, err := rng.Read(rand[:])
 	if err != nil {
 		return Id{}, err
@@ -84,24 +87,25 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 	return newId, nil
 }
 
-// Load an ephemeral ID from raw bytes
+// Marshal loads an ephemeral ID from raw bytes.
 func Marshal(data []byte) (Id, error) {
-	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return Id{}, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
+	if data == nil || len(data) != IdLen {
+		return Id{}, errors.Errorf("Ephemeral ID must be of size %d", IdLen)
 	}
-	eid := Id{}
+	var eid Id
 	copy(eid[:], data)
 	return eid, nil
 }
 
-// GetIdsByRange returns ephemeral IDs based on passed in ID and a time range
-// Accepts an ID, ID size in bits, timestamp in nanoseconds and a time range
-// returns a list of ephemeral IDs
+// GetIdsByRange returns ephemeral IDs based on passed in ID and a time range.
+// Accepts an ID, ID size in bits, timestamp, and a time range. Returns a list
+// of ephemeral IDs.
 func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
 
 	if size > 64 {
-		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
+		return []ProtoIdentity{},
+			errors.Errorf("Cannot generate ID with size > %d", size)
 	}
 
 	iid, err := GetIntermediaryId(id)
@@ -114,7 +118,8 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 
 	for timeStop.After(timestamp) {
 
-		newId, start, end, err := GetIdFromIntermediary(iid, size, timestamp.UnixNano())
+		newId, start, end, err :=
+			GetIdFromIntermediary(iid, size, timestamp.UnixNano())
 		if err != nil {
 			return []ProtoIdentity{}, err
 		}
@@ -125,15 +130,15 @@ func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 			End:   end,
 		})
 
-		//make the timestamp into the next Period
+		// Make the timestamp into the next Period
 		timestamp = end.Add(time.Nanosecond)
 	}
 	return idList, nil
 }
 
-// GetId returns ephemeral ID based on passed in ID
-// Accepts an ID, ID size in bits, and timestamp in nanoseconds
-// returns ephemeral ID, start & end timestamps for salt window
+// GetId returns ephemeral ID based on the passed in ID.
+// Accepts an ID, ID size in bits, and timestamp in nanoseconds.
+// Returns an ephemeral ID and the start and end timestamps for the salt window.
 func GetId(id *id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
 	iid, err := GetIntermediaryId(id)
 	if err != nil {
@@ -142,7 +147,8 @@ func GetId(id *id.ID, size uint, timestamp int64) (Id, time.Time, time.Time, err
 	return GetIdFromIntermediary(iid, size, timestamp)
 }
 
-// GetIntermediaryId returns an intermediary ID for ephemeral ID creation (ID hash)
+// GetIntermediaryId returns an intermediary ID for the ephemeral ID creation
+// (ID hash).
 func GetIntermediaryId(id *id.ID) ([]byte, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	_, err := b2b.Write(id.Marshal())
@@ -153,19 +159,22 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 	return idHash, nil
 }
 
-// GetIdFromIntermediary returns the ephemeral ID from intermediary (id hash)
-// Accepts an intermediary ephemeral ID, ID size in bits, and timestamp in nanoseconds
-// returns ephemeral ID, start & end timestamps for salt window
-func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Time, time.Time, error) {
+// GetIdFromIntermediary returns the ephemeral ID from intermediary (ID hash).
+// Accepts an intermediary ephemeral ID, ID size in bits, and timestamp in
+// nanoseconds.
+// Returns an ephemeral ID and the start and end timestamps for salt window.
+func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
+	Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
 	if size > 64 || size < 1 {
-		return Id{}, time.Time{}, time.Time{}, errors.New("Cannot generate ID, size must be between 1 and 64")
+		return Id{}, time.Time{}, time.Time{},
+			errors.New("Cannot generate ID, size must be between 1 and 64")
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
-	// Continually generate an ephemeral Id until we land on
-	// an id not within the reserved list of Ids
-	eid := Id{}
+	// Continually generate an ephemeral ID until we land on an ID not within
+	// the reserved list of IDs
+	var eid Id
 	var err error
 	for reserved := true; reserved; reserved = IsReserved(eid) {
 		eid, err = getIdFromIntermediaryHelper(b2b, iid, salt, size)
@@ -176,9 +185,10 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (Id, time.Tim
 	return eid, start, end, nil
 }
 
-// Helper function which generates a single ephemeral Id
-func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
-	eid := Id{}
+// Helper function which generates a single ephemeral Id.
+func getIdFromIntermediaryHelper(
+	b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
+	var eid Id
 
 	_, err := b2b.Write(iid)
 	if err != nil {
@@ -197,9 +207,8 @@ func getIdFromIntermediaryHelper(b2b hash.Hash, iid, salt []byte, size uint) (Id
 	return eid, err
 }
 
-// Checks if the Id passed in is  among
-// the reserved global reserved ID list.
-// Returns true if reserved, false if non-reserved
+// IsReserved checks if the Id is among the reserved global reserved ID list.
+// Returns true if reserved, false if non-reserved.
 func IsReserved(eid Id) bool {
 	for _, r := range ReservedIDs {
 		if hmac.Equal(eid[:], r[:]) {
@@ -209,7 +218,7 @@ func IsReserved(eid Id) bool {
 	return false
 }
 
-// getRotationSalt returns rotation salt based on ID hash and timestamp
+// getRotationSalt returns rotation salt based on ID hash and timestamp.
 func getRotationSalt(idHash []byte, timestamp int64) ([]byte, time.Time, time.Time) {
 	offset := GetOffset(idHash)
 	start, end, saltNum := GetOffsetBounds(offset, timestamp)
@@ -249,4 +258,29 @@ func HandleQuantization(start time.Time) (int64, int32) {
 	currentOffset := (start.UnixNano() / NsPerOffset) % NumOffsets
 	epoch := start.UnixNano() / NsPerOffset
 	return currentOffset, int32(epoch)
+}
+
+// MarshalJSON marshals the ephemeral [Id] into valid JSON. This function
+// adheres to the [json.Marshaler] interface.
+func (eid Id) MarshalJSON() ([]byte, error) {
+	return json.Marshal(eid[:])
+}
+
+// UnmarshalJSON unmarshalls the JSON into the ephemeral [Id]. This function
+// adheres to the [json.Unmarshaler] interface.
+func (eid *Id) UnmarshalJSON(data []byte) error {
+	var idBytes []byte
+	err := json.Unmarshal(data, &idBytes)
+	if err != nil {
+		return err
+	}
+
+	newEid, err := Marshal(idBytes)
+	if err != nil {
+		return err
+	}
+
+	*eid = newEid
+
+	return nil
 }

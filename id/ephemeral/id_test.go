@@ -11,13 +11,16 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/binary"
-	"gitlab.com/xx_network/crypto/csprng"
-	"gitlab.com/xx_network/primitives/id"
-	_ "golang.org/x/crypto/blake2b"
+	"encoding/json"
 	"math"
 	"strconv"
 	"testing"
 	"time"
+
+	_ "golang.org/x/crypto/blake2b"
+
+	"gitlab.com/xx_network/crypto/csprng"
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Unit test for GetId
@@ -55,7 +58,7 @@ func TestGetIdByRange(t *testing.T) {
 			"\n\tReceived: %d", expectedLength, len(eids))
 	}
 
-	//test that the time variances are correct
+	// Test that the time variances are correct
 	for i := 0; i < len(eids)-1; i++ {
 		next := i + 1
 		if eids[i].End != eids[next].Start {
@@ -141,8 +144,7 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 
 }
 
-// Will find a reserved ephemeral ID and returns the
-// associated intermediary ID
+// Will find a reserved ephemeral ID and returns the associated intermediary ID.
 func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 	b2b := crypto.BLAKE2b_256.New()
 
@@ -316,5 +318,27 @@ func TestMarshal(t *testing.T) {
 	_, err = Marshal([]byte("Test"))
 	if err == nil {
 		t.Error("Data < size 8 should return an error when marshalled")
+	}
+}
+
+// Tests that a Id can be JSON marshalled and unmarshalled.
+func TestId_JSONMarshalUnmarshal(t *testing.T) {
+	testID := id.NewIdFromString("zezima", id.User, t)
+	expected, _, _, err := GetId(testID, 16, time.Now().Unix())
+
+	data, err := json.Marshal(expected)
+	if err != nil {
+		t.Errorf("Failed to JSON marshal %T: %+v", expected, err)
+	}
+
+	var eid Id
+	err = json.Unmarshal(data, &eid)
+	if err != nil {
+		t.Errorf("Failed to JSON umarshal %T: %+v", eid, err)
+	}
+
+	if expected != eid {
+		t.Errorf("Marshalled and unamrshalled Id does not match expected."+
+			"\nexpected: %s\nreceived: %s", expected, eid)
 	}
 }
