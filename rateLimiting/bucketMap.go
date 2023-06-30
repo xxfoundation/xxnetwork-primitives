@@ -8,6 +8,7 @@
 // The bucket map contains a list of leaky buckets that each track and limit
 // the rate of usage. The map has an optional database backend where buckets are
 // backed up for retrieval on restart.
+
 package rateLimiting
 
 import (
@@ -27,7 +28,7 @@ type BucketMap struct {
 	bucketMaxAge time.Duration      // Max time of inactivity before removal
 	sync.RWMutex
 
-	// Database to backup/restore map from. If no database is being used, then
+	// Database to back up/restore map from. If no database is being used, then
 	// this value should remain nil.
 	db Storage
 }
@@ -134,7 +135,7 @@ func (bm *BucketMap) AddBucket(key string, capacity, leaked uint32,
 // addBucketFromLeakRatio adds a new bucket to the map regardless if one already
 // exists for the key. The added bucket is locked so that it can only be removed
 // manually. If a bucket already exists in the map, the new bucket inherits a
-// portion of the tokens of existing bucket. Otherwise the new bucket is empty.
+// portion of the tokens of existing bucket. Otherwise, the new bucket is empty.
 func (bm *BucketMap) addBucketFromLeakRatio(key string, capacity uint32,
 	leakRate float64) *Bucket {
 
@@ -253,14 +254,14 @@ func (bm *BucketMap) DeleteBucket(key string) error {
 }
 
 // staleBucketWorker periodically clears stale buckets from the map every
-// pollDuration. The quit channel stops the ticker. This functions is meant to
+// pollDuration. The quit channel stops the ticker. This function is meant to
 // be run in its own thread.
 func (bm *BucketMap) staleBucketWorker(quit chan struct{}) {
 	// Create a new ticker that will poll every pollDuration
 	ticker := time.NewTicker(bm.pollDuration)
 
-	jww.DEBUG.Printf("Starting StaleBucketWorker in seperate thread polling "+
-		"every %v.", bm.pollDuration)
+	jww.DEBUG.Printf("Starting StaleBucketWorker in separate thread polling "+
+		"every %s.", bm.pollDuration)
 
 	for {
 		select {
@@ -276,7 +277,7 @@ func (bm *BucketMap) staleBucketWorker(quit chan struct{}) {
 
 // clearStaleBuckets loops through the bucket map and removes stale buckets. A
 // bucket is stale when the elapsed time since its last update is greater than
-// bucketMaxAge and it has no tokens remaining. Stale buckets that are locked
+// bucketMaxAge, and it has no tokens remaining. Stale buckets that are locked
 // are not deleted.
 func (bm *BucketMap) clearStaleBuckets() {
 
@@ -325,7 +326,7 @@ func (bm *BucketMap) clearStaleBuckets() {
 }
 
 // createAddToDbFunc generates the anonymous function that is passed to a new
-// bucket so it can update the remaining tokens int he database.
+// bucket so that it can update the remaining tokens in the database.
 func (bm *BucketMap) createAddToDbFunc(key string) func(uint32, int64) {
 	return func(remaining uint32, lastUpdate int64) {
 		err := bm.db.AddToBucket(key, remaining, lastUpdate)

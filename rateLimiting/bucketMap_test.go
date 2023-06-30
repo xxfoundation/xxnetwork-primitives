@@ -58,7 +58,7 @@ func (db bucketDB) DeleteBucket(key string) error {
 	return errors.Errorf("Failed to find bucket in map.")
 }
 
-// Test that CreateBucketMap() produces a new BucketMap with all the correct
+// Test that CreateBucketMap produces a new BucketMap with all the correct
 // values.
 func TestCreateBucketMap(t *testing.T) {
 	expectedBM := BucketMap{
@@ -73,12 +73,12 @@ func TestCreateBucketMap(t *testing.T) {
 		expectedBM.pollDuration, expectedBM.bucketMaxAge, nil, nil)
 
 	if !reflect.DeepEqual(&expectedBM, bm) {
-		t.Errorf("CreateBucketMap() returned an incorrect BucketMap."+
+		t.Errorf("CreateBucketMap returned an incorrect BucketMap."+
 			"\n\texpected: %+v\n\treceived: %+v", &expectedBM, bm)
 	}
 }
 
-// Test that CreateBucketMap() loads the buckets from the database when it is
+// Test that CreateBucketMap loads the buckets from the database when it is
 // supplied.
 func TestCreateBucketMap_DB(t *testing.T) {
 	expectedBM := BucketMap{
@@ -106,19 +106,19 @@ func TestCreateBucketMap_DB(t *testing.T) {
 	for key, bp := range db {
 		b, exists := bm.buckets[key]
 		if !exists {
-			t.Errorf("CreateBucketMap() did not load bucket %s from database.", key)
+			t.Errorf("CreateBucketMap did not load bucket %s from database.", key)
 		} else if b.capacity != bp.Capacity || b.remaining != bp.Remaining ||
 			b.leakRate != bp.LeakRate || b.lastUpdate != bp.LastUpdate ||
 			b.locked != bp.Locked || b.whitelist != bp.Whitelist {
 			expectedBucket := CreateBucketFromParams(bp, bm.createAddToDbFunc(key))
-			t.Errorf("CreateBucketMap() did not load the correct values from "+
+			t.Errorf("CreateBucketMap did not load the correct values from "+
 				"the database for bucket %s.\n\texpected: %#v\n\treceived: %#v",
 				key, expectedBucket, b)
 		}
 	}
 }
 
-// Tests that TestCreateBucketMapFromParams() creates a new BucketMap with
+// Tests that TestCreateBucketMapFromParams creates a new BucketMap with
 // values matching the input MapParams.
 func TestCreateBucketMapFromParams(t *testing.T) {
 	expectedLeakRate := 0.000003
@@ -132,30 +132,30 @@ func TestCreateBucketMapFromParams(t *testing.T) {
 	bm := CreateBucketMapFromParams(testParams, nil, nil)
 
 	if bm.capacity != testParams.Capacity {
-		t.Errorf("CreateBucketMap() returned incorrect capacity."+
+		t.Errorf("CreateBucketMap returned incorrect capacity."+
 			"\n\texpected: %v\n\treceived: %v",
 			testParams.Capacity, bm.capacity)
 	}
 
 	if bm.leakRate != expectedLeakRate {
-		t.Errorf("CreateBucketMap() returned incorrect leakRate."+
+		t.Errorf("CreateBucketMap returned incorrect leakRate."+
 			"\n\texpected: %v\n\treceived: %v", expectedLeakRate, bm.leakRate)
 	}
 
 	if bm.pollDuration != testParams.PollDuration {
-		t.Errorf("CreateBucketMap() returned incorrect pollDuration."+
+		t.Errorf("CreateBucketMap returned incorrect pollDuration."+
 			"\n\texpected: %v\n\treceived: %v",
 			testParams.PollDuration, bm.pollDuration)
 	}
 
 	if bm.bucketMaxAge != testParams.BucketMaxAge {
-		t.Errorf("CreateBucketMap() returned incorrect bucketMaxAge."+
+		t.Errorf("CreateBucketMap returned incorrect bucketMaxAge."+
 			"\n\texpected: %v\n\treceived: %v",
 			testParams.BucketMaxAge, bm.bucketMaxAge)
 	}
 }
 
-// Tests that BucketMap.LookupBucket() returns the correct bucket or creates it
+// Tests that BucketMap.LookupBucket returns the correct bucket or creates it
 // if it does not exist. This is done by adding tokens to buckets that are added
 // and checking if the number of tokens match when looking up the bucket.
 //
@@ -204,14 +204,14 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 		for _, b := range testData {
 			bucket := bm.LookupBucket(b.key)
 			if bucket.Remaining() != b.tokens {
-				t.Errorf("LookupBucket() returned incorrect bucket %s, it has "+
+				t.Errorf("LookupBucket returned incorrect bucket %s, it has "+
 					"incorrect number of tokens.\n\texpected: %d\n\treceived: %d",
 					b.key, b.tokens, bucket.Remaining())
 			}
 			if bm.db != nil {
 				bp, exists := db[b.key]
 				if !exists {
-					t.Errorf("LookupBucket() failed to add the bucket %s to the "+
+					t.Errorf("LookupBucket failed to add the bucket %s to the "+
 						"database.", b.key)
 				}
 				if bp.Remaining != bucket.Remaining() {
@@ -224,7 +224,7 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 	}
 }
 
-// Tests that BucketMap.LookupBucket() can lookup an existing bucket while a
+// Tests that BucketMap.LookupBucket can look up an existing bucket while a
 // read lock is enabled.
 func TestBucketMap_LookupBucket_ReadLockWhileReading(t *testing.T) {
 	bm := CreateBucketMap(10, 3, 0, 0, 0, nil, nil)
@@ -245,12 +245,12 @@ func TestBucketMap_LookupBucket_ReadLockWhileReading(t *testing.T) {
 	case <-result:
 		return
 	case <-time.After(50 * time.Millisecond):
-		t.Errorf("LookupBucket() stalled when it should have succesfully " +
+		t.Errorf("LookupBucket stalled when it should have succesfully " +
 			"looked up an existing bucket.")
 	}
 }
 
-// Tests that BucketMap.LookupBucket() cannot lookup an existing bucket while
+// Tests that BucketMap.LookupBucket cannot look up an existing bucket while
 // there is a write lock.
 func TestBucketMap_LookupBucket_WriteLockWhileReading(t *testing.T) {
 	bm := CreateBucketMap(10, 3, 0, 0, 0, nil, nil)
@@ -269,15 +269,15 @@ func TestBucketMap_LookupBucket_WriteLockWhileReading(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("LookupBucket() completed when it should have been waiting " +
+		t.Errorf("LookupBucket completed when it should have been waiting " +
 			"for the Lock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.LookupBucket() cannot add add a new bucket to the map
-// while a read lock is enabled.
+// Tests that BucketMap.LookupBucket cannot add a new bucket to the map while a
+// read lock is enabled.
 func TestBucketMap_LookupBucket_ReadLockWhileWriting(t *testing.T) {
 	bm := CreateBucketMap(10, 3, 0, 0, 0, nil, nil)
 	result := make(chan bool)
@@ -292,14 +292,14 @@ func TestBucketMap_LookupBucket_ReadLockWhileWriting(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("LookupBucket() completed when it should have been waiting " +
+		t.Errorf("LookupBucket completed when it should have been waiting " +
 			"for the RLock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.AddBucket() correctly adds new buckets and overwrites
+// Tests that BucketMap.AddBucket correctly adds new buckets and overwrites
 // existing buckets. This function runs twice, once without a database and a
 // second time with a database.
 func TestBucketMap_AddBucket(t *testing.T) {
@@ -339,28 +339,28 @@ func TestBucketMap_AddBucket(t *testing.T) {
 			}
 		}
 
-		// Add all the buckets in the map and ensure they exist and overwrote any
-		// other buckets that were int he map.
+		// Add all the buckets in the map and ensure they exist and overwrote
+		// any other buckets that were in the map.
 		for _, b := range testData {
 			bm.AddBucket(b.key, b.capacity, 30, time.Second)
 			bucket, exists := bm.buckets[b.key]
 			if !exists {
-				t.Errorf("AddBucket() did not add the bucket for key %s.", b.key)
+				t.Errorf("AddBucket did not add the bucket for key %s.", b.key)
 			}
 			if bucket.capacity != b.capacity {
-				t.Errorf("AddBucket() did not overwrite the exisitng bucket."+
+				t.Errorf("AddBucket did not overwrite the exisitng bucket."+
 					"\n\tcapacity expected: %d\n\tcapacity received: %d",
 					b.capacity, bucket.capacity)
 			}
 			if bucket.remaining != b.remaining {
-				t.Errorf("AddBucket() did not overwrite the exisitng bucket."+
+				t.Errorf("AddBucket did not overwrite the exisitng bucket."+
 					"\n\tremaining expected: %d\n\tremaining received: %d",
 					b.remaining, bucket.remaining)
 			}
 			if bm.db != nil {
 				bp, exists := db[b.key]
 				if !exists {
-					t.Errorf("AddBucket() failed to add the bucket %s to the "+
+					t.Errorf("AddBucket failed to add the bucket %s to the "+
 						"database.", b.key)
 				}
 				if bp.Capacity != bucket.Capacity() {
@@ -378,8 +378,8 @@ func TestBucketMap_AddBucket(t *testing.T) {
 	}
 }
 
-// Tests that BucketMap.AddBucket() cannot add add a new bucket to the map while
-// a read lock is enabled.
+// Tests that BucketMap.AddBucket cannot add a new bucket to the map while a
+// read lock is enabled.
 func TestBucketMap_AddBucket_ReadLock(t *testing.T) {
 	bm := CreateBucketMap(10, 3, 0, 0, 0, nil, nil)
 	result := make(chan bool)
@@ -394,14 +394,14 @@ func TestBucketMap_AddBucket_ReadLock(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("AddBucket() completed when it should have been waiting " +
+		t.Errorf("AddBucket completed when it should have been waiting " +
 			"for the RLock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.addAllBuckets() adds all the buckets with the correct
+// Tests that BucketMap.addAllBuckets adds all the buckets with the correct
 // values.
 func TestBucketMap_AddAllBuckets(t *testing.T) {
 	// Generate test buckets
@@ -426,17 +426,17 @@ func TestBucketMap_AddAllBuckets(t *testing.T) {
 	for _, bp := range testBP {
 		b, exists := bm.buckets[bp.Key]
 		if !exists {
-			t.Errorf("addAllBuckets() failed to add the bucket with key %s.",
+			t.Errorf("addAllBuckets failed to add the bucket with key %s.",
 				bp.Key)
 		} else if !reflect.DeepEqual(b, CreateBucketFromParams(bp, nil)) {
-			t.Errorf("addAllBuckets() created bucket %s with incorrect values."+
+			t.Errorf("addAllBuckets created bucket %s with incorrect values."+
 				"\n\texpected: %+v\n\treceived: %+v", bp.Key,
 				CreateBucketFromParams(bp, nil), b)
 		}
 	}
 }
 
-// Tests that BucketMap.AddToWhitelist() correctly adds the whitelisted items or
+// Tests that BucketMap.AddToWhitelist correctly adds the whitelisted items or
 // modifies existing buckets to be whitelisted, if they are already in the map.
 // This function runs twice, once without a database and a second time with a
 // database.
@@ -469,17 +469,17 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 		for _, key := range wlKeys {
 			b, exists := bm.buckets[key]
 			if !exists {
-				t.Errorf("AddToWhitelist() did not add the key %s to the map.", key)
+				t.Errorf("AddToWhitelist did not add the key %s to the map.", key)
 			}
 			if b.whitelist != true {
-				t.Errorf("AddToWhitelist() did not mark the key %s as whitelisted.",
+				t.Errorf("AddToWhitelist did not mark the key %s as whitelisted.",
 					key)
 			}
 
 			if bm.db != nil {
 				bp, exists := db[key]
 				if !exists {
-					t.Errorf("AddToWhitelist() failed to add the bucket %s to "+
+					t.Errorf("AddToWhitelist failed to add the bucket %s to "+
 						"the database.", key)
 				}
 				if bp.Whitelist != b.whitelist {
@@ -491,7 +491,7 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 	}
 }
 
-// Tests that BucketMap.AddToWhitelist() cannot mark buckets as whitelisted
+// Tests that BucketMap.AddToWhitelist cannot mark buckets as whitelisted
 // while a read lock is enabled.
 func TestBucketMap_AddToWhitelist_ReadLock(t *testing.T) {
 	bm := CreateBucketMap(10, 3, 0, 0, 0, nil, nil)
@@ -507,14 +507,14 @@ func TestBucketMap_AddToWhitelist_ReadLock(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("AddToWhitelist() completed when it should have been waiting " +
+		t.Errorf("AddToWhitelist completed when it should have been waiting " +
 			"for the RLock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.DeleteBucket() deletes the correct buckets. This
+// Tests that BucketMap.DeleteBucket deletes the correct buckets. This
 // function runs twice, once without a database and a second time with a
 // database.
 func TestBucketMap_DeleteBucket(t *testing.T) {
@@ -559,20 +559,20 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 			if i%2 == 1 {
 				err := bm.DeleteBucket(bp.Key)
 				if err != nil {
-					t.Errorf("DeleteBucket() returned an error when deleting key %s."+
+					t.Errorf("DeleteBucket returned an error when deleting key %s."+
 						"\n\texpected: %v\n\treceived: %v", bp.Key, nil, err)
 				}
 
 				bucket, exists := bm.buckets[bp.Key]
 				if exists {
-					t.Errorf("DeleteBucket() did not delete the bucket with key %s."+
+					t.Errorf("DeleteBucket did not delete the bucket with key %s."+
 						"\n\tbucket: %+v", bp.Key, bucket)
 				}
 
 				if bm.db != nil {
 					_, exists := db[bp.Key]
 					if exists {
-						t.Errorf("DeleteBucket() did not delete the bucket "+
+						t.Errorf("DeleteBucket did not delete the bucket "+
 							"with key %s from the database.", bp.Key)
 					}
 				}
@@ -580,14 +580,14 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 			} else {
 				_, exists := bm.buckets[bp.Key]
 				if !exists {
-					t.Errorf("DeleteBucket() deleted the bucket with key %s."+
+					t.Errorf("DeleteBucket deleted the bucket with key %s."+
 						"\n\tbucket params: %+v", bp.Key, bp)
 				}
 
 				if bm.db != nil {
 					_, exists := db[bp.Key]
 					if !exists {
-						t.Errorf("DeleteBucket() deleted bucket with key %s "+
+						t.Errorf("DeleteBucket deleted bucket with key %s "+
 							"from the database.", bp.Key)
 					}
 				}
@@ -597,26 +597,26 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 		}
 
 		if len(bm.buckets) != expectedLength {
-			t.Errorf("DeleteBucket() did not delete all the correct buckets."+
+			t.Errorf("DeleteBucket did not delete all the correct buckets."+
 				"\n\texpected length: %d\n\treceived length: %d\n\tbucket map: %+v",
 				expectedLength, len(bm.buckets), bm.buckets)
 		}
 	}
 }
 
-// Tests that BucketMap.DeleteBucket() returns an error when the bucket does not
+// Tests that BucketMap.DeleteBucket returns an error when the bucket does not
 // exist.
 func TestBucketMap_DeleteBucket_Error(t *testing.T) {
 	bm := CreateBucketMap(5, 3, 0, 0, 0, nil, nil)
 
 	err := bm.DeleteBucket("test")
 	if err == nil {
-		t.Errorf("DeleteBucket() did not return an error when the bucket " +
+		t.Errorf("DeleteBucket did not return an error when the bucket " +
 			"does not exist.")
 	}
 }
 
-// Tests that BucketMap.DeleteBucket() cannot delete buckets from the map while
+// Tests that BucketMap.DeleteBucket cannot delete buckets from the map while
 // a read lock is enabled.
 func TestBucketMap_DeleteBucket_ReadLock(t *testing.T) {
 	bm := CreateBucketMap(5, 3, 0, 0, 0, nil, nil)
@@ -632,14 +632,14 @@ func TestBucketMap_DeleteBucket_ReadLock(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("DeleteBucket() completed when it should have been waiting " +
+		t.Errorf("DeleteBucket completed when it should have been waiting " +
 			"for the RLock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.StaleBucketWorker() deletes stale buckets in a separate
+// Tests that BucketMap.StaleBucketWorker deletes stale buckets in a separate
 // thread and that the quit channel stops it.
 func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	quit := make(chan struct{})
@@ -652,7 +652,7 @@ func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	time.Sleep(2 * bm.pollDuration)
 
 	if len(bm.buckets) != 0 {
-		t.Errorf("staleBucketWorker() did not delete the stale buckets."+
+		t.Errorf("staleBucketWorker did not delete the stale buckets."+
 			"\n\texpected length: %d\n\treceived length: %d", 0, len(bm.buckets))
 	}
 
@@ -666,12 +666,12 @@ func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	time.Sleep(2 * bm.pollDuration)
 
 	if len(bm.buckets) != 2 {
-		t.Errorf("staleBucketWorker() deleted the buckets when it should have been stopped.")
+		t.Errorf("staleBucketWorker deleted the buckets when it should have been stopped.")
 	}
 
 }
 
-// Tests that BucketMap.clearStaleBuckets() removes all the stale buckets from
+// Tests that BucketMap.clearStaleBuckets removes all the stale buckets from
 // the map. This function runs twice, once without a database and a second time
 // with a database.
 func TestBucketMap_ClearStaleBuckets(t *testing.T) {
@@ -720,20 +720,20 @@ func TestBucketMap_ClearStaleBuckets(t *testing.T) {
 		for _, bp := range testData {
 			b, exists := bm.buckets[bp.p.Key]
 			if !bp.stale && !exists {
-				t.Errorf("clearStaleBuckets() deleted non-stale bucket %s.",
+				t.Errorf("clearStaleBuckets deleted non-stale bucket %s.",
 					bp.p.Key)
 			} else if bp.stale && exists {
-				t.Errorf("clearStaleBuckets() did not delete stale bucket %s."+
+				t.Errorf("clearStaleBuckets did not delete stale bucket %s."+
 					"\n\tbucket: %+v", bp.p.Key, b)
 			}
 
 			if bm.db != nil {
 				_, exists := db[bp.p.Key]
 				if !bp.stale && !exists {
-					t.Errorf("clearStaleBuckets() deleted non-stale bucket %s "+
+					t.Errorf("clearStaleBuckets deleted non-stale bucket %s "+
 						"from the database.", bp.p.Key)
 				} else if bp.stale && exists {
-					t.Errorf("clearStaleBuckets() did not delete stale bucket "+
+					t.Errorf("clearStaleBuckets did not delete stale bucket "+
 						"%s from the database.\n\tbucket: %+v", bp.p.Key, b)
 				}
 			}
@@ -741,7 +741,7 @@ func TestBucketMap_ClearStaleBuckets(t *testing.T) {
 	}
 }
 
-// Tests that BucketMap.clearStaleBuckets() can search for stale buckets during
+// Tests that BucketMap.clearStaleBuckets can search for stale buckets during
 // a read lock.
 func TestBucketMap_ClearStaleBuckets_ReadLockWhileReading(t *testing.T) {
 	// Create new BucketMap and add a non-stale bucket to it
@@ -763,12 +763,12 @@ func TestBucketMap_ClearStaleBuckets_ReadLockWhileReading(t *testing.T) {
 	case <-result:
 		return
 	case <-time.After(50 * time.Millisecond):
-		t.Errorf("clearStaleBuckets() stalled when it should have succesfully " +
+		t.Errorf("clearStaleBuckets stalled when it should have succesfully " +
 			"finished without finding any stale buckets.")
 	}
 }
 
-// Tests that BucketMap.clearStaleBuckets() cannot search for stale buckets
+// Tests that BucketMap.clearStaleBuckets cannot search for stale buckets
 // during a write lock.
 func TestBucketMap_ClearStaleBuckets_WriteLockWhileReading(t *testing.T) {
 	// Create new BucketMap and add a non-stale bucket to it
@@ -788,14 +788,14 @@ func TestBucketMap_ClearStaleBuckets_WriteLockWhileReading(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("clearStaleBuckets() completed when it should have been waiting " +
+		t.Errorf("clearStaleBuckets completed when it should have been waiting " +
 			"for the Lock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.clearStaleBuckets() cannot remove stale buckets from the
+// Tests that BucketMap.clearStaleBuckets cannot remove stale buckets from the
 // map while a read lock is enabled.
 func TestBucketMap_ClearStaleBuckets_ReadLockWhileWriting(t *testing.T) {
 	// Create new BucketMap and add a stale bucket to it
@@ -815,14 +815,14 @@ func TestBucketMap_ClearStaleBuckets_ReadLockWhileWriting(t *testing.T) {
 
 	select {
 	case <-result:
-		t.Errorf("clearStaleBuckets() completed when it should have been waiting " +
+		t.Errorf("clearStaleBuckets completed when it should have been waiting " +
 			"for the RLock to release.")
 	case <-time.After(50 * time.Millisecond):
 		return
 	}
 }
 
-// Tests that BucketMap.createAddToDbFunc() generates an anonymous function that
+// Tests that BucketMap.createAddToDbFunc generates an anonymous function that
 // panics when it attempts to operate on a bucket that does not exist in the
 // database.
 func TestBucketMap_CreateAddToDbFunc_Panic(t *testing.T) {
@@ -831,7 +831,7 @@ func TestBucketMap_CreateAddToDbFunc_Panic(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("createAddToDbFunc() produced a function that does not " +
+			t.Errorf("createAddToDbFunc produced a function that does not " +
 				"panic when the bucket does not exist in the database.")
 		}
 	}()
