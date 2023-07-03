@@ -15,7 +15,7 @@ import (
 
 func TestNewIDListFromBytes(t *testing.T) {
 	// Topology list will contain the list of strings to be passed to
-	// NewIDListFromBytes()
+	// NewIDListFromBytes
 	var topologyList [][]byte
 
 	// ExpectedNodes will contain the constructed IDs, to be compared one-by-one
@@ -33,7 +33,7 @@ func TestNewIDListFromBytes(t *testing.T) {
 		topologyList = append(topologyList, expectedId.Bytes())
 	}
 
-	// Pass topologyList into NewIDListFromBytes()
+	// Pass topologyList into NewIDListFromBytes
 	receivedIDs, err := NewIDListFromBytes(topologyList)
 	if err != nil {
 		t.Errorf("Failed to create ID list: %+v", err)

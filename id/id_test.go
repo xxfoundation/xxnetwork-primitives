@@ -292,7 +292,7 @@ func TestID_String(t *testing.T) {
 	// Decode the string and check
 	newID, err := base64.StdEncoding.DecodeString(stringID)
 	if err != nil {
-		t.Fatalf("Failed to decode string returned by String():\n%v", err)
+		t.Fatalf("Failed to decode string returned by String:\n%v", err)
 	}
 
 	if !bytes.Equal(expectedBytes, newID) {
@@ -343,7 +343,7 @@ func TestID_GetType_NilError(t *testing.T) {
 }
 
 // Tests that SetType sets the type of the ID correctly by checking if the
-// ID's type changed after calling SetType().
+// ID's type changed after calling SetType.
 func TestID_SetType(t *testing.T) {
 	// Test values
 	expectedType := Node
@@ -774,20 +774,32 @@ func newAlphanumericPRNG() *alphaNumericPRNG {
 	return &alphaNumericPRNG{counter: 0}
 }
 
-// Hardcoded byte array which generates a base64 string starting with a special character.
+// Hardcoded byte array which generates a base64 string starting with a special
+// character.
+//
 // Expected encoding is "/ABBb6YWlbkgLmg2Ohx4f0eE4K7Zx4VkGE4THx58gR8A",
-// any other encoding output indicates that something is wrong (likely a dependency).
-var hardCodedSpecialCharacter = []byte{252, 0, 65, 111, 166, 22, 149, 185, 32, 46, 104, 54, 58, 28, 120, 127, 71, 132, 224, 174, 217, 199, 133, 100, 24, 78, 19, 31, 30, 124, 129, 31, 189}
+// any other encoding output indicates that something is wrong (likely a
+// dependency).
+var hardCodedSpecialCharacter = []byte{252, 0, 65, 111, 166, 22, 149, 185, 32,
+	46, 104, 54, 58, 28, 120, 127, 71, 132, 224, 174, 217, 199, 133, 100, 24,
+	78, 19, 31, 30, 124, 129, 31, 189}
 
-// Hardcoded byte array which generates a base64 string starting with an alphanumeric character.
+// Hardcoded byte array which generates a base64 string starting with an
+// alphanumeric character.
+//
 // Expected encoding is "6iMc/s5V6MSzD6+DDQthcfA53w7wY988cenRkjxNwIcD",
-// any other encoding output indicates that something is wrong (likely a dependency).
-var hardcodedAlphaNumeric = []byte{234, 35, 28, 254, 206, 85, 232, 196, 179, 15, 175, 131, 13, 11, 97, 113, 240, 57, 223, 14, 240, 99, 223, 60, 113, 233, 209, 146, 60, 77, 192, 135, 19}
+// any other encoding output indicates that something is wrong (likely a
+// dependency).
+var hardcodedAlphaNumeric = []byte{234, 35, 28, 254, 206, 85, 232, 196, 179, 15,
+	175, 131, 13, 11, 97, 113, 240, 57, 223, 14, 240, 99, 223, 60, 113, 233,
+	209, 146, 60, 77, 192, 135, 19}
 
-// Read will copy a value into byte slice p. On the first call to alphaNumericPRNG.Read()
-// a hardcoded value with a base64 encoding starting with a special character will be returned.
-// For any other call to alphaNumericPRNG.Read(), a hardcoded value with a base64 encoding starting with an
-// alphanumeric character will be returned.
+// Read will copy a value into byte slice p. On the first call to
+// alphaNumericPRNG.Read a hardcoded value with a base 64 encoding starting with
+// a special character will be returned.
+//
+// For any other call to alphaNumericPRNG.Read, a hardcoded value with a base 64
+// encoding starting with an alphanumeric character will be returned.
 func (prng *alphaNumericPRNG) Read(p []byte) (n int, err error) {
 	defer func() {
 		prng.counter++
