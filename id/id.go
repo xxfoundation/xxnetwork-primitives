@@ -13,6 +13,7 @@
 package id
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -64,7 +65,8 @@ func Unmarshal(data []byte) (*ID, error) {
 // Marshal and any changes made here will affect how Marshal functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get bytes of ID: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to get bytes of ID: ID is nil."))
 	}
 
 	newBytes := make([]byte, ArrIDLen)
@@ -78,21 +80,34 @@ func (id *ID) Bytes() []byte {
 //
 // Deprecated: Use ID.Equal instead.
 func (id *ID) Cmp(y *ID) bool {
-	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
-	}
-
-	return *id == *y
+	return id.Equal(y)
 }
 
 // Equal determines whether two IDs are equal. Returns true if they are equal
 // and false otherwise.
 func (id *ID) Equal(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to check if IDs are equal: one or both IDs are nil."))
 	}
 
 	return *id == *y
+}
+
+// Compare returns an integer comparing the two IDs lexicographically.
+// The result will be 0 if id == y, -1 if id < y, and +1 if id > y.
+func (id *ID) Compare(y *ID) int {
+	if id == nil || y == nil {
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to compare IDs: one or both IDs are nil."))
+	}
+
+	return bytes.Compare(id[:], y[:])
+}
+
+// Less returns true if id is less than y.
+func (id *ID) Less(y *ID) bool {
+	return id.Compare(y) == -1
 }
 
 // DeepCopy creates a copy of an ID.
@@ -112,7 +127,8 @@ func (id *ID) String() string {
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get ID type: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(""+
+			"Failed to get ID type: ID is nil."))
 	}
 
 	return Type(id[ArrIDLen-1])
@@ -121,7 +137,8 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to set ID type: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to set ID type: ID is nil."))
 	}
 
 	id[ArrIDLen-1] = byte(idType)

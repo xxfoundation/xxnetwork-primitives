@@ -100,13 +100,13 @@ func TestID_Bytes(t *testing.T) {
 	// Check for the correct values
 	testVal := testID.Bytes()
 	if !bytes.Equal(expectedBytes, testVal) {
-		t.Errorf("Bytes() returned the incorrect byte slice of the ID"+
+		t.Errorf("Bytes returned the incorrect byte slice of the ID"+
 			"\n\texpected: %+v\n\treceived: %+v", expectedBytes, testVal)
 	}
 
 	// Test if the returned bytes are copies
 	if &testID[0] == &testVal[0] {
-		t.Errorf("Bytes() did not return a copy when it should have."+
+		t.Errorf("Bytes did not return a copy when it should have."+
 			"\n\texpected: any value except %+v\n\treceived: %+v",
 			&testID[0], &testVal[0])
 	}
@@ -118,7 +118,7 @@ func TestID_Bytes_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("Bytes() failed to panic when the ID is nil.")
+			t.Error("Bytes failed to panic when the ID is nil.")
 		}
 	}()
 
@@ -142,21 +142,21 @@ func TestID_Cmp(t *testing.T) {
 	// Compare two equal IDs
 	testVal := testID1.Cmp(testID2)
 	if !testVal {
-		t.Errorf("Cmp() incorrectly determined the two IDs are not equal."+
+		t.Errorf("Cmp incorrectly determined the two IDs are not equal."+
 			"\n\texpected: %+v\n\treceived: %+v", true, testVal)
 	}
 
 	// Compare two unequal IDs
 	testVal = testID1.Cmp(testID3)
 	if testVal {
-		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
+		t.Errorf("Cmp incorrectly determined the two IDs are equal."+
 			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
 	}
 
 	// Compare two almost equal IDs
 	testVal = testID3.Cmp(testID4)
 	if testVal {
-		t.Errorf("Cmp() incorrectly determined the two IDs are equal."+
+		t.Errorf("Cmp incorrectly determined the two IDs are equal."+
 			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
 	}
 }
@@ -167,7 +167,7 @@ func TestID_Cmp_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("Cmp() failed to panic when both IDs are nil.")
+			t.Error("Cmp failed to panic when both IDs are nil.")
 		}
 	}()
 
@@ -203,11 +203,46 @@ func TestID_Equal_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("Cmp() failed to panic when both IDs are nil.")
+			t.Error("Equal failed to panic when both IDs are nil.")
 		}
 	}()
 
 	idA.Equal(idB)
+}
+
+// Unit test of ID.Compare.
+func TestID_Compare(t *testing.T) {
+	tests := []struct {
+		x, y    *ID
+		compare int
+	}{
+		{NewRandomTestID(rand.New(rand.NewSource(42)), User, t),
+			NewRandomTestID(rand.New(rand.NewSource(42)), User, t), 0},
+		{NewIdFromBytes([]byte{1, 2}, t), NewIdFromBytes([]byte{1, 3}, t), -1},
+		{NewIdFromBytes([]byte{9, 9}, t), NewIdFromBytes([]byte{1, 3}, t), 1},
+	}
+
+	for i, tt := range tests {
+		compare := tt.x.Compare(tt.y)
+		if compare != tt.compare {
+			t.Errorf("Failed to compare IDs %s and %s (%d)."+
+				"\nexpected: %d\nreceived: %d",
+				tt.x, tt.y, i, tt.compare, compare)
+		}
+	}
+}
+
+// Tests that ID.Compare panics when either and both IDs are nil.
+func TestID_Compare_NilError(t *testing.T) {
+	var idA, idB *ID
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Compare failed to panic when both IDs are nil.")
+		}
+	}()
+
+	idA.Compare(idB)
 }
 
 // Test that DeepCopy returns a copy with the same contents as the original
@@ -219,13 +254,13 @@ func TestID_DeepCopy(t *testing.T) {
 	// Test if the contents are equal
 	testVal := expectedID.DeepCopy()
 	if !reflect.DeepEqual(expectedID, testVal) {
-		t.Errorf("DeepCopy() returned a copy with the wrong contents."+
+		t.Errorf("DeepCopy returned a copy with the wrong contents."+
 			"\n\texpected: %+v\n\treceived: %+v", expectedID, testVal)
 	}
 
 	// Test if the returned bytes are copies
 	if &expectedID[0] == &testVal[0] {
-		t.Errorf("DeepCopy() did not return a copy when it should have."+
+		t.Errorf("DeepCopy did not return a copy when it should have."+
 			"\n\texpected: any value except %+v\n\treceived: %+v",
 			&expectedID[0], &testVal[0])
 	}
@@ -237,7 +272,7 @@ func TestID_DeepCopy_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("DeepCopy() failed to panic when the ID is nil.")
+			t.Error("DeepCopy failed to panic when the ID is nil.")
 		}
 	}()
 
@@ -261,7 +296,7 @@ func TestID_String(t *testing.T) {
 	}
 
 	if !bytes.Equal(expectedBytes, newID) {
-		t.Errorf("String() did not encode the string correctly."+
+		t.Errorf("String did not encode the string correctly."+
 			"The decoded strings differ.\n\texpected: %v\n\treceived: %v",
 			expectedBytes, newID)
 	}
@@ -288,7 +323,7 @@ func TestID_GetType(t *testing.T) {
 	for i, testID := range testIDs {
 		testVal := testID.GetType()
 		if testTypes[i] != testVal {
-			t.Errorf("GetType() returned the incorrect type."+
+			t.Errorf("GetType returned the incorrect type."+
 				"\n\texpected: %v\n\treceived: %v", testTypes[i], testVal)
 		}
 	}
@@ -300,7 +335,7 @@ func TestID_GetType_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("GetType() failed to panic when the ID is nil.")
+			t.Error("GetType failed to panic when the ID is nil.")
 		}
 	}()
 
@@ -322,7 +357,7 @@ func TestID_SetType(t *testing.T) {
 	// Check the ID
 	testVal := testID.GetType()
 	if expectedType != testVal {
-		t.Errorf("SetType() did not set the ID type correctly."+
+		t.Errorf("SetType did not set the ID type correctly."+
 			"\n\texpected: %v\n\treceived: %v", expectedType, testVal)
 	}
 }
@@ -333,7 +368,7 @@ func TestID_SetType_NilError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("SetType() failed to panic when the ID is nil.")
+			t.Error("SetType failed to panic when the ID is nil.")
 		}
 	}()
 
@@ -437,11 +472,11 @@ func TestNewRandomID_Unique(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
-			t.Errorf("NewRandomID() returned an error (%d): %+v", i, err)
+			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
 		if _, exists := ids[testID]; exists {
-			t.Errorf("NewRandomID() did not generate a unique ID (%d).\nID: %s",
+			t.Errorf("NewRandomID did not generate a unique ID (%d).\nID: %s",
 				i, testID)
 		} else {
 			ids[testID] = struct{}{}
@@ -458,7 +493,7 @@ func TestNewRandomID_SpecialCharacter(t *testing.T) {
 	prng := newAlphanumericPRNG()
 	testId, err := NewRandomID(prng, 0)
 	if err != nil {
-		t.Errorf("NewRandomID() returned an error: %+v", err)
+		t.Errorf("NewRandomID returned an error: %+v", err)
 	}
 
 	if !regexAlphanumeric.MatchString(string(testId.String()[0])) {
@@ -472,7 +507,7 @@ func TestNewRandomID_SpecialCharacter(t *testing.T) {
 func TestNewRandomID_ReaderError(t *testing.T) {
 	_, err := NewRandomID(strings.NewReader(""), Generic)
 	if err == nil {
-		t.Error("NewRandomID() failed to return an error when the reader " +
+		t.Error("NewRandomID failed to return an error when the reader " +
 			"failed.")
 	}
 }
@@ -503,7 +538,7 @@ func TestNewIdFromBytes_Underflow(t *testing.T) {
 	newID := NewIdFromBytes(expectedBytes, t)
 
 	if !bytes.Equal(expectedArr[:], newID[:]) {
-		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
+		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
 			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
 	}
 }
@@ -520,7 +555,7 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 	newID := NewIdFromBytes(expectedBytes, t)
 
 	if !bytes.Equal(expectedArr[:], newID[:]) {
-		t.Errorf("NewIdFromBytes() produced an ID with the incorrect bytes."+
+		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
 			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
 	}
 }
@@ -529,7 +564,7 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 func TestNewIdFromBytes_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromBytes() did not panic when it received a " +
+			t.Errorf("NewIdFromBytes did not panic when it received a " +
 				"nil testing object when it should have.")
 		}
 	}()
@@ -561,7 +596,7 @@ func TestNewIdFromString(t *testing.T) {
 	// Check if the original string is still in the first 32 bytes
 	newIdString := string(newID.Bytes()[:ArrIDLen-1])
 	if expectedIdString != newIdString {
-		t.Errorf("NewIdFromString() did not correctly convert the original "+
+		t.Errorf("NewIdFromString did not correctly convert the original "+
 			"string to bytes.\n\texpected string: %#v\n\treceived string: %#v"+
 			"\n\texpected bytes: %v\n\treceived bytes: %v",
 			expectedIdString, newIdString,
@@ -573,7 +608,7 @@ func TestNewIdFromString(t *testing.T) {
 func TestNewIdFromString_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromString() did not panic when it received a " +
+			t.Errorf("NewIdFromString did not panic when it received a " +
 				"nil testing object when it should have.")
 		}
 	}()
@@ -660,16 +695,16 @@ func TestNewIdFromUInt(t *testing.T) {
 	idUint := binary.BigEndian.Uint64(newID[:ArrIDLen-1])
 
 	if expectedUint != idUint {
-		t.Errorf("NewIdFromUInt() produced an ID from uint incorrectly."+
+		t.Errorf("NewIdFromUInt produced an ID from uint incorrectly."+
 			"\n\texpected: %v\n\treceived: %v", expectedUint, idUint)
 	}
 }
 
-// Tests that NewIdFromUInt() panics when given a nil testing object.
+// Tests that NewIdFromUInt panics when given a nil testing object.
 func TestNewIdFromUInt_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInt() did not panic when it received a " +
+			t.Errorf("NewIdFromUInt did not panic when it received a " +
 				"nil testing object when it should have.")
 		}
 	}()
@@ -694,16 +729,16 @@ func TestNewIdFromUInts(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
-		t.Errorf("NewIdFromUInts() produced an ID from uints incorrectly."+
+		t.Errorf("NewIdFromUInts produced an ID from uints incorrectly."+
 			"\n\texpected: %#v\n\treceived: %#v", expectedUints, idUints)
 	}
 }
 
-// Tests that NewIdFromUInts() panics when given a nil testing object.
+// Tests that NewIdFromUInts panics when given a nil testing object.
 func TestNewIdFromUInts_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInts() did not panic when it received a " +
+			t.Errorf("NewIdFromUInts did not panic when it received a " +
 				"nil testing object when it should have.")
 		}
 	}()
