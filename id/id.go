@@ -113,15 +113,21 @@ func (id *ID) Less(y *ID) bool {
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to create a copy of ID: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to create a copy of ID: ID is nil."))
 	}
 
-	return copyID(id.Bytes())
+	return copyID(id[:])
 }
 
 // String converts an ID to a string via base64 encoding.
 func (id *ID) String() string {
-	return base64.StdEncoding.EncodeToString(id.Bytes())
+	if id == nil {
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to create string of ID: ID is nil."))
+	}
+
+	return base64.StdEncoding.EncodeToString(id[:])
 }
 
 // GetType returns the ID's type. It is the last byte of the array.
