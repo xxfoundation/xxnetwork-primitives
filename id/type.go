@@ -8,7 +8,6 @@
 package id
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -25,7 +24,8 @@ const (
 	NumTypes // Gives number of ID types
 )
 
-// String is a stringer to get the name of the ID type.
+// String returns the ID Type in a human-readable form for use in logging and
+// debugging. This functions adheres to the fmt.Stringer interface.
 func (t Type) String() string {
 	switch t {
 	case Generic:
@@ -41,6 +41,6 @@ func (t Type) String() string {
 	case NumTypes:
 		return strconv.Itoa(int(NumTypes))
 	default:
-		return fmt.Sprintf("UNKNOWN ID TYPE: %d", t)
+		return "UNKNOWN ID TYPE: " + strconv.Itoa(int(t))
 	}
 }
