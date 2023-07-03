@@ -65,7 +65,7 @@ func GetHardCodedIDs() (ids []*ID) {
 // false.
 func CollidesWithHardCodedID(testID *ID) bool {
 	for _, hardCodedID := range GetHardCodedIDs() {
-		if testID.Cmp(hardCodedID) {
+		if testID.Equal(hardCodedID) {
 			return true
 		}
 	}
