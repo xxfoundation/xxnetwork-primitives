@@ -25,42 +25,42 @@ func TestType_String(t *testing.T) {
 	testVal := Generic.String()
 	if expectedGeneric != testVal {
 		t.Errorf("String returned incorrect string for Generic type."+
-			"\n\texpected: %s\n\treceived: %s", expectedGeneric, testVal)
+			"\nexpected: %s\nreceived: %s", expectedGeneric, testVal)
 	}
 
 	// Test Gateway stringer
 	testVal = Gateway.String()
 	if expectedGateway != testVal {
 		t.Errorf("String returned incorrect string for Gateway type."+
-			"\n\texpected: %s\n\treceived: %s", expectedGateway, testVal)
+			"\nexpected: %s\nreceived: %s", expectedGateway, testVal)
 	}
 
 	// Test Node stringer
 	testVal = Node.String()
 	if expectedNode != testVal {
 		t.Errorf("String returned incorrect string for Node type."+
-			"\n\texpected: %s\n\treceived: %s", expectedNode, testVal)
+			"\nexpected: %s\nreceived: %s", expectedNode, testVal)
 	}
 
 	// Test User stringer
 	testVal = User.String()
 	if expectedUser != testVal {
 		t.Errorf("String returned incorrect string for User type."+
-			"\n\texpected: %s\n\treceived: %s", expectedUser, testVal)
+			"\nexpected: %s\nreceived: %s", expectedUser, testVal)
 	}
 
 	// Test Group stringer
 	testVal = Group.String()
 	if expectedGroup != testVal {
 		t.Errorf("String returned incorrect string for Group type."+
-			"\n\texpected: %s\n\treceived: %s", expectedGroup, testVal)
+			"\nexpected: %s\nreceived: %s", expectedGroup, testVal)
 	}
 
 	// Test NumTypes stringer
 	testVal = NumTypes.String()
 	if expectedNumTypes != testVal {
 		t.Errorf("String returned incorrect string for NumTypes type."+
-			"\n\texpected: %s\n\treceived: %s", expectedNumTypes, testVal)
+			"\nexpected: %s\nreceived: %s", expectedNumTypes, testVal)
 	}
 }
 
@@ -75,6 +75,6 @@ func TestType_String_Error(t *testing.T) {
 	testVal := testType.String()
 	if expectedError != testVal {
 		t.Errorf("String did not return an error when it should have."+
-			"\n\texpected: %s\n\treceived: %s", expectedError, testVal)
+			"\nexpected: %s\nreceived: %s", expectedError, testVal)
 	}
 }

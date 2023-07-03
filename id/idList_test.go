@@ -47,7 +47,7 @@ func TestNewIDListFromBytes(t *testing.T) {
 		// Check the outputted list to the expected values
 		if !bytes.Equal(receivedID.Bytes(), expectedNode.Bytes()) {
 			t.Errorf("ID of index %d was not converted correctly."+
-				"\n\treceived: %v\n\texpected: %v", index, receivedID.Bytes(),
+				"\nreceived: %v\nexpected: %v", index, receivedID.Bytes(),
 				expectedNode.Bytes())
 		}
 

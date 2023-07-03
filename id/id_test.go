@@ -32,13 +32,13 @@ func TestID_Marshal(t *testing.T) {
 	testVal := testID.Marshal()
 	if !bytes.Equal(expectedBytes, testVal) {
 		t.Errorf("Marshal returned the incorrect byte slice of the ID"+
-			"\n\texpected: %+v\n\treceived: %+v", expectedBytes, testVal)
+			"\nexpected: %+v\nreceived: %+v", expectedBytes, testVal)
 	}
 
 	// Test if the returned bytes are copies
 	if &testID[0] == &testVal[0] {
 		t.Errorf("Marshal did not return a copy when it should have."+
-			"\n\texpected: any value except %+v\n\treceived: %+v",
+			"\nexpected: any value except %+v\nreceived: %+v",
 			&testID[0], &testVal[0])
 	}
 }
@@ -55,13 +55,13 @@ func TestUnmarshal(t *testing.T) {
 	// Make sure no error occurred
 	if err != nil {
 		t.Errorf("Unmarshal produced an unexpected error."+
-			"\n\texpected: %v\n\treceived: %v", nil, err)
+			"\nexpected: %v\nreceived: %v", nil, err)
 	}
 
 	// Make sure the ID contents are correct
 	if !bytes.Equal(expectedBytes, newID[:]) {
 		t.Errorf("Unmarshal produced an ID with the incorrect bytes."+
-			"\n\texpected: %v\n\treceived: %v", expectedBytes, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedBytes, newID[:])
 	}
 }
 
@@ -80,13 +80,13 @@ func TestUnmarshal_DataLengthError(t *testing.T) {
 	// Make sure an error occurs
 	if err == nil {
 		t.Errorf("Unmarshal did not product an expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Make sure the returned ID is nil
 	if newID != nil {
 		t.Errorf("Unmarshal produced a non-nil ID on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
+			"\nexpected: %v\nreceived: %v", nil, newID)
 	}
 }
 
@@ -101,13 +101,13 @@ func TestID_Bytes(t *testing.T) {
 	testVal := testID.Bytes()
 	if !bytes.Equal(expectedBytes, testVal) {
 		t.Errorf("Bytes returned the incorrect byte slice of the ID"+
-			"\n\texpected: %+v\n\treceived: %+v", expectedBytes, testVal)
+			"\nexpected: %+v\nreceived: %+v", expectedBytes, testVal)
 	}
 
 	// Test if the returned bytes are copies
 	if &testID[0] == &testVal[0] {
 		t.Errorf("Bytes did not return a copy when it should have."+
-			"\n\texpected: any value except %+v\n\treceived: %+v",
+			"\nexpected: any value except %+v\nreceived: %+v",
 			&testID[0], &testVal[0])
 	}
 }
@@ -143,21 +143,21 @@ func TestID_Cmp(t *testing.T) {
 	testVal := testID1.Cmp(testID2)
 	if !testVal {
 		t.Errorf("Cmp incorrectly determined the two IDs are not equal."+
-			"\n\texpected: %+v\n\treceived: %+v", true, testVal)
+			"\nexpected: %+v\nreceived: %+v", true, testVal)
 	}
 
 	// Compare two unequal IDs
 	testVal = testID1.Cmp(testID3)
 	if testVal {
 		t.Errorf("Cmp incorrectly determined the two IDs are equal."+
-			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
+			"\nexpected: %+v\nreceived: %+v", false, testVal)
 	}
 
 	// Compare two almost equal IDs
 	testVal = testID3.Cmp(testID4)
 	if testVal {
 		t.Errorf("Cmp incorrectly determined the two IDs are equal."+
-			"\n\texpected: %+v\n\treceived: %+v", false, testVal)
+			"\nexpected: %+v\nreceived: %+v", false, testVal)
 	}
 }
 
@@ -255,13 +255,13 @@ func TestID_DeepCopy(t *testing.T) {
 	testVal := expectedID.DeepCopy()
 	if !reflect.DeepEqual(expectedID, testVal) {
 		t.Errorf("DeepCopy returned a copy with the wrong contents."+
-			"\n\texpected: %+v\n\treceived: %+v", expectedID, testVal)
+			"\nexpected: %+v\nreceived: %+v", expectedID, testVal)
 	}
 
 	// Test if the returned bytes are copies
 	if &expectedID[0] == &testVal[0] {
 		t.Errorf("DeepCopy did not return a copy when it should have."+
-			"\n\texpected: any value except %+v\n\treceived: %+v",
+			"\nexpected: any value except %+v\nreceived: %+v",
 			&expectedID[0], &testVal[0])
 	}
 }
@@ -297,7 +297,7 @@ func TestID_String(t *testing.T) {
 
 	if !bytes.Equal(expectedBytes, newID) {
 		t.Errorf("String did not encode the string correctly."+
-			"The decoded strings differ.\n\texpected: %v\n\treceived: %v",
+			"The decoded strings differ.\nexpected: %v\nreceived: %v",
 			expectedBytes, newID)
 	}
 }
@@ -324,7 +324,7 @@ func TestID_GetType(t *testing.T) {
 		testVal := testID.GetType()
 		if testTypes[i] != testVal {
 			t.Errorf("GetType returned the incorrect type."+
-				"\n\texpected: %v\n\treceived: %v", testTypes[i], testVal)
+				"\nexpected: %v\nreceived: %v", testTypes[i], testVal)
 		}
 	}
 }
@@ -358,7 +358,7 @@ func TestID_SetType(t *testing.T) {
 	testVal := testID.GetType()
 	if expectedType != testVal {
 		t.Errorf("SetType did not set the ID type correctly."+
-			"\n\texpected: %v\n\treceived: %v", expectedType, testVal)
+			"\nexpected: %v\nreceived: %v", expectedType, testVal)
 	}
 }
 
@@ -522,7 +522,7 @@ func TestNewIdFromBytes(t *testing.T) {
 
 	if !bytes.Equal(expectedBytes, newID[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\n\texpected: %v\n\treceived: %v", expectedBytes, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedBytes, newID[:])
 	}
 }
 
@@ -539,7 +539,7 @@ func TestNewIdFromBytes_Underflow(t *testing.T) {
 
 	if !bytes.Equal(expectedArr[:], newID[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
 	}
 }
 
@@ -556,7 +556,7 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 
 	if !bytes.Equal(expectedArr[:], newID[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\n\texpected: %v\n\treceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
 	}
 }
 
@@ -590,15 +590,15 @@ func TestNewIdFromString(t *testing.T) {
 	// Check if the new ID matches the expected ID
 	if !expectedID.Cmp(newID) {
 		t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-			"\n\texpected: %v\n\treceived: %v", expectedID[:], newID[:])
+			"\nexpected: %v\nreceived: %v", expectedID[:], newID[:])
 	}
 
 	// Check if the original string is still in the first 32 bytes
 	newIdString := string(newID.Bytes()[:ArrIDLen-1])
 	if expectedIdString != newIdString {
 		t.Errorf("NewIdFromString did not correctly convert the original "+
-			"string to bytes.\n\texpected string: %#v\n\treceived string: %#v"+
-			"\n\texpected bytes: %v\n\treceived bytes: %v",
+			"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
+			"\nexpected bytes: %v\nreceived bytes: %v",
 			expectedIdString, newIdString,
 			[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
 	}
@@ -670,15 +670,15 @@ func TestNewIdFromBase64String(t *testing.T) {
 	// // Check if the new ID matches the expected ID
 	// if !expectedID.Cmp(newID) {
 	// 	t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-	// 		"\n\texpected: %v\n\treceived: %v", expectedID[:], newID[:])
+	// 		"\nexpected: %v\nreceived: %v", expectedID[:], newID[:])
 	// }
 	//
 	// // Check if the original string is still in the first 32 bytes
 	// newIdString := string(newID.Bytes()[:ArrIDLen-1])
 	// if expectedIdString != newIdString {
 	// 	t.Errorf("NewIdFromString did not correctly convert the original "+
-	// 		"string to bytes.\n\texpected string: %#v\n\treceived string: %#v"+
-	// 		"\n\texpected bytes: %v\n\treceived bytes: %v",
+	// 		"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
+	// 		"\nexpected bytes: %v\nreceived bytes: %v",
 	// 		expectedIdString, newIdString,
 	// 		[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
 	// }
@@ -696,7 +696,7 @@ func TestNewIdFromUInt(t *testing.T) {
 
 	if expectedUint != idUint {
 		t.Errorf("NewIdFromUInt produced an ID from uint incorrectly."+
-			"\n\texpected: %v\n\treceived: %v", expectedUint, idUint)
+			"\nexpected: %v\nreceived: %v", expectedUint, idUint)
 	}
 }
 
@@ -730,7 +730,7 @@ func TestNewIdFromUInts(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
 		t.Errorf("NewIdFromUInts produced an ID from uints incorrectly."+
-			"\n\texpected: %#v\n\treceived: %#v", expectedUints, idUints)
+			"\nexpected: %#v\nreceived: %#v", expectedUints, idUints)
 	}
 }
 

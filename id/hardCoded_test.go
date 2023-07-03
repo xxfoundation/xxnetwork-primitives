@@ -18,9 +18,9 @@ func TestGetHardCodedIDs(t *testing.T) {
 		&ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for i, testID := range GetHardCodedIDs() {
-		if !expectedIDs[i].Cmp(testID) {
+		if !expectedIDs[i].Equal(testID) {
 			t.Errorf("GetHardCodedIDs did not return the expected ID at "+
-				"index %d.\n\texepcted: %v\n\trecieved: %v",
+				"index %d.\nexepcted: %v\nrecieved: %v",
 				i, expectedIDs[i], testID)
 		}
 	}
@@ -40,7 +40,7 @@ func TestCollidesWithHardCodedID_HappyPath(t *testing.T) {
 	for _, testID := range testIDs {
 		if CollidesWithHardCodedID(testID) {
 			t.Errorf("CollidesWithHardCodedID found collision when none "+
-				"should exist.\n\tcolliding ID: %v", testID)
+				"should exist.\ncolliding ID: %v", testID)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func TestCollidesWithHardCodedID_True(t *testing.T) {
 	for _, testID := range testIDs {
 		if !CollidesWithHardCodedID(testID) {
 			t.Errorf("CollidesWithHardCodedID did not find a collision when "+
-				"one should exist.\n\tcolliding ID: %v", testID)
+				"one should exist.\ncolliding ID: %v", testID)
 		}
 	}
 }

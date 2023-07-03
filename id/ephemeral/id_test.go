@@ -54,8 +54,8 @@ func TestGetIdByRange(t *testing.T) {
 
 	if len(eids) != expectedLength {
 		t.Errorf("Unexpected list of ephemeral IDs."+
-			"\n\tExpected: %d"+
-			"\n\tReceived: %d", expectedLength, len(eids))
+			"\nExpected: %d"+
+			"\nReceived: %d", expectedLength, len(eids))
 	}
 
 	// Test that the time variances are correct
@@ -63,12 +63,12 @@ func TestGetIdByRange(t *testing.T) {
 		next := i + 1
 		if eids[i].End != eids[next].Start {
 			t.Errorf("The next identity after %d does not start "+
-				"when the current identity ends: \n\t end: %s \n\t start: %s",
+				"when the current identity ends: \n end: %s \n start: %s",
 				i, eids[i].End, eids[next].Start)
 		}
 		if int64(eids[i].End.Sub(eids[i].Start)) != Period {
 			t.Errorf("Delta between start and end on %d does not equal the "+
-				"Period: \n\t end: %s \n\t start: %s",
+				"Period: \n end: %s \n start: %s",
 				i, eids[i].End, eids[next].Start)
 		}
 	}
@@ -126,7 +126,7 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 	// Check that the ephemeral Id generated with hardcoded data is a reserved ID
 	if !IsReserved(expectedReservedEID) {
 		t.Errorf("Expected reserved eid is no longer reserved, " +
-			"\n\tmay need to find a new ID. Use FindReservedID in this case.")
+			"\nmay need to find a new ID. Use FindReservedID in this case.")
 	}
 
 	// Generate an ephemeral ID which given the same input above with the production facing call
@@ -138,8 +138,8 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 	// Check that the ephemeralID generated is not reserved.
 	if IsReserved(eid) {
 		t.Errorf("Ephemeral ID generated should not be reserved!"+
-			"\n\tReserved IDs: %v"+
-			"\n\tGenerated ID: %v", ReservedIDs, eid)
+			"\nReserved IDs: %v"+
+			"\nGenerated ID: %v", ReservedIDs, eid)
 	}
 
 }
@@ -167,11 +167,11 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 		// Check if ephemeral ID is reserved exit
 		if IsReserved(eid) {
 			t.Logf("Found input which generates a reserved id. Input as follows."+
-				"\n\tSize: %d"+
-				"\n\tTimestamp: %d"+
-				"\n\tTestID: %v"+
-				"\n\tTestID generated using the following line of code: "+
-				"\n\t\ttestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
+				"\nSize: %d"+
+				"\nTimestamp: %d"+
+				"\nTestID: %v"+
+				"\nTestID generated using the following line of code: "+
+				"\ntestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
 				size, timestamp, testId, counter)
 			return iid
 		}
