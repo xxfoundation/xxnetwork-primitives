@@ -14,8 +14,8 @@ import (
 // Tests that GetHardCodedIDs returns all the hard coded IDs in the order that
 // they were added.
 func TestGetHardCodedIDs(t *testing.T) {
-	expectedIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot, &TempGateway,
-		&ZeroUser, &DummyUser, &UDB, &ClientRegistration}
+	expectedIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot,
+		&TempGateway, &ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for i, testID := range GetHardCodedIDs() {
 		if !expectedIDs[i].Equal(testID) {

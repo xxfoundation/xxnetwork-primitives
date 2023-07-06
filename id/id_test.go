@@ -326,14 +326,13 @@ func TestID_GetType(t *testing.T) {
 
 // Tests that ID.GetType panics when the ID is nil.
 func TestID_GetType_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("GetType failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	_ = id.GetType()
 }
 
@@ -356,14 +355,13 @@ func TestID_SetType(t *testing.T) {
 
 // Tests that ID.SetType panics when the ID is nil.
 func TestID_SetType_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("SetType failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	id.SetType(Generic)
 }
 
@@ -555,9 +553,10 @@ func TestNewRandomID_Unique(t *testing.T) {
 
 // This tests uses a custom PRNG which generates an ID with a base 64 encoding
 // starting with a special character. NewRandomID should force another call
-// to prng.Read, and this call should return an ID with encoding starting with an
-// alphanumeric character. This test fails if it hangs forever (PRNG error) or
-// the ID has an encoding beginning with a special character (NewRandomID error).
+// to prng.Read, and this call should return an ID with encoding starting with
+// an alphanumeric character. This test fails if it hangs forever (PRNG error)
+// or the ID has an encoding beginning with a special character (NewRandomID
+// error).
 func TestNewRandomID_SpecialCharacter(t *testing.T) {
 	prng := newAlphanumericPRNG()
 	testId, err := NewRandomID(prng, 0)
@@ -745,12 +744,18 @@ func TestNewIdFromString_TestError(t *testing.T) {
 // looks similar to the passed in string.
 func TestNewIdFromBase64String(t *testing.T) {
 	tests := []struct{ base64String, expected string }{
-		{"Test 1", "Test+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"[Test  2]", "Test+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"$#%[T$%%est $#$ 3]$$%", "Test+3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"$#%[T$%%est $#$ 4+/]$$%", "Test+4+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"Test 55555555555555555555555555555555555555", "Test+55555555555555555555555555555555555555E"},
-		{"Test 66666666666666666666666666666666666666666", "Test+66666666666666666666666666666666666666E"},
+		{"Test 1",
+			"Test+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"[Test  2]",
+			"Test+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 3]$$%",
+			"Test+3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 4+/]$$%",
+			"Test+4+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"Test 55555555555555555555555555555555555555",
+			"Test+55555555555555555555555555555555555555E"},
+		{"Test 66666666666666666666666666666666666666666",
+			"Test+66666666666666666666666666666666666666E"},
 		{"", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
 	}
 
@@ -844,8 +849,8 @@ func TestNewIdFromUInts_TestError(t *testing.T) {
 	_ = NewIdFromUInts(newUint64s, Generic, nil)
 }
 
-// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface. This is used for
-// testing special characters.
+// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface.
+// This is used for testing special characters.
 type alphaNumericPRNG struct {
 	counter uint
 }

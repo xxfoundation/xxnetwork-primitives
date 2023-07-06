@@ -206,7 +206,8 @@ func exists(path string) (os.FileInfo, bool) {
 //
 // Note that defaultDirectory MUST be a relative path. By default, when checking
 // the home directory, a "." is prepended to the defaultDirectory.
-func SearchDefaultLocations(defaultFileName string, defaultDirectory string) (string, error) {
+func SearchDefaultLocations(
+	defaultFileName string, defaultDirectory string) (string, error) {
 	// Get the user's home directory
 	defaultDirs, err := getDefaultSearchDirs(defaultDirectory)
 	if err != nil {

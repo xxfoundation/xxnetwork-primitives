@@ -8,7 +8,6 @@
 package region
 
 import (
-	"fmt"
 	"gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"testing"
@@ -16,32 +15,25 @@ import (
 
 // Happy path
 func TestPermute(t *testing.T) {
-
 	const totalNodes = 3
 	nodeList := make([]*id.ID, totalNodes)
-
 	prng := rand.New(rand.NewSource(42))
 
 	// Build node states with unique ordering
-	for i := 0; i < totalNodes; i++ {
-		// Make a node state
-
-		newNode, _ := id.NewRandomID(prng, id.Node)
-
-		// Place new node in list
-		nodeList[i] = newNode
-
+	for i := range nodeList {
+		// Make a node state and place it in the list
+		nodeList[i] = id.NewRandomTestID(prng, id.Node, t)
 	}
 
 	// Permute the nodes
 	permutations := Permute(nodeList)
-	expectedLen := factorial(totalNodes)
+	expectedLen := factorial(totalNodes, t)
 
 	// Verify that the amount of permutations is
 	// factorial of the original amount of nodes
 	if len(permutations) != expectedLen {
-		t.Errorf("Permutations did not produce the expected amount of permutations "+
-			"(factorial of amount of nodes)!"+
+		t.Errorf("Permutations did not produce the expected amount of "+
+			"permutations (factorial of amount of nodes)!"+
 			"\nexpected: %d\nreceived: %d", expectedLen, len(permutations))
 	}
 
@@ -66,15 +58,15 @@ func TestPermute(t *testing.T) {
 
 }
 
-func factorial(n int) int {
+func factorial(n int, t testing.TB) int {
 	factVal := 1
 	if n < 0 {
-		fmt.Println("Factorial of negative number doesn't exist.")
+		t.Errorf("Factorial of negative number doesn't exist: %d", n)
 	} else {
 		for i := 1; i <= n; i++ {
 			factVal *= i
 		}
-
 	}
+
 	return factVal
 }

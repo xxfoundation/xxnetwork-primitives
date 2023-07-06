@@ -5,12 +5,13 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// keyMutex implements a keyed mutex with a sync map.
-// This allows you to "Lock()" with a generic interface key and unlock
+// Package keyMutex implements a keyed mutex with a sync map.
+// This allows you to Lock with a generic interface key and unlock.
 package keyMutex
 
 import "sync"
 
+// KeyMutex is a keyed mutex map.
 type KeyMutex struct {
 	m *sync.Map
 }

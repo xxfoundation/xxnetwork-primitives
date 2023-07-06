@@ -642,10 +642,15 @@ func TestBucketMap_DeleteBucket_ReadLock(t *testing.T) {
 // thread and that the quit channel stops it.
 func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	quit := make(chan struct{})
-	bm := CreateBucketMap(5, 3, time.Millisecond, 30*time.Millisecond, time.Second, nil, quit)
+	bm := CreateBucketMap(
+		5, 3, time.Millisecond, 30*time.Millisecond, time.Second, nil, quit)
 	bm.buckets = map[string]*Bucket{
-		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 0, 1, time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil), // Stale
-		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 0, 1, time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),   // Stale
+		"keyA": CreateBucketFromParams( // Stale
+			&BucketParams{"keyA", 10, 0, 1,
+				time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil),
+		"keyB": CreateBucketFromParams( // Stale
+			&BucketParams{"keyB", 10, 0, 1,
+				time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),
 	}
 
 	time.Sleep(2 * bm.pollDuration)
@@ -658,14 +663,17 @@ func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	quit <- struct{}{}
 
 	bm.buckets = map[string]*Bucket{
-		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 6, 1, time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil), // Stale
-		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 6, 1, time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),   // Stale
+		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 6, 1, // Stale
+			time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil),
+		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 6, 1, // Stale
+			time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),
 	}
 
 	time.Sleep(2 * bm.pollDuration)
 
 	if len(bm.buckets) != 2 {
-		t.Errorf("staleBucketWorker deleted the buckets when it should have been stopped.")
+		t.Errorf("staleBucketWorker deleted the buckets when it should have " +
+			"been stopped.")
 	}
 
 }

@@ -23,7 +23,6 @@ type addrBlock struct {
 // List sourced from:
 // https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 // https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
-
 // https://github.com/letsencrypt/boulder/blob/master/bdns/dns.go
 var (
 	privateV4Networks = []addrBlock{
@@ -229,8 +228,10 @@ var (
 			name: "Documentation",
 			rfc:  "RFC3849",
 			net: net.IPNet{
-				IP:   net.IP{0x20, 0x1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				IP: net.IP{
+					0x20, 0x1, 0xd, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// 2001::/32 (RFC 4380)
@@ -239,8 +240,8 @@ var (
 			rfc:  "RFC4380",
 			net: net.IPNet{
 				IP: net.IP{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// 2001::/23 (RFC 2928)
@@ -249,8 +250,8 @@ var (
 			rfc:  "RFC2928",
 			net: net.IPNet{
 				IP: net.IP{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-					0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0xff, 0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// fc00::/7 (RFC 4193)
@@ -258,8 +259,9 @@ var (
 			name: "Unique-Local",
 			rfc:  "RFC4193",
 			net: net.IPNet{
-				IP:   net.IP{0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				IP: net.IP{0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xfe, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// fe80::/10 (RFC 4291)
@@ -267,8 +269,10 @@ var (
 			name: "Link-Local Unicast",
 			rfc:  "RFC4291",
 			net: net.IPNet{
-				IP:   net.IP{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				IP: net.IP{
+					0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// ff00::/8 (RFC 4291)
@@ -276,8 +280,10 @@ var (
 			name: "Multicast",
 			rfc:  "RFC4291",
 			net: net.IPNet{
-				IP:   net.IP{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				IP: net.IP{
+					0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 		// 2002::/16 (RFC 7526)
@@ -289,8 +295,10 @@ var (
 			name: "6to4",
 			rfc:  "RFC7526",
 			net: net.IPNet{
-				IP:   net.IP{0x20, 0x2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				Mask: net.IPMask{0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				IP: net.IP{
+					0x20, 0x2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+				Mask: net.IPMask{
+					0xff, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			},
 		},
 	}
