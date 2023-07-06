@@ -20,7 +20,7 @@ func TestGetHardCodedIDs(t *testing.T) {
 	for i, testID := range GetHardCodedIDs() {
 		if !expectedIDs[i].Equal(testID) {
 			t.Errorf("GetHardCodedIDs did not return the expected ID at "+
-				"index %d.\nexepcted: %v\nrecieved: %v",
+				"index %d.\nexepcted: %s\nrecieved: %s",
 				i, expectedIDs[i], testID)
 		}
 	}

@@ -42,8 +42,7 @@ func TestPermute(t *testing.T) {
 	if len(permutations) != expectedLen {
 		t.Errorf("Permutations did not produce the expected amount of permutations "+
 			"(factorial of amount of nodes)!"+
-			"\n\tExpected: %d"+
-			"\n\tReceived: %d", expectedLen, len(permutations))
+			"\nexpected: %d\nreceived: %d", expectedLen, len(permutations))
 	}
 
 	expectedPermutations := make(map[string]bool)

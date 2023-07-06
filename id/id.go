@@ -193,7 +193,7 @@ func (id ID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// HexEncode encodes the ID without 33rd type byte.
+// HexEncode encodes the ID without the 33rd type byte.
 func (id *ID) HexEncode() string {
 	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }

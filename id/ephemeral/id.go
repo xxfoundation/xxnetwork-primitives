@@ -177,7 +177,7 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
 	var eid Id
 	var err error
 	for reserved := true; reserved; reserved = IsReserved(eid) {
-		eid, err = getIdFromIntermediaryHelper(b2b, iid, salt, size)
+		eid, err = getIdFromIntermediary(b2b, iid, salt, size)
 		if err != nil {
 			return Id{}, start, end, err
 		}
@@ -185,8 +185,9 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
 	return eid, start, end, nil
 }
 
-// Helper function which generates a single ephemeral Id.
-func getIdFromIntermediaryHelper(
+// getIdFromIntermediary generates an ephemeral Id from an intermediary ID and
+// salt using the provided hash.
+func getIdFromIntermediary(
 	b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
 	var eid Id
 

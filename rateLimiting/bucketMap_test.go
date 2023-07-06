@@ -74,7 +74,7 @@ func TestCreateBucketMap(t *testing.T) {
 
 	if !reflect.DeepEqual(&expectedBM, bm) {
 		t.Errorf("CreateBucketMap returned an incorrect BucketMap."+
-			"\n\texpected: %+v\n\treceived: %+v", &expectedBM, bm)
+			"\nexpected: %+v\nreceived: %+v", &expectedBM, bm)
 	}
 }
 
@@ -112,7 +112,7 @@ func TestCreateBucketMap_DB(t *testing.T) {
 			b.locked != bp.Locked || b.whitelist != bp.Whitelist {
 			expectedBucket := CreateBucketFromParams(bp, bm.createAddToDbFunc(key))
 			t.Errorf("CreateBucketMap did not load the correct values from "+
-				"the database for bucket %s.\n\texpected: %#v\n\treceived: %#v",
+				"the database for bucket %s.\nexpected: %#v\nreceived: %#v",
 				key, expectedBucket, b)
 		}
 	}
@@ -133,24 +133,23 @@ func TestCreateBucketMapFromParams(t *testing.T) {
 
 	if bm.capacity != testParams.Capacity {
 		t.Errorf("CreateBucketMap returned incorrect capacity."+
-			"\n\texpected: %v\n\treceived: %v",
-			testParams.Capacity, bm.capacity)
+			"\nexpected: %d\nreceived: %d", testParams.Capacity, bm.capacity)
 	}
 
 	if bm.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketMap returned incorrect leakRate."+
-			"\n\texpected: %v\n\treceived: %v", expectedLeakRate, bm.leakRate)
+			"\nexpected: %f\nreceived: %f", expectedLeakRate, bm.leakRate)
 	}
 
 	if bm.pollDuration != testParams.PollDuration {
 		t.Errorf("CreateBucketMap returned incorrect pollDuration."+
-			"\n\texpected: %v\n\treceived: %v",
+			"\nexpected: %s\nreceived: %s",
 			testParams.PollDuration, bm.pollDuration)
 	}
 
 	if bm.bucketMaxAge != testParams.BucketMaxAge {
 		t.Errorf("CreateBucketMap returned incorrect bucketMaxAge."+
-			"\n\texpected: %v\n\treceived: %v",
+			"\nexpected: %s\nreceived: %s",
 			testParams.BucketMaxAge, bm.bucketMaxAge)
 	}
 }
@@ -205,7 +204,7 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 			bucket := bm.LookupBucket(b.key)
 			if bucket.Remaining() != b.tokens {
 				t.Errorf("LookupBucket returned incorrect bucket %s, it has "+
-					"incorrect number of tokens.\n\texpected: %d\n\treceived: %d",
+					"incorrect number of tokens.\nexpected: %d\nreceived: %d",
 					b.key, b.tokens, bucket.Remaining())
 			}
 			if bm.db != nil {
@@ -216,7 +215,7 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 				}
 				if bp.Remaining != bucket.Remaining() {
 					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\n\texpected: %d\n\treceived: %d",
+						"\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -349,12 +348,12 @@ func TestBucketMap_AddBucket(t *testing.T) {
 			}
 			if bucket.capacity != b.capacity {
 				t.Errorf("AddBucket did not overwrite the exisitng bucket."+
-					"\n\tcapacity expected: %d\n\tcapacity received: %d",
+					"\ncapacity expected: %d\ncapacity received: %d",
 					b.capacity, bucket.capacity)
 			}
 			if bucket.remaining != b.remaining {
 				t.Errorf("AddBucket did not overwrite the exisitng bucket."+
-					"\n\tremaining expected: %d\n\tremaining received: %d",
+					"\nremaining expected: %d\nremaining received: %d",
 					b.remaining, bucket.remaining)
 			}
 			if bm.db != nil {
@@ -365,12 +364,12 @@ func TestBucketMap_AddBucket(t *testing.T) {
 				}
 				if bp.Capacity != bucket.Capacity() {
 					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\n\texpected: %d\n\treceived: %d",
+						"\nexpected: %d\nreceived: %d",
 						b.key, bucket.Capacity(), bp.Capacity)
 				}
 				if bp.Remaining != bucket.Remaining() {
 					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\n\texpected: %d\n\treceived: %d",
+						"\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -430,7 +429,7 @@ func TestBucketMap_AddAllBuckets(t *testing.T) {
 				bp.Key)
 		} else if !reflect.DeepEqual(b, CreateBucketFromParams(bp, nil)) {
 			t.Errorf("addAllBuckets created bucket %s with incorrect values."+
-				"\n\texpected: %+v\n\treceived: %+v", bp.Key,
+				"\nexpected: %+v\nreceived: %+v", bp.Key,
 				CreateBucketFromParams(bp, nil), b)
 		}
 	}
@@ -560,13 +559,13 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 				err := bm.DeleteBucket(bp.Key)
 				if err != nil {
 					t.Errorf("DeleteBucket returned an error when deleting key %s."+
-						"\n\texpected: %v\n\treceived: %v", bp.Key, nil, err)
+						"\nexpected: %v\nreceived: %v", bp.Key, nil, err)
 				}
 
 				bucket, exists := bm.buckets[bp.Key]
 				if exists {
 					t.Errorf("DeleteBucket did not delete the bucket with key %s."+
-						"\n\tbucket: %+v", bp.Key, bucket)
+						"\nbucket: %+v", bp.Key, bucket)
 				}
 
 				if bm.db != nil {
@@ -581,7 +580,7 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 				_, exists := bm.buckets[bp.Key]
 				if !exists {
 					t.Errorf("DeleteBucket deleted the bucket with key %s."+
-						"\n\tbucket params: %+v", bp.Key, bp)
+						"\nbucket params: %+v", bp.Key, bp)
 				}
 
 				if bm.db != nil {
@@ -598,7 +597,7 @@ func TestBucketMap_DeleteBucket(t *testing.T) {
 
 		if len(bm.buckets) != expectedLength {
 			t.Errorf("DeleteBucket did not delete all the correct buckets."+
-				"\n\texpected length: %d\n\treceived length: %d\n\tbucket map: %+v",
+				"\nexpected length: %d\nreceived length: %d\nbucket map: %+v",
 				expectedLength, len(bm.buckets), bm.buckets)
 		}
 	}
@@ -653,7 +652,7 @@ func TestBucketMap_StaleBucketWorker(t *testing.T) {
 
 	if len(bm.buckets) != 0 {
 		t.Errorf("staleBucketWorker did not delete the stale buckets."+
-			"\n\texpected length: %d\n\treceived length: %d", 0, len(bm.buckets))
+			"\nexpected length: %d\nreceived length: %d", 0, len(bm.buckets))
 	}
 
 	quit <- struct{}{}
@@ -724,7 +723,7 @@ func TestBucketMap_ClearStaleBuckets(t *testing.T) {
 					bp.p.Key)
 			} else if bp.stale && exists {
 				t.Errorf("clearStaleBuckets did not delete stale bucket %s."+
-					"\n\tbucket: %+v", bp.p.Key, b)
+					"\nbucket: %+v", bp.p.Key, b)
 			}
 
 			if bm.db != nil {
@@ -734,7 +733,7 @@ func TestBucketMap_ClearStaleBuckets(t *testing.T) {
 						"from the database.", bp.p.Key)
 				} else if bp.stale && exists {
 					t.Errorf("clearStaleBuckets did not delete stale bucket "+
-						"%s from the database.\n\tbucket: %+v", bp.p.Key, b)
+						"%s from the database.\nbucket: %+v", bp.p.Key, b)
 				}
 			}
 		}

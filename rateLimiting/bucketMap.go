@@ -5,11 +5,11 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
+package rateLimiting
+
 // The bucket map contains a list of leaky buckets that each track and limit
 // the rate of usage. The map has an optional database backend where buckets are
 // backed up for retrieval on restart.
-
-package rateLimiting
 
 import (
 	"github.com/pkg/errors"
@@ -254,8 +254,8 @@ func (bm *BucketMap) DeleteBucket(key string) error {
 }
 
 // staleBucketWorker periodically clears stale buckets from the map every
-// pollDuration. The quit channel stops the ticker. This function is meant to
-// be run in its own thread.
+// pollDuration. The quit channel stops the ticker. This function is meant to be
+// run in its own thread.
 func (bm *BucketMap) staleBucketWorker(quit chan struct{}) {
 	// Create a new ticker that will poll every pollDuration
 	ticker := time.NewTicker(bm.pollDuration)

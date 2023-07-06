@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Tests that Now() returns time.Now() if it is unset.
+// Tests that Now returns time.Now if it is unset.
 func TestNow(t *testing.T) {
 	expectedTime := time.Now().Round(time.Millisecond)
 	receivedTime := Now().Round(time.Millisecond)

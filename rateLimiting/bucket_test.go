@@ -29,31 +29,30 @@ func TestCreateBucketWithLeakRate(t *testing.T) {
 	// Test fields for expected results
 	if b.capacity != expectedCapacity {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"capacity.\n\texpected: %v\n\treceived: %v",
+			"capacity.\nexpected: %d\nreceived: %d",
 			expectedCapacity, b.capacity)
 	}
 
 	if b.remaining != 0 {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"remaining.\n\texpected: %v\n\treceived: %v", 0, b.remaining)
+			"remaining.\nexpected: %d\nreceived: %d", 0, b.remaining)
 	}
 
 	if b.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"leak rate.\n\texpected: %v\n\treceived: %v",
+			"leak rate.\nexpected: %f\nreceived: %f",
 			expectedLeakRate, b.leakRate)
 	}
 
 	// Check that the lastUpdate occurred recently
 	if time.Now().UnixNano()-b.lastUpdate > time.Second.Nanoseconds() {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with old "+
-			"lastUpdate.\n\treceived: %v", b.lastUpdate)
+			"lastUpdate.\nreceived: %s", b.lastUpdate)
 	}
 
 	if b.locked {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"lock.\n\texpected: %v\n\treceived: %v",
-			expectedLeakRate, b.leakRate)
+			"lock.\nexpected: %t\nreceived: %t", false, b.locked)
 	}
 }
 
@@ -68,7 +67,7 @@ func TestCreateBucket(t *testing.T) {
 
 	if b.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect leak rate."+
-			"\n\texpected: %v\n\treceived: %v", expectedLeakRate, b.leakRate)
+			"\nexpected: %f\nreceived: %f", expectedLeakRate, b.leakRate)
 	}
 }
 
@@ -108,7 +107,7 @@ func TestCreateBucketFromDB(t *testing.T) {
 
 	if !bytes.Equal(expectedJson, testJson) {
 		t.Errorf("CreateBucketFromDB produced an incorrect bucket."+
-			"\n\texepcted: %+v\n\treceived: %+v", expectedBucket, testBucket)
+			"\nexepcted: %+v\nreceived: %+v", expectedBucket, testBucket)
 
 	}
 }
@@ -137,7 +136,7 @@ func TestCreateBucketFromParams(t *testing.T) {
 
 	if !reflect.DeepEqual(expectedBucket, testBucket) {
 		t.Errorf("CreateBucketFromParams produced an incorrect bucket."+
-			"\n\texepcted: %+v\n\treceived: %+v", expectedBucket, testBucket)
+			"\nexepcted: %+v\nreceived: %+v", expectedBucket, testBucket)
 	}
 }
 
@@ -151,7 +150,7 @@ func TestBucket_Capacity(t *testing.T) {
 
 	if b.Capacity() != expectedCapacity {
 		t.Errorf("Capacity returned incorrect capacity."+
-			"\n\texpected: %v\n\treceived: %v", expectedCapacity, b.Capacity())
+			"\nexpected: %d\nreceived: %d", expectedCapacity, b.Capacity())
 	}
 }
 
@@ -162,7 +161,7 @@ func TestBucket_Remaining(t *testing.T) {
 
 	if b.Remaining() != 0 {
 		t.Errorf("Remaining returned incorrect remaining for the bucket."+
-			"\n\texpected: %v\n\treceived: %v", 0, b.Remaining())
+			"\nexpected: %d\nreceived: %d", 0, b.Remaining())
 	}
 }
 
@@ -173,7 +172,7 @@ func TestBucket_IsLocked(t *testing.T) {
 
 	if b.IsLocked() {
 		t.Errorf("IsLocked returned incorrect locked status."+
-			"\n\texpected: %v\n\treceived: %v", false, b.IsLocked())
+			"\nexpected: %t\nreceived: %t", false, b.IsLocked())
 	}
 }
 
@@ -184,7 +183,7 @@ func TestBucket_IsWhitelisted(t *testing.T) {
 
 	if b.IsWhitelisted() {
 		t.Errorf("IsWhitelisted returned incorrect whitelist status."+
-			"\n\texpected: %v\n\treceived: %v", false, b.IsWhitelisted())
+			"\nexpected: %t\nreceived: %t", false, b.IsWhitelisted())
 	}
 }
 
@@ -196,14 +195,14 @@ func TestBucket_IsFull(t *testing.T) {
 
 	if b.IsFull() {
 		t.Errorf("IsFull returned incorrect value for new bucket."+
-			"\n\texpected: %v\n\treceived: %v", false, b.IsFull())
+			"\nexpected: %t\nreceived: %t", false, b.IsFull())
 	}
 
 	b.Add(b.capacity * 2)
 
 	if !b.IsFull() {
 		t.Errorf("IsFull returned incorrect value for a filled bucket."+
-			"\n\texpected: %v\n\treceived: %v", true, b.IsFull())
+			"\nexpected: %t\nreceived: %t", true, b.IsFull())
 	}
 }
 
@@ -215,14 +214,14 @@ func TestBucket_IsEmpty(t *testing.T) {
 
 	if !b.IsEmpty() {
 		t.Errorf("IsEmpty returned incorrect value for new bucket."+
-			"\n\texpected: %v\n\treceived: %v", true, b.IsFull())
+			"\nexpected: %t\nreceived: %t", true, b.IsFull())
 	}
 
 	b.Add(b.capacity / 2)
 
 	if b.IsEmpty() {
 		t.Errorf("IsEmpty returned incorrect value for a filled bucket."+
-			"\n\texpected: %v\n\treceived: %v", false, b.IsEmpty())
+			"\nexpected: %t\nreceived: %t", false, b.IsEmpty())
 	}
 }
 
@@ -256,7 +255,7 @@ func TestBucket_Add(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v",
+				"\nexpected: %v\nreceived: %v",
 				i, r.expectedRem, b.remaining)
 		}
 	}
@@ -293,7 +292,7 @@ func TestBucket_Add_OverCapacity(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -344,19 +343,19 @@ func TestBucket_Add_DB(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v",
+				"\nexpected: %v\nreceived: %v",
 				i, r.expectedRem, b.remaining)
 		}
 
 		if b.remaining != bucketDB.Remaining {
 			t.Errorf("Incorrect number of tokens remaining in database bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v",
+				"\nexpected: %v\nreceived: %v",
 				i, b.remaining, bucketDB.Remaining)
 		}
 
 		if b.lastUpdate != bucketDB.LastUpdate {
 			t.Errorf("Incorrect LastUpdate in database bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v",
+				"\nexpected: %v\nreceived: %v",
 				i, b.lastUpdate, bucketDB.LastUpdate)
 		}
 	}
@@ -393,7 +392,7 @@ func TestBucket_Add_Whitelist(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\n\texpected: %v\n\treceived: %v",
+				"\nexpected: %v\nreceived: %v",
 				i, r.expectedRem, b.remaining)
 		}
 	}
