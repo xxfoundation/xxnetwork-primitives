@@ -51,21 +51,20 @@ func TestGetIdByRange(t *testing.T) {
 
 	if len(eids) != expectedLength {
 		t.Errorf("Unexpected list of ephemeral IDs."+
-			"\n\tExpected: %d"+
-			"\n\tReceived: %d", expectedLength, len(eids))
+			"\nexpected: %d\nreceived: %d", expectedLength, len(eids))
 	}
 
-	//test that the time variances are correct
+	// Test that the time variances are correct
 	for i := 0; i < len(eids)-1; i++ {
 		next := i + 1
 		if eids[i].End != eids[next].Start {
 			t.Errorf("The next identity after %d does not start "+
-				"when the current identity ends: \n\t end: %s \n\t start: %s",
+				"when the current identity ends:\nend: %s\nstart: %s",
 				i, eids[i].End, eids[next].Start)
 		}
 		if int64(eids[i].End.Sub(eids[i].Start)) != Period {
 			t.Errorf("Delta between start and end on %d does not equal the "+
-				"Period: \n\t end: %s \n\t start: %s",
+				"Period:\nend: %s\nstart: %s",
 				i, eids[i].End, eids[next].Start)
 		}
 	}
@@ -75,7 +74,7 @@ func TestGetIntermediaryId(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
 	iid, err := GetIntermediaryId(testId)
 	if err != nil {
-		t.Errorf("Failed to get intermediary id: %+v", err)
+		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
 	if iid == nil || len(iid) == 0 {
 		t.Errorf("iid returned with no data: %+v", iid)
@@ -86,11 +85,11 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
 	iid, err := GetIntermediaryId(testId)
 	if err != nil {
-		t.Errorf("Failed to get intermediary id: %+v", err)
+		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
 	eid, _, _, err := GetIdFromIntermediary(iid, 16, time.Now().UnixNano())
 	if err != nil {
-		t.Errorf("Failed to get id from intermediary: %+v", err)
+		t.Errorf("Failed to get ID from intermediary: %+v", err)
 	}
 	if eid[2] != 0 && eid[3] != 0 && eid[4] != 0 && eid[5] != 0 && eid[6] != 0 && eid[7] != 0 {
 		t.Errorf("Id was not cleared to proper size: %+v", eid)
@@ -109,21 +108,21 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 	// Intermediary ID expected to generate a reserved ephemeral ID
 	iid, err := GetIntermediaryId(testId)
 	if err != nil {
-		t.Errorf("Failed to get intermediary id: %+v", err)
+		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
 	// Generate an ephemeral Id given the input above. This specific
 	// call does not check if the outputted Id is reserved
 	salt, _, _ := getRotationSalt(iid, hardcodedTimestamp)
 	b2b := crypto.BLAKE2b_256.New()
-	expectedReservedEID, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
+	expectedReservedEID, err := getIdFromIntermediary(b2b, iid, salt, size)
 	if err != nil {
-		t.Errorf("Failed to get id from intermediary: %+v", err)
+		t.Errorf("Failed to get ID from intermediary: %+v", err)
 	}
 
 	// Check that the ephemeral Id generated with hardcoded data is a reserved ID
 	if !IsReserved(expectedReservedEID) {
-		t.Errorf("Expected reserved eid is no longer reserved, " +
-			"\n\tmay need to find a new ID. Use FindReservedID in this case.")
+		t.Errorf("Expected reserved eid is no longer reserved; may need to " +
+			"find a new ID. Use FindReservedID in this case.")
 	}
 
 	// Generate an ephemeral ID which given the same input above with the production facing call
@@ -135,8 +134,8 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 	// Check that the ephemeralID generated is not reserved.
 	if IsReserved(eid) {
 		t.Errorf("Ephemeral ID generated should not be reserved!"+
-			"\n\tReserved IDs: %v"+
-			"\n\tGenerated ID: %v", ReservedIDs, eid)
+			"\nReserved IDs: %v"+
+			"\nGenerated ID: %v", ReservedIDs, eid)
 	}
 
 }
@@ -157,7 +156,7 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 
 		// Generate an ephemeral ID
 		salt, _, _ := getRotationSalt(iid, timestamp)
-		eid, err := getIdFromIntermediaryHelper(b2b, iid, salt, size)
+		eid, err := getIdFromIntermediary(b2b, iid, salt, size)
 		if err != nil {
 			t.Errorf("Failed to get id from intermediary: %+v", err)
 		}
@@ -165,11 +164,11 @@ func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 		// Check if ephemeral ID is reserved exit
 		if IsReserved(eid) {
 			t.Logf("Found input which generates a reserved id. Input as follows."+
-				"\n\tSize: %d"+
-				"\n\tTimestamp: %d"+
-				"\n\tTestID: %v"+
-				"\n\tTestID generated using the following line of code: "+
-				"\n\t\ttestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
+				"\nSize: %d"+
+				"\nTimestamp: %d"+
+				"\nTestID: %v"+
+				"\nTestID generated using the following line of code: "+
+				"\ntestId := id.NewIdFromString(strconv.Itoa(%d), id.User, t)",
 				size, timestamp, testId, counter)
 			return iid
 		}
@@ -274,11 +273,11 @@ func TestId_Int64(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to fill ephemeral ID: %+v", err)
 	}
-	maxuint64Id := Id{}
-	binary.BigEndian.PutUint64(maxuint64Id[:], math.MaxUint64)
-	if maxuint64Id.Int64() != math.MinInt64 {
+	var maxUint64Id Id
+	binary.BigEndian.PutUint64(maxUint64Id[:], math.MaxUint64)
+	if maxUint64Id.Int64() != math.MinInt64 {
 		t.Error("Did not properly convert from uint to int")
-		t.Error(maxuint64Id.Int64())
+		t.Error(maxUint64Id.Int64())
 	}
 
 	zerouint64Id := Id{}

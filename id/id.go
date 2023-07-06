@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	// Length of the ID data
+	// Length of the ID data.
 	dataLen = 32
 
-	// Length of the full ID array
+	// ArrIDLen is the length of the full ID array.
 	ArrIDLen = dataLen + 1
 
 	// Alphanumeric contains the regular expression to search for an alphanumeric string.
@@ -60,11 +60,12 @@ func Unmarshal(data []byte) (*ID, error) {
 	return copyID(data), nil
 }
 
-// Bytes returns a copy of an ID as a byte slice. Note that Bytes() is used by
-// Marshal() and any changes made here will affect how Marshal() functions.
+// Bytes returns a copy of an ID as a byte slice. Note that Bytes is used by
+// Marshal and any changes made here will affect how Marshal functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get bytes of ID: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to get bytes of ID: ID is nil."))
 	}
 
 	newBytes := make([]byte, ArrIDLen)
@@ -147,7 +148,7 @@ func (id ID) MarshalText() (text []byte, err error) {
 
 // UnmarshalText implements encoding.TextUnmarshaler for
 // json.Unmarshal compatibility
-// This lets you unemmarshal it as part of a map, for example.
+// This lets you unmarshal it as part of a map, for example.
 func (id ID) UnmarshalText(text []byte) error {
 	idBytes, err := base64.RawStdEncoding.DecodeString(string(text))
 	copy(id[:], idBytes)
@@ -183,7 +184,7 @@ func NewRandomID(r io.Reader, t Type) (*ID, error) {
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
-// to Unmarshal() but does not do any error checking. If the data is longer than
+// to Unmarshal but does not do any error checking. If the data is longer than
 // ArrIDLen, then it is truncated. If it is shorter, then the remaining bytes
 // are filled with zeroes. This function is for testing purposes only.
 func NewIdFromBytes(data []byte, x interface{}) *ID {
@@ -192,7 +193,7 @@ func NewIdFromBytes(data []byte, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromBytes() can only be used for testing.")
+		panic("NewIdFromBytes can only be used for testing.")
 	}
 
 	return copyID(data)
@@ -208,7 +209,7 @@ func NewIdFromString(idString string, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromString() can only be used for testing.")
+		panic("NewIdFromString can only be used for testing.")
 	}
 
 	// Convert the string to bytes and create new ID from it
@@ -285,7 +286,7 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromUInt() can only be used for testing.")
+		panic("NewIdFromUInt can only be used for testing.")
 	}
 
 	// Create the new ID
@@ -300,7 +301,7 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	return newID
 }
 
-// HexEncode encodes the Id without 33rd type byte
+// HexEncode encodes the Id without the 33rd type byte.
 func (id *ID) HexEncode() string {
 	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }
@@ -315,7 +316,7 @@ func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromUInts() can only be used for testing.")
+		panic("NewIdFromUInts can only be used for testing.")
 	}
 
 	// Create the new ID

@@ -43,7 +43,7 @@ type NetworkDefinition struct {
 	WhitelistedIds []string
 	// Ips that bypass rate limiting
 	WhitelistedIpAddresses []string
-	//Details on how gateways will rate limit clients
+	// Details on how gateways will rate limit clients
 	RateLimits RateLimiting
 }
 

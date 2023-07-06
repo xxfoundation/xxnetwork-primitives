@@ -35,7 +35,7 @@ type IdFile struct {
 // UnloadIDF reads the contents of the IDF at the given path and returns the
 // salt and ID stored in it. It does so by unmarshalling the JSON in the file
 // into an IdFile object. The ID bytes from the object are unmarshalled into an
-// ID object and it is returned along with the salt.
+// ID object, and it is returned along with the salt.
 //
 // Errors are returned when there is a failure to read the IDF, unmarshall the
 // JSON, or unmarshalling the ID.

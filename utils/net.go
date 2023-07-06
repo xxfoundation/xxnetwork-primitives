@@ -209,14 +209,14 @@ func IsIPv6(address string) bool {
 	return ip != nil && ip.To4() == nil
 }
 
-// IsIP determines if the given string is is a valid IP address. Ports are
-// allowed; if a port is present, then it is stripped.
+// IsIP determines if the given string is a valid IP address. Ports are allowed;
+// if a port is present, then it is stripped.
 func IsIP(address string) bool {
 	return ParseIP(address) != nil
 }
 
 // IsPublicIP determines if the given string is a valid public IP address. The
-// IP address address may include a port. If the IP is invalid, then an error is
+// IP address may include a port. If the IP is invalid, then an error is
 // returned specifying the reason. Otherwise, it returns nil. Ports are allowed;
 // if a port is present, then it is stripped.
 func IsPublicIP(address string) error {

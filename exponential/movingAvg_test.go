@@ -39,7 +39,7 @@ func TestNewMovingAvg(t *testing.T) {
 
 // Tests that MovingAvg.Intake does not return an error.
 // NOTE: This is not a full or accurate test of MovingAvg.Intake. Not sure if
-//  there is a good test for it, but if there is, you should add it.
+// there is a good test for it, but if there is, you should add it.
 func TestMovingAvg_Intake(t *testing.T) {
 	ea := NewMovingAvg(DefaultMovingAvgParams())
 
