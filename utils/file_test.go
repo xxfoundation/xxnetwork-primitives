@@ -13,13 +13,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/go-homedir"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
+	"github.com/stretchr/testify/require"
 )
 
 const sep = string(filepath.Separator)
@@ -557,6 +559,7 @@ func TestReadDir(t *testing.T) {
 	//       accordingly.
 	var expectedFiles = []string{"gen.go", "net.go", "net_test.go",
 		"privNet.go", "file.go", "file_test.go"}
+	sort.Strings(expectedFiles)
 
 	require.Equal(t, expectedFiles, files)
 }
