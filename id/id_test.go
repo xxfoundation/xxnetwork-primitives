@@ -18,6 +18,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -381,14 +382,15 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 		t.Errorf("json.Unmarshal returned an error: %+v", err)
 	}
 
-	if *testID != *newID {
+	if !testID.Equal(newID) {
 		t.Errorf("Failed the JSON marshal and unmarshal ID."+
 			"\noriginal ID: %s\nreceived ID: %s", testID, newID)
 	}
 }
 
-// Tests that an ID can be JSON marshaled and unmarshalled.
-func TestID_TextMarshal_TextUnmarshal(t *testing.T) {
+// Tests that an ID can be JSON marshaled and unmarshalled when it is the key in
+// a map. This tests ID.MarshalText.
+func TestID_TextMarshal(t *testing.T) {
 	testID := NewRandomTestID(rand.New(rand.NewSource(42534)), User, t)
 
 	testMap := make(map[ID]int)
@@ -402,6 +404,55 @@ func TestID_TextMarshal_TextUnmarshal(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, testMap[*testID], newMap[*testID])
+}
+
+// Tests that an ID can be text marshaled and unmarshalled.
+func TestID_MarshalText_UnmarshalText(t *testing.T) {
+	testID := NewRandomTestID(rand.New(rand.NewSource(6156)), Node, t)
+
+	text, err := testID.MarshalText()
+	if err != nil {
+		t.Errorf("Failed to text marshal: %+v", err)
+	}
+
+	newID := &ID{}
+	err = newID.UnmarshalText(text)
+	if err != nil {
+		t.Errorf("Failed to text unmarshal: %+v", err)
+	}
+
+	if !testID.Equal(newID) {
+		t.Errorf("Text marshalled and unmarshalled ID does not match original."+
+			"\nexpected: %s\nreceived: %s", testID, newID)
+	}
+}
+
+// Error path: Tests that ID.UnmarshalText returns an error when the bytes are
+// not a valid base 64 string.
+func TestID_UnmarshalText_InvalidBase64Error(t *testing.T) {
+	expectedErr := base64.CorruptInputError(7)
+
+	newID := &ID{}
+	err := newID.UnmarshalText([]byte("invalid bytes"))
+	if err == nil || !errors.Is(err, expectedErr) {
+		t.Errorf("Failed to receive expected error.\nexpected: %v\nreceived: %+v",
+			expectedErr, err)
+	}
+}
+
+// Error path: Tests that ID.UnmarshalText returns an error when the bytes are
+// not a valid ID.
+func TestID_UnmarshalText_InvalidIDError(t *testing.T) {
+	data := []byte("InvalidID")
+	expectedErr := errors.Errorf("Failed to unmarshal ID: length of data "+
+		"must be %d, length received is %d", ArrIDLen, len(data))
+
+	newID := &ID{}
+	err := newID.UnmarshalText([]byte(base64.StdEncoding.EncodeToString(data)))
+	if err == nil || !strings.Contains(err.Error(), expectedErr.Error()) {
+		t.Errorf("Failed to receive expected error.\nexpected: %v\nreceived: %+v",
+			expectedErr, err)
+	}
 }
 
 // Error path: supplied data is invalid JSON.
@@ -476,8 +527,8 @@ func TestNewRandomID_Consistency(t *testing.T) {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 		if testID.String() != expected {
-			t.Errorf("NewRandomID did not generate the expected ID."+
-				"\nexpected: %s\nreceived: %s", expected, testID)
+			t.Errorf("NewRandomID did not generate the expected ID (%d)."+
+				"\nexpected: %s\nreceived: %s", i, expected, testID)
 		}
 	}
 }
@@ -528,6 +579,58 @@ func TestNewRandomID_ReaderError(t *testing.T) {
 		t.Error("NewRandomID failed to return an error when the reader " +
 			"failed.")
 	}
+}
+
+// Tests that NewRandomTestID returns the expected IDs for a given PRNG.
+func TestNewRandomTestID_Consistency(t *testing.T) {
+	prng := rand.New(rand.NewSource(42))
+	expectedIDs := []string{
+		"G5e7n0u0cuifWxSE8lIJydk0PpK6Cd2dUt/Xm012QpsA",
+		"egzA1hRMiIU1hBrL4HCbB1gIP2HTdbwCtB30+Rkp4Y8C",
+		"nm+C5b1v40zcuoQ+6NY+jE/+HOvqVG2PrBPdGqwEzi4A",
+		"h3xVec+iG4KnURCKQu08kDyqQ0ZaeGIGFpeK7QzjxsQA",
+		"rv79vgwQKIfhANrNLYhfaSy2B9oAoRwccHHnlqLcLcIA",
+		"W3SyySMmgo4rBW44F2WOEGFJiUf980RBDtTBFgI/qOME",
+		"a2/tJ//QVpKxNhnnOJZN/ceejVNDc2Yc/WbXT+weG4kD",
+		"YpDPK+tCw8onMoVg8arAZ86m6L9G1KsrRoBALF+ygg4A",
+		"XTKgmjb5bCCUF0bj7U2mRqmui0+ntPw6ILr6GnXtMnoE",
+		"uLDDmup5Uzq/RI0sR50yYHUzkFkUyMwc8J2jng6SnQIE",
+	}
+
+	for i, expected := range expectedIDs {
+		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+
+		if testID.String() != expected {
+			t.Errorf("NewRandomTestID did not generate the expected ID (%d)."+
+				"\nexpected: %s\nreceived: %s", i, expected, testID)
+		}
+	}
+}
+
+// Tests that NewRandomTestID panics when given a nil testing object.
+func TestNewRandomTestID_TestError(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("NewRandomTestID did not panic when it received a nil " +
+				"testing object when it should have.")
+		}
+	}()
+
+	// Call the function with nil testing object
+	_ = NewRandomTestID(nil, Generic, nil)
+}
+
+// Tests that NewRandomTestID returns an error when the io reader encounters an
+// error.
+func TestNewRandomTestID_ReaderError(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("NewRandomTestID failed to return an error when the " +
+				"reader failed.")
+		}
+	}()
+
+	_ = NewRandomTestID(strings.NewReader(""), Generic, t)
 }
 
 // Tests that NewIdFromBytes creates a new ID with the correct contents.
@@ -661,48 +764,19 @@ func TestNewIdFromBase64String(t *testing.T) {
 				tt.base64String, i, tt.expected, b64)
 		}
 	}
-	//
-	//
-	// // Test values
-	// expectedIdString := "TestIDStringOfCorrectLength"
-	// expectedType := Group
-	// expectedID := new(ID)
-	// copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
-	//
-	// strs := []string{
-	// 	"test",
-	// 	`"test"`,
-	// 	`Question ?`,
-	// 	`open   angle bracket <`,
-	// 	`close angle bracket >`,
-	// 	`slash /`,
-	// 	`slash \`,
-	// }
-	// for i, str := range strs {
-	// 	escaped := url.QueryEscape(str)
-	// 	escaped = whitespaceRegex.ReplaceAllString(str, "+")
-	// 	escaped = nonBase64Regex.ReplaceAllString(escaped, "")
-	// 	fmt.Printf("%2d. %s\n    %s\n", i, str, escaped)
-	// }
-	//
-	// // Create the ID and check its contents
-	// newID := NewIdFromBase64String(expectedIdString, expectedType, t)
-	//
-	// // Check if the new ID matches the expected ID
-	// if !expectedID.Cmp(newID) {
-	// 	t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-	// 		"\nexpected: %v\nreceived: %v", expectedID[:], newID[:])
-	// }
-	//
-	// // Check if the original string is still in the first 32 bytes
-	// newIdString := string(newID.Bytes()[:ArrIDLen-1])
-	// if expectedIdString != newIdString {
-	// 	t.Errorf("NewIdFromString did not correctly convert the original "+
-	// 		"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
-	// 		"\nexpected bytes: %v\nreceived bytes: %v",
-	// 		expectedIdString, newIdString,
-	// 		[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
-	// }
+}
+
+// Tests that NewIdFromBase64String panics when given a nil testing object.
+func TestNewIdFromBase64String_TestError(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("NewIdFromBase64String did not panic when it received a " +
+				"nil testing object when it should have.")
+		}
+	}()
+
+	// Call the function with nil testing object
+	_ = NewIdFromBase64String("", Generic, nil)
 }
 
 // Tests that NewIdFromUInt creates a new ID with the correct contents by

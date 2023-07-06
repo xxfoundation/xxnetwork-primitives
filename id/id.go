@@ -184,12 +184,18 @@ func (id ID) MarshalText() (text []byte, err error) {
 // UnmarshalText unmarshalls the text into an [ID]. This function adheres to the
 // [encoding.TextUnmarshaler] interface. This allows for the JSON unmarshalling
 // of non-referenced IDs in maps (e.g., map[ID]int).
-func (id ID) UnmarshalText(text []byte) error {
+func (id *ID) UnmarshalText(text []byte) error {
 	idBytes, err := base64.RawStdEncoding.DecodeString(string(text))
 	if err != nil {
 		return err
 	}
-	copy(id[:], idBytes)
+
+	newID, err := Unmarshal(idBytes)
+	if err != nil {
+		return err
+	}
+
+	copy(id[:], newID[:])
 	return nil
 }
 
