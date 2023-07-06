@@ -556,7 +556,7 @@ func TestReadDir(t *testing.T) {
 	//       If at any point files are added or moved, refactor this list
 	//       accordingly.
 	var expectedFiles = []string{"gen.go", "net.go", "net_test.go",
-		"privNet.go", "utils.go", "utils_test.go"}
+		"privNet.go", "file.go", "file_test.go"}
 
 	require.Equal(t, expectedFiles, files)
 }
