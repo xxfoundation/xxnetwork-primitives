@@ -47,7 +47,7 @@ func TestCreateBucketWithLeakRate(t *testing.T) {
 	// Check that the lastUpdate occurred recently
 	if time.Now().UnixNano()-b.lastUpdate > time.Second.Nanoseconds() {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with old "+
-			"lastUpdate.\nreceived: %s", b.lastUpdate)
+			"lastUpdate.\nreceived: %d", b.lastUpdate)
 	}
 
 	if b.locked {
