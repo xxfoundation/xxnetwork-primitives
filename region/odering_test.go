@@ -30,10 +30,10 @@ func TestCreateLatencyTable(t *testing.T) {
 // Test that a team of 8 nodes, each in a different region
 // is assembled into a round with an efficient order
 func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
-	const teamsize = 9
+	const teamSize = 9
 
 	// Build the nodes
-	nodeList := make([]*id.ID, teamsize)
+	nodeList := make([]*id.ID, teamSize)
 
 	rng := rand.New(rand.NewSource(42))
 
@@ -64,8 +64,7 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 
 	if duration > expectedDuration {
 		t.Logf("Warning, creating round for a team of %d took longer than expected."+
-			"\n\tExpected: ~%s"+
-			"\n\tReceived: %s", teamsize, expectedDuration, duration)
+			"\nexpected: ~%s\nreceived: %s", teamSize, expectedDuration, duration)
 	}
 
 	var regionOrder []GeoBin
@@ -78,7 +77,7 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 
 	t.Logf("Team order outputted by CreateRound with weight %d: %v", weight, regionOrderStr)
 
-	// Go though the regions, checking for any long jumps
+	// Go through the regions, checking for any long jumps
 	validRegionTransitions := newTransitions()
 	longTransitions := uint32(0)
 	for i, thisRegion := range regionOrder {
@@ -93,10 +92,10 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 	t.Logf("Amount of long distant jumps: %v", longTransitions)
 
 	// Check that the long jumps does not exceed over half the jumps
-	if longTransitions > teamsize/2+1 {
+	if longTransitions > teamSize/2+1 {
 		t.Errorf("Number of long distant transitions beyond acceptable amount!"+
-			"\n\tAcceptable long distance transitions: %v"+
-			"\n\tReceived long distance transitions: %v", teamsize/2+1, longTransitions)
+			"\nAcceptable long distance transitions: %v"+
+			"\nReceived long distance transitions: %v", teamSize/2+1, longTransitions)
 	}
 
 }
@@ -104,10 +103,10 @@ func TestCreateRound_EfficientTeam_AllRegions(t *testing.T) {
 // Test that a team of 8 nodes, each in a different region
 // is assembled into a round with an efficient order
 func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
-	const teamsize = 5
+	const teamSize = 5
 
 	// Build the nodes
-	nodeList := make([]*id.ID, teamsize)
+	nodeList := make([]*id.ID, teamSize)
 
 	rng := rand.New(rand.NewSource(42))
 
@@ -138,25 +137,25 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 
 	if duration > expectedDuration {
 		t.Errorf("Warning, creating round for a team of %d took longer than expected."+
-			"\n\tExpected: ~%s"+
-			"\n\tReceived: %s", teamsize, expectedDuration, duration)
+			"\nExpected: ~%s"+
+			"\nReceived: %s", teamSize, expectedDuration, duration)
 	}
 
-	//var regionOrder []GeoBin
-	//var regionOrderStr []string
-	//for _, n := range bestOrdering {
+	// var regionOrder []GeoBin
+	// var regionOrderStr []string
+	// for _, n := range bestOrdering {
 	//	order, _ := GetCountryBin(countryMap[*n])
 	//	regionOrder = append(regionOrder, order)
 	//	regionOrderStr = append(regionOrderStr, order.String())
-	//}
+	// }
 	//
 	//
-	//for i := 0; i < len(bestOrdering)-1; i++ {
+	// for i := 0; i < len(bestOrdering)-1; i++ {
 	//	x :=  latencyTable[(regionOrder[i])][regionOrder[i+1]]
 	//	if x > 2 {
 	//		t.Fatalf("blah")
 	//	}
-	//}
+	// }
 
 }
 
@@ -164,7 +163,7 @@ func TestCreateRound_EfficientTeam_CloseAndFar(t *testing.T) {
 // Test that a team of 8 nodes from random regions,
 // is assembled into a round with an efficient order
 func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
-	testpool := NewWaitingPool()
+	testPool := NewWaitingPool()
 
 	// Build scheduling params
 	testParams := Params{
@@ -196,7 +195,7 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 		// Randomize the regions of the nodes
 		index := mathRand.Intn(8)
 
-		// Generate a test id
+		// Generate a test ID
 		nid := id.NewIdFromUInt(i, id.Node, t)
 		nodeList[i] = nid
 
@@ -211,17 +210,17 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 		// Add the node to the pool
 		nodeState := testState.GetNodeMap().GetNode(nid)
 		nodeStateList[i] = nodeState
-		testpool.Add(nodeState)
+		testPool.Add(nodeState)
 	}
 
 	roundID, err := testState.IncrementRoundID()
 	if err != nil {
-		t.Errorf("IncrementRoundID() failed: %+v", err)
+		t.Errorf("IncrementRoundID failed: %+v", err)
 	}
 
-	//  Create the protoround
+	// Create the protoRound
 	start := time.Now()
-	testProtoRound, err := createSecureRound(testParams, testpool, roundID, testState)
+	testProtoRound, err := createSecureRound(testParams, testPool, roundID, testState)
 	if err != nil {
 		t.Errorf("Error in happy path: %v", err)
 	}
@@ -233,8 +232,7 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 	// to create the round
 	if duration.Milliseconds() > expectedDuration {
 		t.Errorf("Warning, creating round for a team of 8 took longer than expected."+
-			"\n\tExpected: ~%v ms"+
-			"\n\tReceived: %v ms", expectedDuration, duration)
+			"\nexpected: ~%v ms\nreceived: %v ms", expectedDuration, duration)
 	}
 
 	// Parse the order of the regions
@@ -247,7 +245,7 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 		regionOrderStr = append(regionOrderStr, order.String())
 	}
 
-	// Output the teaming order to the log in human readable format
+	// Output the teaming order to the log in human-readable format
 	t.Log("Team order outputted by CreateRound: ", regionOrderStr)
 
 	// Measure the amount of longer than necessary jumps
@@ -267,8 +265,8 @@ func TestCreateRound_EfficientTeam_RandomRegions(t *testing.T) {
 	// Check that the long distant jumps do not exceed half the jumps
 	if longTransitions > testParams.TeamSize/2+1 {
 		t.Errorf("Number of long distant transitions beyond acceptable amount!"+
-			"\n\tAcceptable long distance transitions: %v"+
-			"\n\tReceived long distance transitions: %v", testParams.TeamSize/2+1, longTransitions)
+			"\nAcceptable long distance transitions: %v"+
+			"\nReceived long distance transitions: %v", testParams.TeamSize/2+1, longTransitions)
 	}
 
 }*/
@@ -293,9 +291,9 @@ func newRegionTransitionValidation(from ...GeoBin) regionTransitionValidation {
 	return tv
 }
 
-// Valid transitions are defined as region jumps that are not long distant
-// long distant is defined by internet cable maps. It was defined
-// in a undirected graph of what are good internet connections
+// Valid transitions are defined as region jumps that are not long distant.
+// Long distant is defined by internet cable maps. It was defined in an
+// undirected graph of which are good internet connections.
 func newTransitions() regionTransition {
 	t := regionTransition{}
 
@@ -316,7 +314,8 @@ func newTransitions() regionTransition {
 }
 
 // IsValidTransition checks the transitionValidation to see if
-//  the attempted transition is valid
+//
+//	the attempted transition is valid
 func (r regionTransition) isValidTransition(from, to GeoBin) bool {
 	return r[to].from[from]
 }

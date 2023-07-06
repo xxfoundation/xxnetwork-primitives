@@ -7,8 +7,8 @@
 
 // Package utils contains general utility functions used by our system.
 // They are generic and perform basic tasks. As of writing, it mostly contains
-// file IO functions to make our system be able file IO independent of platform
-// as well as domain and IP validation.
+// file IO functions to make our system be able to file IO independent of
+// platform as well as domain and IP validation.
 
 package utils
 
@@ -81,7 +81,7 @@ func MakeDirs(path string, perm os.FileMode) error {
 	return mkdirAll(path, perm)
 }
 
-// WriteFile creates any directories in the path that do not exists and write
+// WriteFile creates any directories in the path that do not exist and write
 // the specified data to the file.
 func WriteFile(path string, data []byte, filePerm, dirPerm os.FileMode) error {
 	// Expand '~' to user's home directory and clean the path
@@ -90,7 +90,7 @@ func WriteFile(path string, data []byte, filePerm, dirPerm os.FileMode) error {
 		return err
 	}
 
-	// Make an directories in the path that do not already exist
+	// Make directories in the path that do not already exist
 	err = mkdirAll(path, dirPerm)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func WriteFile(path string, data []byte, filePerm, dirPerm os.FileMode) error {
 	return err
 }
 
-// WriteFileDef creates any directories in the path that do not exists and write
+// WriteFileDef creates any directories in the path that do not exist and write
 // the specified data to the file using the default file and directory
 // permissions.
 func WriteFileDef(path string, data []byte) error {
@@ -205,7 +205,7 @@ func exists(path string) (os.FileInfo, bool) {
 // blank and an error is returned.
 //
 // Note that defaultDirectory MUST be a relative path. By default, when checking
-// the home directory a "." is prepended the to defaultDirectory.
+// the home directory, a "." is prepended to the defaultDirectory.
 func SearchDefaultLocations(defaultFileName string, defaultDirectory string) (string, error) {
 	// Get the user's home directory
 	defaultDirs, err := getDefaultSearchDirs(defaultDirectory)

@@ -81,7 +81,8 @@ func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string, countryToBins map
 // other defined regions. Latency is derived through educated guesses right now
 // without any real world data.
 // todo: table needs better real-world accuracy. Once data is collected
-//  this table can be updated for better accuracy and selection
+//
+//	this table can be updated for better accuracy and selection
 func CreateLinkTable() (distanceLatency [12][12]int) {
 
 	// number of hops on the graph from region.Americas to other regions

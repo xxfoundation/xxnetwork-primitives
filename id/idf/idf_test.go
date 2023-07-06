@@ -39,7 +39,7 @@ var randomIDF = IdFile{
 	HexNodeID: randomHexNodeId,
 }
 
-// Tests that newIdfFromJSON() creates the correct IdFile object form the given
+// Tests that newIdfFromJSON creates the correct IdFile object form the given
 // JSON bytes.
 func TestNewIdfFromJSON(t *testing.T) {
 	// Expected values
@@ -51,17 +51,17 @@ func TestNewIdfFromJSON(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("newIdfFromJSON() produced an unexpected error:\n%+v", err)
+		t.Fatalf("newIdfFromJSON produced an unexpected error:\n%+v", err)
 	}
 
 	// Check that the new IDF matches the expected IDF
 	if !reflect.DeepEqual(expectedIDF, newIDF) {
-		t.Errorf("newIdfFromJSON() produced an incorrect IDF."+
-			"\n\texpected: %#v\n\treceived: %#v", expectedIDF, newIDF)
+		t.Errorf("newIdfFromJSON produced an incorrect IDF."+
+			"\nexpected: %#v\nreceived: %#v", expectedIDF, newIDF)
 	}
 }
 
-// Tests that newIdfFromJSON() creates the correct IdFile object form the given
+// Tests that newIdfFromJSON creates the correct IdFile object form the given
 // JSON bytes.
 func TestNewIdfFromJSON_JsonError(t *testing.T) {
 	// Expected values
@@ -73,18 +73,18 @@ func TestNewIdfFromJSON_JsonError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Fatalf("newIdfFromJSON() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Fatalf("newIdfFromJSON did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the new IDF is nil
 	if newIDF != nil {
-		t.Errorf("newIdfFromJSON() returned a non-nil IDF on error."+
-			"\n\texpected: %#v\n\treceived: %#v", nil, newIDF)
+		t.Errorf("newIdfFromJSON returned a non-nil IDF on error."+
+			"\nexpected: %#v\nreceived: %#v", nil, newIDF)
 	}
 }
 
-// Tests that newIDF() creates the correct IdFile object.
+// Tests that newIDF creates the correct IdFile object.
 func TestNewIDF(t *testing.T) {
 	// Expected values
 	expectedID := id.NewIdFromBytes(randomIDBytes[:], t)
@@ -96,17 +96,17 @@ func TestNewIDF(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("newIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("newIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Check that the new IDF matches the expected IDF
 	if !reflect.DeepEqual(expectedIDF, newIDF) {
-		t.Errorf("newIDF() produced an incorrect IDF."+
-			"\n\texpected: %#v\n\treceived: %#v", expectedIDF, newIDF)
+		t.Errorf("newIDF produced an incorrect IDF."+
+			"\nexpected: %#v\nreceived: %#v", expectedIDF, newIDF)
 	}
 }
 
-// Tests that newIDF() returns and error when the provided salt is of the
+// Tests that newIDF returns and error when the provided salt is of the
 // incorrect length.
 func TestNewIDF_SaltLengthError(t *testing.T) {
 	// Expected values
@@ -119,18 +119,18 @@ func TestNewIDF_SaltLengthError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Fatalf("newIDF() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Fatalf("newIDF did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the new IDF is nil
 	if newIDF != nil {
-		t.Errorf("newIDF() returned a non-nil IDF on error."+
-			"\n\texpected: %#v\n\treceived: %#v", nil, newIDF)
+		t.Errorf("newIDF returned a non-nil IDF on error."+
+			"\nexpected: %#v\nreceived: %#v", nil, newIDF)
 	}
 }
 
-// Tests that writeIDF() write the IDF data to file correctly by reading the
+// Tests that writeIDF write the IDF data to file correctly by reading the
 // file back and comparing the contents to the original JSON.
 func TestWriteIDF(t *testing.T) {
 	// Expected values
@@ -150,7 +150,7 @@ func TestWriteIDF(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("writeIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("writeIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Read the contents from the file
@@ -161,12 +161,12 @@ func TestWriteIDF(t *testing.T) {
 
 	// Check that the IDF file contents match the expected IDF bytes
 	if !bytes.Equal(expectedJSON, jsonBytes) {
-		t.Errorf("writeIDF() wrote the IDF incorrectly."+
-			"\n\texpected: %#v\n\treceived: %#v", expectedJSON, jsonBytes)
+		t.Errorf("writeIDF wrote the IDF incorrectly."+
+			"\nexpected: %#v\nreceived: %#v", expectedJSON, jsonBytes)
 	}
 }
 
-// Tests that writeIDF() returns an error and does not create a new file when
+// Tests that writeIDF returns an error and does not create a new file when
 // provided a bad path.
 func TestWriteIDF_BadPathError(t *testing.T) {
 	// Expected values
@@ -187,18 +187,18 @@ func TestWriteIDF_BadPathError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Fatalf("writeIDF() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Fatalf("writeIDF did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the IDF was not created
 	if utils.Exists(filePath) {
-		t.Errorf("writeIDF() created the test file %#v when given a bad path.",
+		t.Errorf("writeIDF created the test file %#v when given a bad path.",
 			filePath)
 	}
 }
 
-// Tests that UnloadIDF() returns the expected salt and IdBytes.
+// Tests that UnloadIDF returns the expected salt and IdBytes.
 func TestUnloadIDF(t *testing.T) {
 	// Test values
 	filePath := "test_ID.json"
@@ -227,24 +227,24 @@ func TestUnloadIDF(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("UnloadIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("UnloadIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Check if returned salt is correct
 	if !bytes.Equal(expectedSalt, newSalt) {
-		t.Errorf("UnloadIDF() returned incorrect salt."+
-			"\n\texpected: %v\n\treceived: %v", expectedSalt, newSalt)
+		t.Errorf("UnloadIDF returned incorrect salt."+
+			"\nexpected: %v\nreceived: %v", expectedSalt, newSalt)
 	}
 
 	// Check if returned IdBytes is correct
 	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
-			"\n\texpected: %v\n\treceived: %v",
+		t.Errorf("UnloadIDF returned incorrect IdBytes."+
+			"\nexpected: %v\nreceived: %v",
 			expectedID.Bytes(), newID.Bytes())
 	}
 }
 
-// Tests that UnloadIDF() returns an error when provided an invalid path.
+// Tests that UnloadIDF returns an error when provided an invalid path.
 func TestUnloadIDF_FilePathError(t *testing.T) {
 	// Test values
 	filePath := "~a/test_ID.json"
@@ -255,24 +255,24 @@ func TestUnloadIDF_FilePathError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Errorf("UnloadIDF() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Errorf("UnloadIDF did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the returned salt is nil
 	if newSalt != nil {
-		t.Errorf("UnloadIDF() returned non-nil salt on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newSalt)
+		t.Errorf("UnloadIDF returned non-nil salt on error."+
+			"\nexpected: %v\nreceived: %v", nil, newSalt)
 	}
 
 	// Check that the returned IdBytes is nil
 	if newID != nil {
-		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
+		t.Errorf("UnloadIDF returned non-nil IdBytes on error."+
+			"\nexpected: %v\nreceived: %v", nil, newID)
 	}
 }
 
-// Tests that UnloadIDF() returns an error when the provided IDF contains
+// Tests that UnloadIDF returns an error when the provided IDF contains
 // invalid JSON.
 func TestUnloadIDF_InvalidJsonError(t *testing.T) {
 	// Test values
@@ -301,24 +301,24 @@ func TestUnloadIDF_InvalidJsonError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Errorf("UnloadIDF() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Errorf("UnloadIDF did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the returned salt is nil
 	if newSalt != nil {
-		t.Errorf("UnloadIDF() returned non-nil salt on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newSalt)
+		t.Errorf("UnloadIDF returned non-nil salt on error."+
+			"\nexpected: %v\nreceived: %v", nil, newSalt)
 	}
 
 	// Check that the returned IdBytes is nil
 	if newID != nil {
-		t.Errorf("UnloadIDF() returned non-nil IdBytes on error."+
-			"\n\texpected: %v\n\treceived: %v", nil, newID)
+		t.Errorf("UnloadIDF returned non-nil IdBytes on error."+
+			"\nexpected: %v\nreceived: %v", nil, newID)
 	}
 }
 
-// Tests that LoadIDF() writes the correct data to file.
+// Tests that LoadIDF writes the correct data to file.
 func TestLoadIDF(t *testing.T) {
 	// Test values
 	filePath := "test_ID.json"
@@ -341,7 +341,7 @@ func TestLoadIDF(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("LoadIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("LoadIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Get NDF contents
@@ -354,12 +354,12 @@ func TestLoadIDF(t *testing.T) {
 
 	// Check if returned IDF JSON is correct
 	if !bytes.Equal(expectedIdfJSON, testIdfJSON) {
-		t.Errorf("LoadIDF() created incorrect IDF."+
-			"\n\texpected: %v\n\treceived: %v", expectedIdfJSON, testIdfJSON)
+		t.Errorf("LoadIDF created incorrect IDF."+
+			"\nexpected: %v\nreceived: %v", expectedIdfJSON, testIdfJSON)
 	}
 }
 
-// Tests that LoadIDF() returns an error when given a salt with incorrect
+// Tests that LoadIDF returns an error when given a salt with incorrect
 // length.
 func TestLoadIDF_IdfError(t *testing.T) {
 	// Test values
@@ -383,13 +383,13 @@ func TestLoadIDF_IdfError(t *testing.T) {
 
 	// Check that the expected error occurred
 	if err == nil {
-		t.Errorf("LoadIDF() did not produce the expected error."+
-			"\n\texpected: %v\n\treceived: %v", expectedError, err)
+		t.Errorf("LoadIDF did not produce the expected error."+
+			"\nexpected: %v\nreceived: %v", expectedError, err)
 	}
 
 	// Check that the IDF was not created
 	if utils.Exists(filePath) {
-		t.Errorf("LoadIDF() created the test file %#v when given a bad path.",
+		t.Errorf("LoadIDF created the test file %#v when given a bad path.",
 			filePath)
 	}
 }
@@ -415,7 +415,7 @@ func TestIDF_LoadUnload(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("LoadIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("LoadIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Unload the IDF
@@ -423,19 +423,19 @@ func TestIDF_LoadUnload(t *testing.T) {
 
 	// Check that no error occurred
 	if err != nil {
-		t.Fatalf("UnloadIDF() produced an unexpected error:\n%v", err)
+		t.Fatalf("UnloadIDF produced an unexpected error:\n%v", err)
 	}
 
 	// Check if returned salt is correct
 	if !bytes.Equal(expectedSalt, newSalt) {
-		t.Errorf("UnloadIDF() returned incorrect salt."+
-			"\n\texpected: %v\n\treceived: %v", expectedSalt, newSalt)
+		t.Errorf("UnloadIDF returned incorrect salt."+
+			"\nexpected: %v\nreceived: %v", expectedSalt, newSalt)
 	}
 
 	// Check if returned IdBytes is correct
 	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF() returned incorrect IdBytes."+
-			"\n\texpected: %v\n\treceived: %v",
+		t.Errorf("UnloadIDF returned incorrect IdBytes."+
+			"\nexpected: %v\nreceived: %v",
 			expectedID.Bytes(), newID.Bytes())
 	}
 }

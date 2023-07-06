@@ -11,7 +11,7 @@ import (
 	"net"
 )
 
-// addrBlock describes a block of addresses that have bee registered for as
+// addrBlock describes a block of addresses that have been registered for as
 // specific purpose.
 type addrBlock struct {
 	name string    // Name for the purpose of the block

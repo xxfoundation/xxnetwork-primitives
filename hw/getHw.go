@@ -5,7 +5,7 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// Package hw contains files for identifying the hardware inside of a computer
+// Package hw contains files for identifying the hardware inside a computer
 
 package hw
 
@@ -64,7 +64,7 @@ func LogHardware() {
 		var out []byte
 		var err error
 		cmd := strings.Join(cmdList, " ")
-		if len(cmdList) == 1 { // Handle quirks of exec.Command() and variable command length
+		if len(cmdList) == 1 { // Handle quirks of exec.Command and variable command length
 			out, err = exec.Command(cmdList[0]).Output()
 			if err != nil { // Print error, continue with other commands
 				out = []byte((fmt.Sprintf("%s err: %s", cmdList, err)))

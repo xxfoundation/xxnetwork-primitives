@@ -54,7 +54,8 @@ func TestWeights(t *testing.T) {
 }
 
 // All returns all combinations for a given string array.
-// This is essentially a powerset of the given set except that the empty set is disregarded.
+// This is essentially a powerset of the given set except that the empty set is
+// disregarded.
 func All(set []int) (subsets [][]int) {
 	length := uint(len(set))
 

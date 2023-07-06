@@ -24,7 +24,7 @@ import (
 
 const sep = string(filepath.Separator)
 
-// Tests that ExpandPath properly expands the the "~" character.
+// Tests that ExpandPath properly expands the "~" character.
 func TestExpandPath_Happy(t *testing.T) {
 	path := sep + "test123" + sep + "test.txt"
 	testPath := "~" + path
@@ -94,7 +94,7 @@ func TestMkdirAll(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %#v: %v", path, err)
 		}
 	}()
 
@@ -104,8 +104,7 @@ func TestMkdirAll(t *testing.T) {
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
-		t.Errorf("mkdirAll did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("mkdirAll did not correctly make the directories: %s", path)
 	}
 }
 
@@ -118,7 +117,7 @@ func TestMkdirAll_DirectoryPath(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %#v: %v", path, err)
 		}
 	}()
 
@@ -128,8 +127,7 @@ func TestMkdirAll_DirectoryPath(t *testing.T) {
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
-		t.Errorf("mkdirAll did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("mkdirAll did not correctly make the directories: %s", path)
 	}
 }
 
@@ -141,7 +139,7 @@ func TestMkdirAll_EmptyPath(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %#v: %v", path, err)
 		}
 	}()
 
@@ -151,8 +149,7 @@ func TestMkdirAll_EmptyPath(t *testing.T) {
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
-		t.Errorf("mkdirAll did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("mkdirAll did not correctly make the directories: %s", path)
 	}
 }
 
@@ -174,8 +171,7 @@ func TestMakeDirs(t *testing.T) {
 	}
 
 	if _, err = os.Stat(filepath.Dir(path)); os.IsExist(err) {
-		t.Errorf("MakeDirs did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("MakeDirs did not correctly make the directories: %s", path)
 	}
 }
 
@@ -225,8 +221,7 @@ func TestWriteFile(t *testing.T) {
 	}
 
 	if _, err = os.Stat(path); os.IsExist(err) {
-		t.Errorf("WriteFile did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("WriteFile did not correctly make the directories: %s", path)
 	}
 }
 
@@ -277,8 +272,7 @@ func TestWriteFileDef(t *testing.T) {
 	}
 
 	if _, err = os.Stat(path); os.IsExist(err) {
-		t.Errorf("WriteFileDef did not correctly make the directories:"+
-			"\n\t%s", path)
+		t.Errorf("WriteFileDef did not correctly make the directories: %s", path)
 	}
 }
 
@@ -633,8 +627,7 @@ func Test_exist(t *testing.T) {
 	expectedInfo, err := os.Stat(path)
 
 	if !exists && err != nil {
-		t.Errorf("exists did not find a file that should exist:"+
-			"\n\t%v", err)
+		t.Errorf("exists did not find a file that should exist: %v", err)
 	} else if !exists {
 		t.Errorf("exists did not find a file that should exist")
 	}
@@ -670,11 +663,11 @@ func TestSearchDefaultLocations(t *testing.T) {
 	testPath := testDir + testFile
 	expectedPath, err := ExpandPath("~/." + testPath)
 	if err != nil {
-		t.Fatalf("ExpandPath() failed to exapnd the path %s: %+v", testPath, err)
+		t.Fatalf("ExpandPath failed to exapnd the path %s: %+v", testPath, err)
 	}
 	expectedDir, err := ExpandPath("~/" + testDir)
 	if err != nil {
-		t.Fatalf("ExpandPath() failed to exapnd the path %s: %+v", testPath, err)
+		t.Fatalf("ExpandPath failed to exapnd the path %s: %+v", testPath, err)
 	}
 
 	// Delete the test file at the end
@@ -687,7 +680,7 @@ func TestSearchDefaultLocations(t *testing.T) {
 
 	err = WriteFile(expectedPath, []byte("TEST"), FilePerms, DirPerms)
 	if err != nil {
-		t.Fatalf("WriteFile() failed to create file %s: %+v", testPath, err)
+		t.Fatalf("WriteFile failed to create file %s: %+v", testPath, err)
 	}
 
 	foundPath, err := SearchDefaultLocations(testFile, testDir)
