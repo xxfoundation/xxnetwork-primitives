@@ -112,16 +112,159 @@ func TestID_Bytes(t *testing.T) {
 	}
 }
 
+// Tests that ID.Bytes panics when the ID is nil.
+func TestID_Bytes_NilError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Bytes failed to panic when the ID is nil.")
+		}
+	}()
+
+	var id *ID
+	_ = id.Bytes()
+}
+
+// Tests that ID.Equal properly reports when two IDs with the same values are
+// equal and different values as not equal.
+func TestID_Equal(t *testing.T) {
+	prng := rand.New(rand.NewSource(8459612))
+
+	idA := NewRandomTestID(prng, Gateway, t)
+	idB, idC := NewIdFromBytes(idA.Bytes(), t), idA.DeepCopy()
+	idC.SetType(Node)
+	tests := []struct {
+		a, b  *ID
+		equal bool
+	}{
+		{idA, idA, true},
+		{idA, idB, true},
+		{idA, idC, false},
+		{idA, NewRandomTestID(prng, Gateway, t), false},
+		{NewRandomTestID(prng, Node, t), NewRandomTestID(prng, Node, t), false},
+	}
+
+	for i, tt := range tests {
+		equal := tt.a.Equal(tt.b)
+		if equal != tt.equal {
+			t.Errorf("Incorrect result for %s == %s (%d)."+
+				"\nexpected: %t\nreceived: %t", tt.a, tt.b, i, tt.equal, equal)
+		}
+	}
+}
+
+// Tests that ID.Equal panics when the ID is nil.
+func TestID_Equal_NilError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Equal failed to panic when the ID is nil.")
+		}
+	}()
+
+	var id *ID
+	_ = id.Equal(nil)
+}
+
+// Tests that ID.Compare properly reports the comparison of different IDs.
+func TestID_Compare(t *testing.T) {
+	tests := []struct {
+		a, b    *ID
+		compare int
+	}{
+		{NewIdFromBytes([]byte(""), t), NewIdFromBytes([]byte(""), t), 0},
+		{NewIdFromBytes([]byte("a"), t), NewIdFromBytes([]byte(""), t), 1},
+		{NewIdFromBytes([]byte(""), t), NewIdFromBytes([]byte("a"), t), -1},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("abc"), t), 0},
+		{NewIdFromBytes([]byte("abd"), t), NewIdFromBytes([]byte("abc"), t), 1},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("abd"), t), -1},
+		{NewIdFromBytes([]byte("ab"), t), NewIdFromBytes([]byte("abc"), t), -1},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("ab"), t), 1},
+		{NewIdFromBytes([]byte("x"), t), NewIdFromBytes([]byte("ab"), t), 1},
+		{NewIdFromBytes([]byte("ab"), t), NewIdFromBytes([]byte("x"), t), -1},
+		{NewIdFromBytes([]byte("x"), t), NewIdFromBytes([]byte("a"), t), 1},
+		{NewIdFromBytes([]byte("b"), t), NewIdFromBytes([]byte("x"), t), -1},
+	}
+
+	for i, tt := range tests {
+		compare := tt.a.Compare(tt.b)
+		if compare != tt.compare {
+			t.Errorf("Incorrect result for comparing %s and %s (%d)."+
+				"\nexpected: %d\nreceived: %d",
+				tt.a, tt.b, i, tt.compare, compare)
+		}
+	}
+}
+
+// Tests that ID.Compare panics when the ID is nil.
+func TestID_Compare_NilError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Compare failed to panic when the ID is nil.")
+		}
+	}()
+
+	var id *ID
+	_ = id.Compare(nil)
+}
+
+// Tests that ID.Less properly reports when an ID is less than another.
+func TestID_Less(t *testing.T) {
+	tests := []struct {
+		a, b *ID
+		less bool
+	}{
+		{NewIdFromBytes([]byte(""), t), NewIdFromBytes([]byte(""), t), false},
+		{NewIdFromBytes([]byte("a"), t), NewIdFromBytes([]byte(""), t), false},
+		{NewIdFromBytes([]byte(""), t), NewIdFromBytes([]byte("a"), t), true},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("abc"), t), false},
+		{NewIdFromBytes([]byte("abd"), t), NewIdFromBytes([]byte("abc"), t), false},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("abd"), t), true},
+		{NewIdFromBytes([]byte("ab"), t), NewIdFromBytes([]byte("abc"), t), true},
+		{NewIdFromBytes([]byte("abc"), t), NewIdFromBytes([]byte("ab"), t), false},
+		{NewIdFromBytes([]byte("x"), t), NewIdFromBytes([]byte("ab"), t), false},
+		{NewIdFromBytes([]byte("ab"), t), NewIdFromBytes([]byte("x"), t), true},
+		{NewIdFromBytes([]byte("x"), t), NewIdFromBytes([]byte("a"), t), false},
+		{NewIdFromBytes([]byte("b"), t), NewIdFromBytes([]byte("x"), t), true},
+	}
+
+	for i, tt := range tests {
+		less := tt.a.Less(tt.b)
+		if less != tt.less {
+			t.Errorf("Incorrect result for %s < %s (%d)."+
+				"\nexpected: %t\nreceived: %t", tt.a, tt.b, i, tt.less, less)
+		}
+	}
+}
+
+// Test that DeepCopy returns a copy with the same contents as the original
+// and where the pointers are different.
+func TestID_DeepCopy(t *testing.T) {
+	// Test values
+	expectedID := NewRandomTestID(rand.New(rand.NewSource(2125)), Gateway, t)
+
+	// Test if the contents are equal
+	testVal := expectedID.DeepCopy()
+	if !reflect.DeepEqual(expectedID, testVal) {
+		t.Errorf("DeepCopy returned a copy with the wrong contents."+
+			"\nexpected: %+v\nreceived: %+v", expectedID, testVal)
+	}
+
+	// Test if the returned bytes are copies
+	if &expectedID[0] == &testVal[0] {
+		t.Errorf("DeepCopy did not return a copy when it should have."+
+			"\nexpected: any value except %+v\nreceived: %+v",
+			&expectedID[0], &testVal[0])
+	}
+}
+
 // Tests that ID.DeepCopy panics when the ID is nil.
 func TestID_DeepCopy_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("DeepCopy failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	_ = id.DeepCopy()
 }
 
@@ -149,6 +292,18 @@ func TestID_String(t *testing.T) {
 				"\nexpected: %s\nreceived: %s", i, expected, testID.String())
 		}
 	}
+}
+
+// Tests that ID.String panics when the ID is nil.
+func TestID_String_NilError(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("String failed to panic when the ID is nil.")
+		}
+	}()
+
+	var id *ID
+	_ = id.String()
 }
 
 // Tests that ID.GetType returns the correct type for each ID type.
@@ -269,6 +424,33 @@ func TestID_UnmarshalJSON_IdUnmarshalError(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("UnmarshalJSON failed to return the expected error for "+
 			"invalid ID.\nexpected: %s\nreceived: %+v", expectedErr, err)
+	}
+}
+
+// Consistency test of ID.HexEncode.
+func TestID_HexEncode(t *testing.T) {
+	prng := rand.New(rand.NewSource(6516))
+	expectedIDs := []string{
+		"0xae5843e77c9721df5ba243cff923d518d00ced010b0105c145dfae308b900d60",
+		"0x0ca36fad72ac9a0032e84d8980377841f66ec5a61311adc85f588100d7b40ef5",
+		"0x72567246a346927f4b672dbf2ef5f0a310f1cd1e81b625c37762860b010f6ec7",
+		"0x18ec3e065d83db8c8eaee3b3434a1e551dbeda262b5babbd15ef0067f6aba57b",
+		"0x5b1ebe5390064991e9f9f50395e98b89336e2901decf89cfc87c4615f3aa847e",
+		"0xdeed3aa17f2fec2a8f400c713d5833873bfb39175bb126fee6317a43c2801b6e",
+		"0x7946861001bbfb4c50c300cb13bf912427ea5d0a8dc9ee58d975697782cdc0d1",
+		"0x75497ed22411fa8467f73d140e83b866d0e01d7052a8f40fad30ed77b643c88e",
+		"0x34369f5ba85469f0fdf42e23df6eeca302917b85af084deaab7b27b8b3927ea9",
+		"0xc8eb3ca60b689be3588bf254627086a2f678a30d79b9d24c813202894cda8113",
+	}
+
+	for i, expected := range expectedIDs {
+		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+
+		hexString := testID.HexEncode()
+		if hexString != expected {
+			t.Errorf("Unexpected hex string for ID %s (%d)."+
+				"\nexpected: %s\nreceived: %s", testID, i, expected, hexString)
+		}
 	}
 }
 
