@@ -86,7 +86,7 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
-	if originalID != testID {
+	if !originalID.Equal(testID) {
 		t.Errorf("Original ID does not match marshaled/unmarshalled ID."+
 			"\nexpected: %s\nreceived: %s", originalID, testID)
 	}

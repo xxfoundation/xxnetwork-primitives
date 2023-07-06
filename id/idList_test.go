@@ -56,7 +56,7 @@ func TestNewIDListFromBytes_Error(t *testing.T) {
 
 	// Attempt to convert the topologyList
 	_, err := NewIDListFromBytes(topologyList)
-	if err == nil || !strings.Contains(err.Error(), "failed to unmarshal ID") {
+	if err == nil || !strings.Contains(err.Error(), "unable to unmarshal ID") {
 		t.Errorf("NewIDListFromBytes did not return an error when an invalid " +
 			"ID is in the list.")
 	}

@@ -16,14 +16,14 @@ import "github.com/pkg/errors"
 func NewIDListFromBytes(topology [][]byte) ([]*ID, error) {
 	list := make([]*ID, len(topology))
 
-	for i, id := range topology {
-		newID, err := Unmarshal(id)
+	for i, idBytes := range topology {
+		id, err := Unmarshal(idBytes)
 		if err != nil {
 			return nil, errors.Errorf("unable to unmarshal ID at index %d: %+v",
 				i, err)
 		}
 
-		list[i] = newID
+		list[i] = id
 	}
 
 	return list, nil
