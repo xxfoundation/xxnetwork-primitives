@@ -28,6 +28,10 @@ const (
 	Period            = int64(time.Hour * 24)
 	NumOffsets  int64 = 1 << 16
 	NsPerOffset       = Period / NumOffsets
+
+	// Minimum and maximum size for new Id.
+	maxSize = 64
+	minSize = 1
 )
 
 // ReservedIDs are ephemeral IDs reserved for specific actions:
@@ -103,9 +107,9 @@ func Marshal(data []byte) (Id, error) {
 func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
 
-	if size > 64 {
+	if size > maxSize {
 		return []ProtoIdentity{},
-			errors.Errorf("Cannot generate ID with size > %d", size)
+			errors.Errorf("Cannot generate ID with size > %d", maxSize)
 	}
 
 	iid, err := GetIntermediaryId(id)
@@ -166,9 +170,9 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
 	Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
-	if size > 64 || size < 1 {
-		return Id{}, time.Time{}, time.Time{},
-			errors.New("Cannot generate ID, size must be between 1 and 64")
+	if size > maxSize || size < minSize {
+		return Id{}, time.Time{}, time.Time{}, errors.Errorf("Cannot generate "+
+			"ID, size must be between %d and %d", minSize, maxSize)
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
