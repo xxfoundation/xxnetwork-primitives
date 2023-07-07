@@ -94,15 +94,14 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get ID from intermediary: %+v", err)
 	}
-	if eid[2] != 0 && eid[3] != 0 && eid[4] != 0 && eid[5] != 0 && eid[6] != 0 && eid[7] != 0 {
-		t.Errorf("Id was not cleared to proper size: %+v", eid)
+	if !bytes.Equal(eid[:6], make([]byte, 6)) {
+		t.Errorf("Id was not cleared to proper size: %v", eid)
 	}
 }
 
 // Check that given precomputed input that should generate a reserved
 // ephemeral ID, GetIdFromIntermediary does not generate a reserved Id
 func TestGetIdFromIntermediary_Reserved(t *testing.T) {
-
 	// Hardcoded to ensure a collision with a reserved ID
 	hardcodedTimestamp := int64(1614199942358373731)
 	size := uint(4)
@@ -192,20 +191,20 @@ func TestId_Clear(t *testing.T) {
 	}
 
 	newEid = eid.Clear(16)
-	if newEid[0] != 0 || newEid[1] != 0 || newEid[2] != 0 || newEid[3] != 0 || newEid[4] != 0 || newEid[5] != 0 {
+	if !bytes.Equal(newEid[:6], make([]byte, 6)) {
 		t.Errorf("Proper bits were not cleared from size 16 ID: %v", newEid)
 	}
-	if eid[0] == 0 && eid[1] == 0 && eid[2] == 0 && eid[3] == 0 && eid[4] == 0 && eid[5] == 0 {
+	if bytes.Equal(eid[:6], make([]byte, 6)) {
 		t.Errorf("Bits were cleared from original ID: %v", eid)
 	}
-	if newEid[6] != eid[6] && newEid[7] != eid[7] {
+	if !bytes.Equal(eid[6:8], newEid[6:8]) {
 		t.Errorf("Proper bits do not match in IDs.\noriginal: %v\ncleared:  %v",
 			eid, newEid)
 	}
 }
 
 func TestId_Fill(t *testing.T) {
-	eid := Id{}
+	var eid Id
 	dummyData := []byte{201, 99, 103, 45, 68, 2, 56, 7}
 	copy(eid[:], dummyData)
 
@@ -226,11 +225,10 @@ func TestId_Fill(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to fill ID: %+v", err)
 	}
-	if newEid[0] == eid[0] || newEid[1] == eid[1] || newEid[2] == eid[2] || newEid[3] == eid[3] ||
-		newEid[4] == eid[4] || newEid[5] == eid[5] {
+	if bytes.Equal(newEid[:6], eid[:6]) {
 		t.Errorf("Proper bits were not filled from size 16 ID %v", newEid)
 	}
-	if newEid[6] != eid[6] && newEid[7] != eid[7] {
+	if !bytes.Equal(newEid[6:8], eid[6:8]) {
 		t.Errorf("Proper bits do not match in IDs.\noriginal: %v\ncleared:  %v",
 			eid, newEid)
 	}
