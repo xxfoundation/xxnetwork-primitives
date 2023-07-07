@@ -254,8 +254,7 @@ func TestBucket_Add(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %d\nreceived: %d",
-				i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }

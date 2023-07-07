@@ -96,7 +96,7 @@ func TestMkdirAll(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v: %v", path, err)
+			t.Fatalf("Error deleting test file %q: %v", path, err)
 		}
 	}()
 
@@ -119,7 +119,7 @@ func TestMkdirAll_DirectoryPath(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v: %v", path, err)
+			t.Fatalf("Error deleting test file %q: %v", path, err)
 		}
 	}()
 
@@ -141,7 +141,7 @@ func TestMkdirAll_EmptyPath(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v: %v", path, err)
+			t.Fatalf("Error deleting test file %q: %v", path, err)
 		}
 	}()
 
@@ -163,7 +163,7 @@ func TestMakeDirs(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -185,7 +185,7 @@ func TestMakeDirs_PathError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -208,7 +208,7 @@ func TestWriteFile(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll("temp/")
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", "temp/", err)
+			t.Fatalf("Error deleting test file %q: %+v", "temp/", err)
 		}
 	}()
 
@@ -236,7 +236,7 @@ func TestWriteFile_PathError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -259,7 +259,7 @@ func TestWriteFileDef(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll("temp/")
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", "temp/", err)
+			t.Fatalf("Error deleting test file %q: %+v", "temp/", err)
 		}
 	}()
 
@@ -288,7 +288,7 @@ func TestReadFile(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -329,7 +329,7 @@ func TestExist(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -352,7 +352,7 @@ func TestExist_Dir(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -375,7 +375,7 @@ func TestExist_NoFileError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -394,7 +394,7 @@ func TestFileExists(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -417,7 +417,7 @@ func TestFileExists_DirError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -439,7 +439,7 @@ func TestFileExists_NoFileError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -457,7 +457,7 @@ func TestDirExists(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -481,7 +481,7 @@ func TestDirExists_FileError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -504,7 +504,7 @@ func TestDirExists_NoDirError(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -617,7 +617,7 @@ func Test_exist(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(path)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", path, err)
+			t.Fatalf("Error deleting test file %q: %+v", path, err)
 		}
 	}()
 
@@ -677,7 +677,7 @@ func TestSearchDefaultLocations(t *testing.T) {
 	defer func() {
 		err := os.RemoveAll(expectedDir)
 		if err != nil {
-			t.Fatalf("Error deleting test file %#v:\n%v", expectedDir, err)
+			t.Fatalf("Error deleting test file %q: %+v", expectedDir, err)
 		}
 	}()
 
