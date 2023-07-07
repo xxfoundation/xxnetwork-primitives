@@ -25,7 +25,8 @@ const (
 	NumTypes // Gives number of ID types
 )
 
-// String is a stringer to get the name of the ID type.
+// String returns the ID Type in a human-readable form for use in logging and
+// debugging. This functions adheres to the fmt.Stringer interface.
 func (t Type) String() string {
 	switch t {
 	case Generic:

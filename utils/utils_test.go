@@ -13,13 +13,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/go-homedir"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
+	"github.com/stretchr/testify/require"
 )
 
 const sep = string(filepath.Separator)

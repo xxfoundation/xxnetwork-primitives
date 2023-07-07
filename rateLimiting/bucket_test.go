@@ -67,7 +67,7 @@ func TestCreateBucket(t *testing.T) {
 	b := CreateBucket(expectedCapacity, 3.0, 5*time.Millisecond, nil)
 
 	if b.leakRate != expectedLeakRate {
-		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect leak rate."+
+		t.Errorf("New Bucket has incorrect leak rate."+
 			"\nexpected: %v\nreceived: %v", expectedLeakRate, b.leakRate)
 	}
 }
@@ -82,9 +82,8 @@ func TestCreateBucketFromDB(t *testing.T) {
 	timestamp := time.Now().UnixNano()
 	addToDb := func(a uint32, b int64) {}
 
-	testBucket := CreateBucketFromDB(expectedCapacity,
-		expectedLeaked, expectedLeakDuration, expectedInBucket,
-		timestamp, addToDb)
+	testBucket := CreateBucketFromDB(expectedCapacity, expectedLeaked,
+		expectedLeakDuration, expectedInBucket, timestamp, addToDb)
 
 	expectedBucket := &Bucket{
 		capacity:   expectedCapacity,
@@ -318,7 +317,7 @@ func TestBucket_Add_DB(t *testing.T) {
 	b := CreateBucketFromLeakRatio(10, leakRate, nil)
 
 	// Set up mock bucket database with addToDb function
-	bucketDB := &BucketParams{
+	db := &BucketParams{
 		Key:        "keyA",
 		Capacity:   b.capacity,
 		Remaining:  b.remaining,
@@ -329,8 +328,8 @@ func TestBucket_Add_DB(t *testing.T) {
 	}
 
 	b.addToDb = func(remaining uint32, lastUpdate int64) {
-		bucketDB.Remaining = remaining
-		bucketDB.LastUpdate = lastUpdate
+		db.Remaining = remaining
+		db.LastUpdate = lastUpdate
 	}
 
 	// Add expected values and test
@@ -344,20 +343,18 @@ func TestBucket_Add_DB(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, r.expectedRem, b.remaining)
+				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
 		}
 
-		if b.remaining != bucketDB.Remaining {
-			t.Errorf("Incorrect number of tokens remaining in database bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, b.remaining, bucketDB.Remaining)
+		if b.remaining != db.Remaining {
+			t.Errorf("Incorrect number of tokens remaining in database bucket "+
+				"(round %d).\nexpected: %v\nreceived: %v",
+				i, b.remaining, db.Remaining)
 		}
 
-		if b.lastUpdate != bucketDB.LastUpdate {
+		if b.lastUpdate != db.LastUpdate {
 			t.Errorf("Incorrect LastUpdate in database bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, b.lastUpdate, bucketDB.LastUpdate)
+				"\nexpected: %v\nreceived: %v", i, b.lastUpdate, db.LastUpdate)
 		}
 	}
 }

@@ -403,7 +403,8 @@ func TestGetNodeId(t *testing.T) {
 	}
 
 	// Expected ID, pulled from the global ExampleNDF
-	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	// Fetch the ID
 	receivedNodeId, err := jsonData.Nodes[0].GetNodeId()
@@ -421,7 +422,8 @@ func TestGetGatewayId(t *testing.T) {
 	gw := Gateway{make([]byte, 33), "52.41.80.104", "-----BEGIN CERT", 0}
 
 	// Expected ID, pulled from the global ExampleNDF
-	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	// Fetch the ID
 	receivedGatewayId, err := gw.GetGatewayId()
@@ -450,7 +452,8 @@ func TestNetworkDefinition_DeepCopy(t *testing.T) {
 			"\nexpected: %+v\nreceived: %+v", netDef, netDef)
 	}
 
-	netDef.Gateways = append(netDef.Gateways, Gateway{[]byte("ID"), "address", "TlsCertificate", 0})
+	netDef.Gateways = append(netDef.Gateways,
+		Gateway{[]byte("ID"), "address", "TlsCertificate", 0})
 
 	if reflect.DeepEqual(netDef, newNDF) {
 		t.Errorf("DeepCopy failed to make a deep copy. Changes in original "+

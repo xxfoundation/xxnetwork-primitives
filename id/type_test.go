@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// Tests that String returns the correct string for each Type.
+// Tests that Type.String returns the correct string for each Type.
 func TestType_String(t *testing.T) {
 	// Expected values
 	expectedGeneric := "generic"
@@ -64,10 +64,9 @@ func TestType_String(t *testing.T) {
 	}
 }
 
-// Tests that String returns an error when given a Type that has not been
+// Tests that Type.String returns an error when given a Type that has not been
 // defined.
 func TestType_String_Error(t *testing.T) {
-	// Expected/test values
 	expectedError := "UNKNOWN ID TYPE: 6"
 	testType := Type(6)
 

@@ -16,21 +16,17 @@ import (
 
 // Happy path
 func TestPermute(t *testing.T) {
-
 	const totalNodes = 3
 	nodeList := make([]*id.ID, totalNodes)
-
 	prng := rand.New(rand.NewSource(42))
 
 	// Build node states with unique ordering
 	for i := 0; i < totalNodes; i++ {
 		// Make a node state
-
 		newNode, _ := id.NewRandomID(prng, id.Node)
 
 		// Place new node in list
 		nodeList[i] = newNode
-
 	}
 
 	// Permute the nodes
@@ -40,8 +36,8 @@ func TestPermute(t *testing.T) {
 	// Verify that the amount of permutations is
 	// factorial of the original amount of nodes
 	if len(permutations) != expectedLen {
-		t.Errorf("Permutations did not produce the expected amount of permutations "+
-			"(factorial of amount of nodes)!"+
+		t.Errorf("Permutations did not produce the expected amount of "+
+			"permutations (factorial of amount of nodes)!"+
 			"\nexpected: %d\nreceived: %d", expectedLen, len(permutations))
 	}
 
@@ -74,7 +70,7 @@ func factorial(n int) int {
 		for i := 1; i <= n; i++ {
 			factVal *= i
 		}
-
 	}
+
 	return factVal
 }

@@ -5,9 +5,9 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// The package idf contains the structure of the ID File. It holds a generated
-// ID and a salt (a 256-bit random number) in a JSON file. This file is used
-// by different entities to save their ID and salt to file. The file path is
+// Package idf contains the structure of the ID File. It holds a generated ID
+// and a salt (a 256-bit random number) in a JSON file. This file is used by
+// different entities to save their ID and salt to file. The file path is
 // usually stored and referenced from each entity's configuration files.
 package idf
 
