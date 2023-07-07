@@ -429,8 +429,8 @@ func TestID_MarshalText_UnmarshalText(t *testing.T) {
 func TestID_UnmarshalText_InvalidBase64Error(t *testing.T) {
 	expectedErr := base64.CorruptInputError(7)
 
-	newID := &ID{}
-	err := newID.UnmarshalText([]byte("invalid bytes"))
+	id := &ID{}
+	err := id.UnmarshalText([]byte("invalid bytes"))
 	if err == nil || !errors.Is(err, expectedErr) {
 		t.Errorf("Failed to receive expected error.\nexpected: %v\nreceived: %+v",
 			expectedErr, err)
@@ -444,8 +444,8 @@ func TestID_UnmarshalText_InvalidIDError(t *testing.T) {
 	expectedErr := errors.Errorf("Failed to unmarshal ID: length of data "+
 		"must be %d, length received is %d", ArrIDLen, len(data))
 
-	newID := &ID{}
-	err := newID.UnmarshalText([]byte(base64.StdEncoding.EncodeToString(data)))
+	id := &ID{}
+	err := id.UnmarshalText([]byte(base64.StdEncoding.EncodeToString(data)))
 	if err == nil || !strings.Contains(err.Error(), expectedErr.Error()) {
 		t.Errorf("Failed to receive expected error.\nexpected: %v\nreceived: %+v",
 			expectedErr, err)
@@ -455,7 +455,7 @@ func TestID_UnmarshalText_InvalidIDError(t *testing.T) {
 // Error path: supplied data is invalid JSON.
 func TestID_UnmarshalJSON_JsonUnmarshalError(t *testing.T) {
 	expectedErr := "invalid character"
-	id := ID{}
+	id := &ID{}
 	err := id.UnmarshalJSON([]byte("invalid JSON"))
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("UnmarshalJSON failed to return the expected error for "+
@@ -467,7 +467,7 @@ func TestID_UnmarshalJSON_JsonUnmarshalError(t *testing.T) {
 func TestID_UnmarshalJSON_IdUnmarshalError(t *testing.T) {
 	expectedErr := fmt.Sprintf("Failed to unmarshal ID: length of data "+
 		"must be %d, length received is %d", ArrIDLen, 0)
-	id := ID{}
+	id := &ID{}
 	err := id.UnmarshalJSON([]byte("\"\""))
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("UnmarshalJSON failed to return the expected error for "+
@@ -820,10 +820,10 @@ func TestNewIdFromUInts(t *testing.T) {
 		rand.Uint64(), rand.Uint64(), rand.Uint64(), rand.Uint64()}
 
 	// Create the ID and check its contents
-	newID := NewIdFromUInts(expectedUints, Generic, t)
+	id := NewIdFromUInts(expectedUints, Generic, t)
 	idUints := [4]uint64{}
 	for i := range idUints {
-		idUints[i] = binary.BigEndian.Uint64(newID[i*8 : (i+1)*8])
+		idUints[i] = binary.BigEndian.Uint64(id[i*8 : (i+1)*8])
 	}
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
