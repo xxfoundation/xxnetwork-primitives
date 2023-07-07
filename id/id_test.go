@@ -85,14 +85,13 @@ func TestID_Bytes(t *testing.T) {
 	idBytes := id.Bytes()
 	if !bytes.Equal(expected, idBytes) {
 		t.Errorf("Bytes returned unexpected bytes."+
-			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
+			"\nexpected: %v\nreceived: %v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
 	if &id[0] == &idBytes[0] {
-		t.Errorf("Bytes did not return a copy when it should have."+
-			"\nexpected: any value except %+v\nreceived: %+v",
-			&id[0], &idBytes[0])
+		t.Errorf("Bytes did not return a copy of the ID data."+
+			"\nID pointer:    %+v\nbytes pointer: %+v", &id[0], &idBytes[0])
 	}
 }
 
@@ -203,7 +202,7 @@ func TestID_String(t *testing.T) {
 	// Decode the string and check
 	newID, err := base64.StdEncoding.DecodeString(stringID)
 	if err != nil {
-		t.Fatalf("Failed to decode string returned by String():\n%v", err)
+		t.Fatalf("Failed to decode string returned by String: %+v", err)
 	}
 
 	if !bytes.Equal(expectedBytes, newID) {
@@ -379,16 +378,16 @@ func TestNewRandomID_Unique(t *testing.T) {
 	ids := map[*ID]struct{}{}
 
 	for i := 0; i < 100; i++ {
-		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		id, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
-		if _, exists := ids[testID]; exists {
-			t.Errorf("NewRandomID did not generate a unique ID (%d).\nID: %s",
-				i, testID)
+		if _, exists := ids[id]; exists {
+			t.Errorf(
+				"NewRandomID did not generate a unique ID (%d).\nID: %s", i, id)
 		} else {
-			ids[testID] = struct{}{}
+			ids[id] = struct{}{}
 		}
 	}
 }
@@ -401,12 +400,12 @@ func TestNewRandomID_Unique(t *testing.T) {
 // error).
 func TestNewRandomID_SpecialCharacter(t *testing.T) {
 	prng := newAlphanumericPRNG()
-	testId, err := NewRandomID(prng, 0)
+	id, err := NewRandomID(prng, 0)
 	if err != nil {
 		t.Errorf("NewRandomID returned an error: %+v", err)
 	}
 
-	if !regexAlphanumeric.MatchString(string(testId.String()[0])) {
+	if !regexAlphanumeric.MatchString(string(id.String()[0])) {
 		t.Errorf("Should not have an ID starting with a special character")
 	}
 
@@ -476,7 +475,7 @@ func TestNewIdFromBytes_TestError(t *testing.T) {
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromBytes(newRandomBytes(ArrIDLen, t), nil)
 }
 
@@ -592,10 +591,10 @@ func TestNewIdFromUInts(t *testing.T) {
 		rand.Uint64(), rand.Uint64(), rand.Uint64(), rand.Uint64()}
 
 	// Create the ID and check its contents
-	newID := NewIdFromUInts(expectedUints, Generic, t)
+	id := NewIdFromUInts(expectedUints, Generic, t)
 	idUints := [4]uint64{}
 	for i := range idUints {
-		idUints[i] = binary.BigEndian.Uint64(newID[i*8 : (i+1)*8])
+		idUints[i] = binary.BigEndian.Uint64(id[i*8 : (i+1)*8])
 	}
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
@@ -633,8 +632,8 @@ func newRandomBytes(length int, t *testing.T) []byte {
 	return idBytes
 }
 
-// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface. This is used for
-// testing special characters.
+// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface.
+// This is used for testing special characters.
 type alphaNumericPRNG struct {
 	counter uint
 }

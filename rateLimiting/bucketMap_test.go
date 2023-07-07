@@ -214,8 +214,8 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -363,13 +363,13 @@ func TestBucketMap_AddBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Capacity != bucket.Capacity() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Capacity(), bp.Capacity)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -425,8 +425,8 @@ func TestBucketMap_AddAllBuckets(t *testing.T) {
 	for _, bp := range testBP {
 		b, exists := bm.buckets[bp.Key]
 		if !exists {
-			t.Errorf("addAllBuckets failed to add the bucket with key %s.",
-				bp.Key)
+			t.Errorf(
+				"addAllBuckets failed to add the bucket with key %s.", bp.Key)
 		} else if !reflect.DeepEqual(b, CreateBucketFromParams(bp, nil)) {
 			t.Errorf("addAllBuckets created bucket %s with incorrect values."+
 				"\nexpected: %+v\nreceived: %+v", bp.Key,
@@ -468,11 +468,12 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 		for _, key := range wlKeys {
 			b, exists := bm.buckets[key]
 			if !exists {
-				t.Errorf("AddToWhitelist did not add the key %s to the map.", key)
+				t.Errorf(
+					"AddToWhitelist did not add the key %s to the map.", key)
 			}
 			if b.whitelist != true {
-				t.Errorf("AddToWhitelist did not mark the key %s as whitelisted.",
-					key)
+				t.Errorf(
+					"AddToWhitelist did not mark the key %s as whitelisted.", key)
 			}
 
 			if bm.db != nil {
@@ -482,8 +483,8 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 						"the database.", key)
 				}
 				if bp.Whitelist != b.whitelist {
-					t.Errorf("Bucket %s in the database is not on whitelist.",
-						key)
+					t.Errorf(
+						"Bucket %s in the database is not on whitelist.", key)
 				}
 			}
 		}

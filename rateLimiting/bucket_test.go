@@ -52,8 +52,7 @@ func TestCreateBucketWithLeakRate(t *testing.T) {
 
 	if b.locked {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"lock.\nexpected: %v\nreceived: %v",
-			expectedLeakRate, b.leakRate)
+			"lock.\nexpected: %v\nreceived: %v", expectedLeakRate, b.leakRate)
 	}
 }
 
@@ -255,8 +254,7 @@ func TestBucket_Add(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, r.expectedRem, b.remaining)
+				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -390,8 +388,7 @@ func TestBucket_Add_Whitelist(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, r.expectedRem, b.remaining)
+				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
 		}
 	}
 }

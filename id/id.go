@@ -312,7 +312,7 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 }
 
 // NewIdFromUInts converts the specified uint64 array into bytes and returns a
-// new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
+// new ID based off it with the specified ID type. Unlike NewIdFromUInt, the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
 func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
