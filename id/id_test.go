@@ -26,20 +26,20 @@ import (
 // that the returned data is a copy.
 func TestID_Marshal(t *testing.T) {
 	prng := rand.New(rand.NewSource(498651))
-	testID := NewRandomTestID(prng, Group, t)
-	expected := testID.Bytes()
+	id := NewRandomTestID(prng, Group, t)
+	expected := id.Bytes()
 
 	// Check for the correct values
-	idBytes := testID.Marshal()
+	idBytes := id.Marshal()
 	if !bytes.Equal(expected, idBytes) {
 		t.Errorf("Marshal returned unexpected bytes."+
 			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
-	if &testID[0] == &idBytes[0] {
+	if &id[0] == &idBytes[0] {
 		t.Errorf("Marshal did not return a copy of the ID data."+
-			"\nID pointer:    %+v\nbytes pointer: %+v", &testID[0], &idBytes[0])
+			"\nID pointer:    %+v\nbytes pointer: %+v", &id[0], &idBytes[0])
 	}
 }
 
@@ -48,20 +48,20 @@ func TestUnmarshal(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
 
 	// Unmarshal the bytes into an ID
-	testID, err := Unmarshal(expected)
+	id, err := Unmarshal(expected)
 	if err != nil {
 		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
 	// Make sure the ID contents are correct
-	if !bytes.Equal(expected, testID[:]) {
+	if !bytes.Equal(expected, id[:]) {
 		t.Errorf("Unmarshal produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expected, testID[:])
+			"\nexpected: %v\nreceived: %v", expected, id[:])
 	}
 }
 
-// Tests that Unmarshal produces an error when the given data length is not
-// equal to the length of an ID.
+// Error path: Tests that Unmarshal produces an error when the given data length
+// is not equal to the length of an ID.
 func TestUnmarshal_DataLengthError(t *testing.T) {
 	invalidIdBytes := rngBytes(ArrIDLen+10, 42, t)
 	expectedErr := fmt.Errorf("could not marshal byte slice to ID: "+
@@ -82,14 +82,14 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 
 	idBytes := originalID.Marshal()
 
-	testID, err := Unmarshal(idBytes)
+	id, err := Unmarshal(idBytes)
 	if err != nil {
 		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
-	if !originalID.Equal(testID) {
+	if !originalID.Equal(id) {
 		t.Errorf("Original ID does not match marshaled/unmarshalled ID."+
-			"\nexpected: %s\nreceived: %s", originalID, testID)
+			"\nexpected: %s\nreceived: %s", originalID, id)
 	}
 }
 
@@ -97,19 +97,19 @@ func TestID_Marshal_Unmarshal(t *testing.T) {
 // original ID and the data is a copy of the values and not the reference.
 func TestID_Bytes(t *testing.T) {
 	expected := rngBytes(ArrIDLen, 42, t)
-	testID := NewIdFromBytes(expected, t)
+	id := NewIdFromBytes(expected, t)
 
 	// Check for the correct values
-	idBytes := testID.Bytes()
+	idBytes := id.Bytes()
 	if !bytes.Equal(expected, idBytes) {
 		t.Errorf("Bytes returned unexpected bytes."+
-			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
+			"\nexpected: %v\nreceived: %v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
-	if &testID[0] == &idBytes[0] {
+	if &id[0] == &idBytes[0] {
 		t.Errorf("Bytes did not return a copy of the ID data."+
-			"\nID pointer:    %+v\nbytes pointer: %+v", &testID[0], &idBytes[0])
+			"\nID pointer:    %+v\nbytes pointer: %+v", &id[0], &idBytes[0])
 	}
 }
 
@@ -286,11 +286,11 @@ func TestID_String(t *testing.T) {
 	}
 
 	for i, expected := range expectedIDs {
-		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+		id := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
 
-		if testID.String() != expected {
+		if id.String() != expected {
 			t.Errorf("String did not output the expected value for ID %d."+
-				"\nexpected: %s\nreceived: %s", i, expected, testID.String())
+				"\nexpected: %s\nreceived: %s", i, expected, id.String())
 		}
 	}
 }
@@ -316,10 +316,10 @@ func TestID_GetType(t *testing.T) {
 		testIDs[i] = NewRandomTestID(prng, idType, t)
 	}
 
-	for i, testID := range testIDs {
-		if testTypes[i] != testID.GetType() {
+	for i, id := range testIDs {
+		if testTypes[i] != id.GetType() {
 			t.Errorf("GetType returned the incorrect type (%d)."+
-				"\nexpected: %s\nreceived: %s", i, testTypes[i], testID.GetType())
+				"\nexpected: %s\nreceived: %s", i, testTypes[i], id.GetType())
 		}
 	}
 }
@@ -342,13 +342,12 @@ func TestID_SetType(t *testing.T) {
 	prng := rand.New(rand.NewSource(334832))
 	testTypes := []Type{Generic, Gateway, Node, User, Group, NumTypes, 7}
 	for i, idType := range testTypes {
-		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
-		testID.SetType(idType)
+		id := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+		id.SetType(idType)
 
-		if idType != testID.GetType() {
+		if idType != id.GetType() {
 			t.Errorf("Incorrect type for ID %s (%d)."+
-				"\nexpected: %s\nreceived: %s",
-				testID, i, idType, testID.GetType())
+				"\nexpected: %s\nreceived: %s", id, i, idType, id.GetType())
 		}
 	}
 }
@@ -367,9 +366,9 @@ func TestID_SetType_NilError(t *testing.T) {
 
 // Tests that an ID can be JSON marshaled and unmarshalled.
 func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
-	testID := NewRandomTestID(rand.New(rand.NewSource(49056)), Node, t)
+	id := NewRandomTestID(rand.New(rand.NewSource(49056)), Node, t)
 
-	jsonData, err := json.Marshal(testID)
+	jsonData, err := json.Marshal(id)
 	if err != nil {
 		t.Errorf("json.Marshal returned an error: %+v", err)
 	}
@@ -380,19 +379,19 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 		t.Errorf("json.Unmarshal returned an error: %+v", err)
 	}
 
-	if !testID.Equal(newID) {
+	if !id.Equal(newID) {
 		t.Errorf("Failed the JSON marshal and unmarshal ID."+
-			"\noriginal ID: %s\nreceived ID: %s", testID, newID)
+			"\noriginal ID: %s\nreceived ID: %s", id, newID)
 	}
 }
 
 // Tests that an ID can be JSON marshaled and unmarshalled when it is the key in
 // a map. This tests ID.MarshalText.
 func TestID_TextMarshal(t *testing.T) {
-	testID := NewRandomTestID(rand.New(rand.NewSource(42534)), User, t)
+	id := NewRandomTestID(rand.New(rand.NewSource(42534)), User, t)
 
 	testMap := make(map[ID]int)
-	testMap[*testID] = 8675309
+	testMap[*id] = 8675309
 
 	jsonData, err := json.Marshal(testMap)
 	require.NoError(t, err)
@@ -401,14 +400,14 @@ func TestID_TextMarshal(t *testing.T) {
 	err = json.Unmarshal(jsonData, &newMap)
 	require.NoError(t, err)
 
-	require.Equal(t, testMap[*testID], newMap[*testID])
+	require.Equal(t, testMap[*id], newMap[*id])
 }
 
 // Tests that an ID can be text marshaled and unmarshalled.
 func TestID_MarshalText_UnmarshalText(t *testing.T) {
-	testID := NewRandomTestID(rand.New(rand.NewSource(6156)), Node, t)
+	id := NewRandomTestID(rand.New(rand.NewSource(6156)), Node, t)
 
-	text, err := testID.MarshalText()
+	text, err := id.MarshalText()
 	if err != nil {
 		t.Errorf("Failed to text marshal: %+v", err)
 	}
@@ -419,9 +418,9 @@ func TestID_MarshalText_UnmarshalText(t *testing.T) {
 		t.Errorf("Failed to text unmarshal: %+v", err)
 	}
 
-	if !testID.Equal(newID) {
+	if !id.Equal(newID) {
 		t.Errorf("Text marshalled and unmarshalled ID does not match original."+
-			"\nexpected: %s\nreceived: %s", testID, newID)
+			"\nexpected: %s\nreceived: %s", id, newID)
 	}
 }
 
@@ -493,12 +492,12 @@ func TestID_HexEncode(t *testing.T) {
 	}
 
 	for i, expected := range expectedIDs {
-		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+		id := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
 
-		hexString := testID.HexEncode()
+		hexString := id.HexEncode()
 		if hexString != expected {
 			t.Errorf("Unexpected hex string for ID %s (%d)."+
-				"\nexpected: %s\nreceived: %s", testID, i, expected, hexString)
+				"\nexpected: %s\nreceived: %s", id, i, expected, hexString)
 		}
 	}
 }
@@ -520,13 +519,13 @@ func TestNewRandomID_Consistency(t *testing.T) {
 	}
 
 	for i, expected := range expectedIDs {
-		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		id, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
-		if testID.String() != expected {
+		if id.String() != expected {
 			t.Errorf("NewRandomID did not generate the expected ID (%d)."+
-				"\nexpected: %s\nreceived: %s", i, expected, testID)
+				"\nexpected: %s\nreceived: %s", i, expected, id.String())
 		}
 	}
 }
@@ -537,16 +536,16 @@ func TestNewRandomID_Unique(t *testing.T) {
 	ids := map[*ID]struct{}{}
 
 	for i := 0; i < 100; i++ {
-		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		id, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
-		if _, exists := ids[testID]; exists {
-			t.Errorf("NewRandomID did not generate a unique ID (%d).\nID: %s",
-				i, testID)
+		if _, exists := ids[id]; exists {
+			t.Errorf(
+				"NewRandomID did not generate a unique ID (%d).\nID: %s", i, id)
 		} else {
-			ids[testID] = struct{}{}
+			ids[id] = struct{}{}
 		}
 	}
 }
@@ -559,12 +558,12 @@ func TestNewRandomID_Unique(t *testing.T) {
 // error).
 func TestNewRandomID_SpecialCharacter(t *testing.T) {
 	prng := newAlphanumericPRNG()
-	testId, err := NewRandomID(prng, 0)
+	id, err := NewRandomID(prng, 0)
 	if err != nil {
 		t.Errorf("NewRandomID returned an error: %+v", err)
 	}
 
-	if !regexAlphanumeric.MatchString(string(testId.String()[0])) {
+	if !regexAlphanumeric.MatchString(string(id.String()[0])) {
 		t.Errorf("Should not have an ID starting with a special character")
 	}
 
@@ -597,11 +596,11 @@ func TestNewRandomTestID_Consistency(t *testing.T) {
 	}
 
 	for i, expected := range expectedIDs {
-		testID := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
+		id := NewRandomTestID(prng, Type(prng.Intn(int(NumTypes))), t)
 
-		if testID.String() != expected {
+		if id.String() != expected {
 			t.Errorf("NewRandomTestID did not generate the expected ID (%d)."+
-				"\nexpected: %s\nreceived: %s", i, expected, testID)
+				"\nexpected: %s\nreceived: %s", i, expected, id.String())
 		}
 	}
 }
@@ -635,11 +634,11 @@ func TestNewRandomTestID_ReaderError(t *testing.T) {
 // Tests that NewIdFromBytes creates a new ID with the correct contents.
 func TestNewIdFromBytes(t *testing.T) {
 	expectedBytes := rngBytes(ArrIDLen, 42, t)
-	testID := NewIdFromBytes(expectedBytes, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	if !bytes.Equal(expectedBytes, testID[:]) {
+	if !bytes.Equal(expectedBytes, id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedBytes, testID[:])
+			"\nexpected: %v\nreceived: %v", expectedBytes, id[:])
 	}
 }
 
@@ -655,11 +654,11 @@ func TestNewIdFromBytes_Underflow(t *testing.T) {
 	copy(expectedArr[:], expectedBytes)
 
 	// Create the ID and check its contents
-	newID := NewIdFromBytes(expectedBytes, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	if !bytes.Equal(expectedArr[:], newID[:]) {
+	if !bytes.Equal(expectedArr[:], id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, id[:])
 	}
 }
 
@@ -675,11 +674,11 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 	copy(expectedArr[:], expectedBytes)
 
 	// Create the ID and check its contents
-	newID := NewIdFromBytes(expectedBytes, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	if !bytes.Equal(expectedArr[:], newID[:]) {
+	if !bytes.Equal(expectedArr[:], id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, id[:])
 	}
 }
 
@@ -708,22 +707,21 @@ func TestNewIdFromString(t *testing.T) {
 	copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
 
 	// Create the ID and check its contents
-	testID := NewIdFromString(expectedIdString, expectedType, t)
+	id := NewIdFromString(expectedIdString, expectedType, t)
 
 	// Check if the new ID matches the expected ID
-	if !expectedID.Equal(testID) {
+	if !expectedID.Equal(id) {
 		t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-			"\nexpected: %v\nreceived: %v", expectedID[:], testID[:])
+			"\nexpected: %v\nreceived: %v", expectedID[:], id[:])
 	}
 
 	// Check if the original string is still in the first 32 bytes
-	newIdString := string(testID.Bytes()[:ArrIDLen-1])
-	if expectedIdString != newIdString {
+	idString := string(id.Bytes()[:ArrIDLen-1])
+	if expectedIdString != idString {
 		t.Errorf("NewIdFromString did not correctly convert the original "+
-			"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
-			"\nexpected bytes: %v\nreceived bytes: %v",
-			expectedIdString, newIdString,
-			[]byte(expectedIdString), testID.Bytes()[:ArrIDLen-1])
+			"string to bytes.\nexpected string: %q\nreceived string: %q"+
+			"\nexpected bytes: %v\nreceived bytes: %v", expectedIdString,
+			idString, []byte(expectedIdString), id.Bytes()[:ArrIDLen-1])
 	}
 }
 
@@ -760,9 +758,9 @@ func TestNewIdFromBase64String(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		newID := NewIdFromBase64String(tt.base64String, Group, t)
+		id := NewIdFromBase64String(tt.base64String, Group, t)
 
-		b64 := base64.StdEncoding.EncodeToString(newID.Marshal())
+		b64 := base64.StdEncoding.EncodeToString(id.Marshal())
 		if tt.expected != b64 {
 			t.Errorf("Incorrect base 64 encoding for string %q (%d)."+
 				"\nexpected: %s\nreceived: %s",
@@ -791,8 +789,8 @@ func TestNewIdFromUInt(t *testing.T) {
 	expectedUint := rand.Uint64()
 
 	// Create the ID and check its contents
-	newID := NewIdFromUInt(expectedUint, Generic, t)
-	idUint := binary.BigEndian.Uint64(newID[:ArrIDLen-1])
+	id := NewIdFromUInt(expectedUint, Generic, t)
+	idUint := binary.BigEndian.Uint64(id[:ArrIDLen-1])
 
 	if expectedUint != idUint {
 		t.Errorf("NewIdFromUInt produced an ID from uint incorrectly."+
@@ -818,8 +816,8 @@ func TestNewIdFromUInt_TestError(t *testing.T) {
 // original.
 func TestNewIdFromUInts(t *testing.T) {
 	// Expected values
-	expectedUints := [4]uint64{rand.Uint64(), rand.Uint64(),
-		rand.Uint64(), rand.Uint64()}
+	expectedUints := [4]uint64{
+		rand.Uint64(), rand.Uint64(), rand.Uint64(), rand.Uint64()}
 
 	// Create the ID and check its contents
 	newID := NewIdFromUInts(expectedUints, Generic, t)

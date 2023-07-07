@@ -80,7 +80,7 @@ func TestGetIntermediaryId(t *testing.T) {
 		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
 	if iid == nil || len(iid) == 0 {
-		t.Errorf("iid returned with no data: %+v", iid)
+		t.Errorf("iid returned with no data: %v", iid)
 	}
 }
 
@@ -187,7 +187,7 @@ func TestId_Clear(t *testing.T) {
 	newEid := eid.Clear(uint(64))
 	var ok bool
 	if bytes.Map(func(r rune) rune { ok = ok || r == 0; return r }, eid[:]); ok {
-		t.Errorf("Bytes were cleared from max size ID: %+v", newEid)
+		t.Errorf("Bytes were cleared from max size ID: %v", newEid)
 	}
 
 	newEid = eid.Clear(16)
@@ -216,7 +216,7 @@ func TestId_Fill(t *testing.T) {
 	for i, r := range newEid[:] {
 		if r != eid[i] {
 			t.Errorf("Fill changed bits in max size ID (%d)."+
-				"\noriginal: %v\nnew:      %+v", i, eid, newEid)
+				"\noriginal: %v\nnew:      %v", i, eid, newEid)
 		}
 	}
 
@@ -248,7 +248,7 @@ func TestGetRotationSalt(t *testing.T) {
 	if bytes.Compare(salt1, salt2) == 0 && bytes.Compare(salt2, salt3) == 0 {
 		t.Error("Salt did not change as timestamp increased w/ Period of one day")
 	}
-	t.Logf("First: %+v\tSecond: %+v\nThird: %+v\n", salt1, salt2, salt3)
+	t.Logf("First:  %v\tSecond: %v\nThird:  %v\n", salt1, salt2, salt3)
 }
 
 // Unit test for UInt64 method on ephemeral ID

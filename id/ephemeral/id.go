@@ -63,7 +63,7 @@ func (eid *Id) Int64() int64 {
 	return x
 }
 
-// Clear reduces an ID down to the correct size.
+// Clear clears all the bits in the ID outside of the given size.
 func (eid Id) Clear(size uint) Id {
 	var newId Id
 	var mask uint64 = math.MaxUint64 >> (64 - size)

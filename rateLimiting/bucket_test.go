@@ -254,7 +254,7 @@ func TestBucket_Add(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
+				"\nexpected: %d\nreceived: %d",
 				i, r.expectedRem, b.remaining)
 		}
 	}
@@ -291,7 +291,7 @@ func TestBucket_Add_OverCapacity(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -342,18 +342,18 @@ func TestBucket_Add_DB(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 
 		if b.remaining != db.Remaining {
 			t.Errorf("Incorrect number of tokens remaining in database bucket "+
-				"(round %d).\nexpected: %v\nreceived: %v",
+				"(round %d).\nexpected: %d\nreceived: %d",
 				i, b.remaining, db.Remaining)
 		}
 
 		if b.lastUpdate != db.LastUpdate {
 			t.Errorf("Incorrect LastUpdate in database bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, b.lastUpdate, db.LastUpdate)
+				"\nexpected: %d\nreceived: %d", i, b.lastUpdate, db.LastUpdate)
 		}
 	}
 }
@@ -389,8 +389,7 @@ func TestBucket_Add_Whitelist(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v",
-				i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }
