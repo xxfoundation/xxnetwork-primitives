@@ -65,7 +65,7 @@ func Unmarshal(data []byte) (*ID, error) {
 // Marshal and any changes made here will affect how Marshal functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to get bytes of ID: ID is nil."))
 	}
 
@@ -87,7 +87,7 @@ func (id *ID) Cmp(y *ID) bool {
 // and false otherwise.
 func (id *ID) Equal(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to check if IDs are equal: one or both IDs are nil."))
 	}
 
@@ -98,7 +98,7 @@ func (id *ID) Equal(y *ID) bool {
 // The result will be 0 if id == y, -1 if id < y, and +1 if id > y.
 func (id *ID) Compare(y *ID) int {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to compare IDs: one or both IDs are nil."))
 	}
 
@@ -113,7 +113,7 @@ func (id *ID) Less(y *ID) bool {
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to create a copy of ID: ID is nil."))
 	}
 
@@ -123,7 +123,7 @@ func (id *ID) DeepCopy() *ID {
 // String converts an ID to a string via base64 encoding.
 func (id *ID) String() string {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to create string of ID: ID is nil."))
 	}
 
@@ -133,7 +133,7 @@ func (id *ID) String() string {
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(""+
+		jww.FATAL.Panicf("%+v", errors.New(""+
 			"Failed to get ID type: ID is nil."))
 	}
 
@@ -143,7 +143,7 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to set ID type: ID is nil."))
 	}
 
@@ -213,8 +213,8 @@ func NewRandomID(r io.Reader, t Type) (*ID, error) {
 		// Generate random bytes
 		idBytes := make([]byte, ArrIDLen)
 		if _, err := r.Read(idBytes); err != nil {
-			return nil, errors.Errorf("failed to generate random bytes for new "+
-				"ID: %+v", err)
+			return nil, errors.Errorf(
+				"failed to generate random bytes for new ID: %+v", err)
 		}
 
 		// Create ID from bytes
