@@ -300,8 +300,6 @@ func TestID_String_NilError(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Errorf("String failed to panic when the ID is nil.")
-		} else {
-			t.Log(r)
 		}
 	}()
 
