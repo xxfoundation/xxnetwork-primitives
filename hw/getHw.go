@@ -36,12 +36,13 @@ const (
 )
 
 // commandList is the list of headers that will be run and printed to the log.
-// commandList will be iterated over in LogHardware rather than commandMap to ensure
-// consistent printing order. The entry will be used to pull out the bash command
-// to be run out of commandMap.
+// commandList will be iterated over in LogHardware rather than commandMap to
+// ensure consistent printing order. The entry will be used to pull out the bash
+// command to be run out of commandMap.
 var commandList = []string{cpu, gpu, partition, diskUsage, diskHw, ramUsage}
 
-// commandMap maps the header that will be printed to the bash command that will be run.
+// commandMap maps the header that will be printed to the bash command that will
+// be run.
 var commandMap = map[string][]string{
 	cpu:       {"lscpu"},
 	gpu:       {"bash", "-c", "lspci -vnnn | perl -lne 'print if /^\\d+\\:.+(\\[\\S+\\:\\S+\\])/' | grep VGA"},
@@ -64,14 +65,17 @@ func LogHardware() {
 		var out []byte
 		var err error
 		cmd := strings.Join(cmdList, " ")
-		if len(cmdList) == 1 { // Handle quirks of exec.Command and variable command length
+		if len(cmdList) == 1 {
+			// Handle quirks of exec.Command and variable command length
 			out, err = exec.Command(cmdList[0]).Output()
-			if err != nil { // Print error, continue with other commands
+			if err != nil {
+				// Print error, continue with other commands
 				out = []byte((fmt.Sprintf("%s err: %s", cmdList, err)))
 			}
 		} else {
 			out, err = exec.Command(cmdList[0], cmdList[1:]...).Output()
-			if err != nil { // Print error, continue with other commands
+			if err != nil {
+				// Print error, continue with other commands
 				out = []byte((fmt.Sprintf("%s err: %s", cmdList, err)))
 			}
 		}

@@ -5,11 +5,11 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// Contains the generic ID type, which is a byte array that represents an entity
-// ID. The first bytes in the array contain the actual ID data while the last
-// byte contains the ID type, which is either generic, gateway, node, or user.
-// IDs can be hard coded or generated using a cryptographic function found in
-// crypto.
+// Package id contains the generic ID type, which is a byte array that
+// represents an entity ID. The first bytes in the array contain the actual ID
+// data while the last byte contains the ID type, which is either generic,
+// gateway, node, or user. IDs can be hard coded or generated using a
+// cryptographic function found in crypto.
 package id
 
 import (
@@ -78,7 +78,8 @@ func (id *ID) Bytes() []byte {
 // false otherwise.
 func (id *ID) Cmp(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: "+
+			"one or both IDs are nil."))
 	}
 
 	return *id == *y
@@ -87,7 +88,8 @@ func (id *ID) Cmp(y *ID) bool {
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to create a copy of ID: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to create a copy of ID: ID is nil."))
 	}
 
 	return copyID(id.Bytes())
@@ -101,7 +103,8 @@ func (id *ID) String() string {
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to get ID type: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(""+
+			"Failed to get ID type: ID is nil."))
 	}
 
 	return Type(id[ArrIDLen-1])
@@ -110,14 +113,21 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to set ID type: ID is nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf(
+			"Failed to set ID type: ID is nil."))
 	}
 
 	id[ArrIDLen-1] = byte(idType)
 }
 
-// UnmarshalJSON is part of the json.Unmarshaler interface and allows IDs to be
-// marshaled into JSON.
+// MarshalJSON marshals the [ID] into valid JSON. This function adheres to the
+// [json.Marshaler] interface.
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(id.Marshal())
+}
+
+// UnmarshalJSON unmarshalls the JSON into the [ID]. This function adheres to
+// the [json.Unmarshaler] interface.
 func (id *ID) UnmarshalJSON(b []byte) error {
 	var buff []byte
 	if err := json.Unmarshal(b, &buff); err != nil {
@@ -134,25 +144,25 @@ func (id *ID) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON is part of the json.Marshaler interface and allows IDs to be
-// marshaled into JSON.
-func (id ID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(id.Marshal())
-}
-
-// MarshalText implements encoding.TextMarshaler for json.Marshal compatibility
-// This lets you marshal it as part of a map, for example.
+// MarshalText marshals the [ID] into base 64 encoded text. This function
+// adheres to the [encoding.TextMarshaler] interface. This allows for the JSON
+// marshalling of non-referenced IDs in maps (e.g., map[ID]int).
 func (id ID) MarshalText() (text []byte, err error) {
 	return []byte(base64.RawStdEncoding.EncodeToString(id[:])), nil
 }
 
-// UnmarshalText implements encoding.TextUnmarshaler for
-// json.Unmarshal compatibility
-// This lets you unmarshal it as part of a map, for example.
+// UnmarshalText unmarshalls the text into an [ID]. This function adheres to the
+// [encoding.TextUnmarshaler] interface. This allows for the JSON unmarshalling
+// of non-referenced IDs in maps (e.g., map[ID]int).
 func (id ID) UnmarshalText(text []byte) error {
 	idBytes, err := base64.RawStdEncoding.DecodeString(string(text))
 	copy(id[:], idBytes)
 	return err
+}
+
+// HexEncode encodes the ID without the 33rd type byte.
+func (id *ID) HexEncode() string {
+	return "0x" + hex.EncodeToString(id.Bytes()[:32])
 }
 
 // NewRandomID generates a random ID using the passed in io.Reader r
@@ -301,13 +311,8 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	return newID
 }
 
-// HexEncode encodes the Id without the 33rd type byte.
-func (id *ID) HexEncode() string {
-	return "0x" + hex.EncodeToString(id.Bytes()[:32])
-}
-
 // NewIdFromUInts converts the specified uint64 array into bytes and returns a
-// new ID based off it with the specified ID type. Unlike NewIdFromUInt(), the
+// new ID based off it with the specified ID type. Unlike NewIdFromUInt, the
 // four uint64s provided fill the entire ID array. This function is for testing
 // purposes only.
 func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {

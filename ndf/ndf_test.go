@@ -321,7 +321,7 @@ func TestUnmarshal_ErrUnmarshal(t *testing.T) {
 	}
 }
 
-// Tests the consistency of Serialize().
+// Tests the consistency of NetworkDefinition.Serialize.
 func TestNetworkDefinition_Serialize(t *testing.T) {
 	ndf, err := Unmarshal([]byte(ExampleNDF))
 	if err != nil {
@@ -340,7 +340,7 @@ func TestNetworkDefinition_Serialize(t *testing.T) {
 	// fmt.Printf("%s\n", base64.StdEncoding.EncodeToString(ndfBytes))
 }
 
-// Happy path
+// Happy path of NetworkDefinition.StripNdf.
 func TestStripNdf(t *testing.T) {
 	ndf, err := Unmarshal([]byte(ExampleNDF))
 	if err != nil {
@@ -403,12 +403,13 @@ func TestGetNodeId(t *testing.T) {
 	}
 
 	// Expected ID, pulled from the global ExampleNDF
-	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	// Fetch the ID
 	receivedNodeId, err := jsonData.Nodes[0].GetNodeId()
 	if err != nil {
-		t.Errorf("GetNodeId unexpectedly produced an error:\n%v", err)
+		t.Errorf("GetNodeId unexpectedly produced an error: %+v", err)
 	}
 
 	if !bytes.Equal(receivedNodeId.Bytes(), expectedId) {
@@ -421,12 +422,13 @@ func TestGetGatewayId(t *testing.T) {
 	gw := Gateway{make([]byte, 33), "52.41.80.104", "-----BEGIN CERT", 0}
 
 	// Expected ID, pulled from the global ExampleNDF
-	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	expectedId := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 
 	// Fetch the ID
 	receivedGatewayId, err := gw.GetGatewayId()
 	if err != nil {
-		t.Errorf("GetGatewayId produces an error:\n%v", err)
+		t.Errorf("GetGatewayId produces an error: %+v", err)
 	}
 
 	if !bytes.Equal(receivedGatewayId.Bytes(), expectedId) {
@@ -450,7 +452,8 @@ func TestNetworkDefinition_DeepCopy(t *testing.T) {
 			"\nexpected: %+v\nreceived: %+v", netDef, netDef)
 	}
 
-	netDef.Gateways = append(netDef.Gateways, Gateway{[]byte("ID"), "address", "TlsCertificate", 0})
+	netDef.Gateways = append(netDef.Gateways,
+		Gateway{[]byte("ID"), "address", "TlsCertificate", 0})
 
 	if reflect.DeepEqual(netDef, newNDF) {
 		t.Errorf("DeepCopy failed to make a deep copy. Changes in original "+

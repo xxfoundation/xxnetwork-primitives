@@ -14,14 +14,13 @@ import (
 // Tests that GetHardCodedIDs returns all the hard coded IDs in the order that
 // they were added.
 func TestGetHardCodedIDs(t *testing.T) {
-	expectedIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot, &TempGateway,
-		&ZeroUser, &DummyUser, &UDB, &ClientRegistration}
+	expectedIDs := []*ID{&Permissioning, &Authorizer, &NotificationBot,
+		&TempGateway, &ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for i, testID := range GetHardCodedIDs() {
 		if !expectedIDs[i].Cmp(testID) {
-			t.Errorf("GetHardCodedIDs did not return the expected ID at "+
-				"index %d.\nexepcted: %v\nrecieved: %v",
-				i, expectedIDs[i], testID)
+			t.Errorf("GetHardCodedIDs did not return the expected ID (%d)."+
+				"\nexepcted: %v\nrecieved: %v", i, expectedIDs[i], testID)
 		}
 	}
 }

@@ -59,13 +59,16 @@ func getOffset() time.Duration {
 	return time.Duration(atomic.LoadInt64(&offset)) * time.Nanosecond
 }
 
-// Since returns the time elapsed since t. It is shorthand for
-// netTime.Now().Sub(t).
+// Since returns the time elapsed since t. It is shorthand for:
+//
+//	netTime.Now().Sub(t).
 func Since(t time.Time) time.Duration {
 	return Now().Sub(t)
 }
 
-// Until returns the duration until t. It is shorthand for t.Sub(netTime.Now()).
+// Until returns the duration until t. It is shorthand for:
+//
+//	t.Sub(netTime.Now()).
 func Until(t time.Time) time.Duration {
 	return t.Sub(Now())
 }

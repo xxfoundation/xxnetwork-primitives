@@ -11,13 +11,15 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/binary"
-	"gitlab.com/xx_network/crypto/csprng"
-	"gitlab.com/xx_network/primitives/id"
-	_ "golang.org/x/crypto/blake2b"
 	"math"
 	"strconv"
 	"testing"
 	"time"
+
+	_ "golang.org/x/crypto/blake2b"
+
+	"gitlab.com/xx_network/crypto/csprng"
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Unit test for GetId
@@ -99,7 +101,6 @@ func TestGetIdFromIntermediary(t *testing.T) {
 // Check that given precomputed input that should generate a reserved
 // ephemeral ID, GetIdFromIntermediary does not generate a reserved Id
 func TestGetIdFromIntermediary_Reserved(t *testing.T) {
-
 	// Hardcoded to ensure a collision with a reserved ID
 	hardcodedTimestamp := int64(1614199942358373731)
 	size := uint(4)
@@ -125,7 +126,8 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 			"find a new ID. Use FindReservedID in this case.")
 	}
 
-	// Generate an ephemeral ID which given the same input above with the production facing call
+	// Generate an ephemeral ID which given the same input above with the
+	// production facing call
 	eid, _, _, err := GetIdFromIntermediary(iid, size, hardcodedTimestamp)
 	if err != nil {
 		t.Errorf("Failed to get id from intermediary: %+v", err)
@@ -140,8 +142,7 @@ func TestGetIdFromIntermediary_Reserved(t *testing.T) {
 
 }
 
-// Will find a reserved ephemeral ID and returns the
-// associated intermediary ID
+// Will find a reserved ephemeral ID and returns the associated intermediary ID.
 func FindReservedID(size uint, timestamp int64, t *testing.T) []byte {
 	b2b := crypto.BLAKE2b_256.New()
 
@@ -185,23 +186,24 @@ func TestId_Clear(t *testing.T) {
 	newEid := eid.Clear(uint(64))
 	var ok bool
 	if bytes.Map(func(r rune) rune { ok = ok || r == 0; return r }, eid[:]); ok {
-		t.Errorf("Bytes were cleared from max size id: %+v", newEid)
+		t.Errorf("Bytes were cleared from max size ID: %+v", newEid)
 	}
 
 	newEid = eid.Clear(16)
 	if newEid[0] != 0 || newEid[1] != 0 || newEid[2] != 0 || newEid[3] != 0 || newEid[4] != 0 || newEid[5] != 0 {
-		t.Errorf("Proper bits were not cleared from size 16 id: %+v", newEid)
+		t.Errorf("Proper bits were not cleared from size 16 ID: %+v", newEid)
 	}
 	if eid[0] == 0 && eid[1] == 0 && eid[2] == 0 && eid[3] == 0 && eid[4] == 0 && eid[5] == 0 {
-		t.Errorf("Bits were cleared from original id: %+v", eid)
+		t.Errorf("Bits were cleared from original ID: %+v", eid)
 	}
 	if newEid[6] != eid[6] && newEid[7] != eid[7] {
-		t.Errorf("Proper bits do not match in ids.  Original: %+v, cleared: %+v", eid, newEid)
+		t.Errorf("Proper bits do not match in IDs.\noriginal: %+v\ncleared:  %+v",
+			eid, newEid)
 	}
 }
 
 func TestId_Fill(t *testing.T) {
-	eid := Id{}
+	var eid Id
 	dummyData := []byte{201, 99, 103, 45, 68, 2, 56, 7}
 	copy(eid[:], dummyData)
 
@@ -212,7 +214,8 @@ func TestId_Fill(t *testing.T) {
 	}
 	for i, r := range newEid[:] {
 		if r != eid[i] {
-			t.Errorf("Fill changed bits in max size ID.  Original: %+v, New: %+v", eid, newEid)
+			t.Errorf("Fill changed bits in max size ID."+
+				"\noriginal: %+v\nnew:      %+v", eid, newEid)
 		}
 	}
 
@@ -223,10 +226,11 @@ func TestId_Fill(t *testing.T) {
 	}
 	if newEid[0] == eid[0] || newEid[1] == eid[1] || newEid[2] == eid[2] || newEid[3] == eid[3] ||
 		newEid[4] == eid[4] || newEid[5] == eid[5] {
-		t.Errorf("Proper bits were not filled from size 16 id: %+v", newEid)
+		t.Errorf("Proper bits were not filled from size 16 ID: %+v", newEid)
 	}
 	if newEid[6] != eid[6] && newEid[7] != eid[7] {
-		t.Errorf("Proper bits do not match in ids.  Original: %+v, cleared: %+v", eid, newEid)
+		t.Errorf("Proper bits do not match in IDs.\noriginal: %+v\ncleared:  %+v",
+			eid, newEid)
 	}
 }
 
@@ -304,7 +308,8 @@ func TestMarshal(t *testing.T) {
 		t.Errorf("Failed to marshal id from bytes")
 	}
 	if bytes.Compare(eid[:], eid2[:]) != 0 {
-		t.Errorf("Failed to load ephermeral ID from bytes.  Original: %+v, Loaded: %+v", eid, eid2)
+		t.Errorf("Failed to load ephermeral ID from bytes."+
+			"\noriginal: %+v\nloaded:   %+v", eid, eid2)
 	}
 
 	_, err = Marshal(nil)

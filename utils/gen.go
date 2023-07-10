@@ -19,7 +19,8 @@ import (
 	"time"
 )
 
-// Version file generation consumed by higher-level repos
+// GenerateVersionFile is for version file generation consumed by higher-level
+// repos.
 func GenerateVersionFile(version string) {
 	gitversion := GenerateGitVersion()
 	deps := ReadGoMod()
@@ -50,7 +51,7 @@ func GenerateVersionFile(version string) {
 	}
 }
 
-// Determine current Git version information
+// GenerateGitVersion returns current Git version information.
 func GenerateGitVersion() string {
 	cmd := exec.Command("git", "show", "--oneline")
 	stdoutStderr, err := cmd.CombinedOutput()
@@ -64,7 +65,7 @@ func GenerateGitVersion() string {
 	return "UNKNOWNVERSION"
 }
 
-// Read in go modules file
+// ReadGoMod return the go modules file.
 func ReadGoMod() string {
 	r, err := ioutil.ReadFile("go.mod")
 	if err != nil {

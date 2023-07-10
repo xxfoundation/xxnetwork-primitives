@@ -5,7 +5,7 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// keyMutex implements a keyed mutex with a sync map.
+// Package keyMutex implements a keyed mutex with a sync map.
 // This allows you to "Lock()" with a generic interface key and unlock
 package keyMutex
 

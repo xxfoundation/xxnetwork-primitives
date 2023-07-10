@@ -133,8 +133,7 @@ func TestCreateBucketMapFromParams(t *testing.T) {
 
 	if bm.capacity != testParams.Capacity {
 		t.Errorf("CreateBucketMap returned incorrect capacity."+
-			"\nexpected: %v\nreceived: %v",
-			testParams.Capacity, bm.capacity)
+			"\nexpected: %v\nreceived: %v", testParams.Capacity, bm.capacity)
 	}
 
 	if bm.leakRate != expectedLeakRate {
@@ -215,8 +214,8 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -364,13 +363,13 @@ func TestBucketMap_AddBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Capacity != bucket.Capacity() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Capacity(), bp.Capacity)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number of tokens."+
-						"\nexpected: %d\nreceived: %d",
+					t.Errorf("Bucket %s in the database has incorrect number "+
+						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
 			}
@@ -426,8 +425,8 @@ func TestBucketMap_AddAllBuckets(t *testing.T) {
 	for _, bp := range testBP {
 		b, exists := bm.buckets[bp.Key]
 		if !exists {
-			t.Errorf("addAllBuckets failed to add the bucket with key %s.",
-				bp.Key)
+			t.Errorf(
+				"addAllBuckets failed to add the bucket with key %s.", bp.Key)
 		} else if !reflect.DeepEqual(b, CreateBucketFromParams(bp, nil)) {
 			t.Errorf("addAllBuckets created bucket %s with incorrect values."+
 				"\nexpected: %+v\nreceived: %+v", bp.Key,
@@ -469,11 +468,12 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 		for _, key := range wlKeys {
 			b, exists := bm.buckets[key]
 			if !exists {
-				t.Errorf("AddToWhitelist did not add the key %s to the map.", key)
+				t.Errorf(
+					"AddToWhitelist did not add the key %s to the map.", key)
 			}
 			if b.whitelist != true {
-				t.Errorf("AddToWhitelist did not mark the key %s as whitelisted.",
-					key)
+				t.Errorf(
+					"AddToWhitelist did not mark the key %s as whitelisted.", key)
 			}
 
 			if bm.db != nil {
@@ -483,8 +483,8 @@ func TestBucketMap_AddToWhitelist(t *testing.T) {
 						"the database.", key)
 				}
 				if bp.Whitelist != b.whitelist {
-					t.Errorf("Bucket %s in the database is not on whitelist.",
-						key)
+					t.Errorf(
+						"Bucket %s in the database is not on whitelist.", key)
 				}
 			}
 		}
@@ -643,10 +643,15 @@ func TestBucketMap_DeleteBucket_ReadLock(t *testing.T) {
 // thread and that the quit channel stops it.
 func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	quit := make(chan struct{})
-	bm := CreateBucketMap(5, 3, time.Millisecond, 30*time.Millisecond, time.Second, nil, quit)
+	bm := CreateBucketMap(
+		5, 3, time.Millisecond, 30*time.Millisecond, time.Second, nil, quit)
 	bm.buckets = map[string]*Bucket{
-		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 0, 1, time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil), // Stale
-		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 0, 1, time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),   // Stale
+		"keyA": CreateBucketFromParams( // Stale
+			&BucketParams{"keyA", 10, 0, 1,
+				time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil),
+		"keyB": CreateBucketFromParams( // Stale
+			&BucketParams{"keyB", 10, 0, 1,
+				time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),
 	}
 
 	time.Sleep(2 * bm.pollDuration)
@@ -659,14 +664,17 @@ func TestBucketMap_StaleBucketWorker(t *testing.T) {
 	quit <- struct{}{}
 
 	bm.buckets = map[string]*Bucket{
-		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 6, 1, time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil), // Stale
-		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 6, 1, time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),   // Stale
+		"keyA": CreateBucketFromParams(&BucketParams{"keyA", 10, 6, 1, // Stale
+			time.Now().Add(-3 * time.Second).UnixNano(), false, false}, nil),
+		"keyB": CreateBucketFromParams(&BucketParams{"keyB", 10, 6, 1, // Stale
+			time.Now().AddDate(0, -1, -13).UnixNano(), false, false}, nil),
 	}
 
 	time.Sleep(2 * bm.pollDuration)
 
 	if len(bm.buckets) != 2 {
-		t.Errorf("staleBucketWorker deleted the buckets when it should have been stopped.")
+		t.Errorf("staleBucketWorker deleted the buckets when it should have " +
+			"been stopped.")
 	}
 
 }
