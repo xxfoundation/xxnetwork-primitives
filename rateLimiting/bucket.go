@@ -5,7 +5,7 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// An implementation of the leaky bucket algorithm:
+// Package rateLimiting implements the leaky bucket algorithm:
 // https://en.wikipedia.org/wiki/Leaky_bucket
 package rateLimiting
 
@@ -60,7 +60,7 @@ func CreateBucketFromLeakRatio(capacity uint32, leakRate float64,
 	}
 }
 
-// CreateBucketFromLeakRatio generates a new empty bucket.
+// CreateBucketFromParams generates a new empty bucket from custom parameters.
 func CreateBucketFromParams(params *BucketParams,
 	addToDb func(uint32, int64)) *Bucket {
 	return &Bucket{
@@ -120,8 +120,8 @@ func (b *Bucket) IsFull() bool {
 	return b.remaining >= b.capacity
 }
 
-// IsFullOrWhitelist returns true if the bucket is overflowing (i.e. no remaining capacity
-// for additional tokens) or if the bucket is whitelisted.
+// IsFullOrWhitelist returns true if the bucket is overflowing (i.e., no
+// remaining capacity for additional tokens) or if the bucket is whitelisted.
 func (b *Bucket) IsFullOrWhitelist() bool {
 	b.Lock()
 	defer b.Unlock()
@@ -166,10 +166,10 @@ func (b *Bucket) Add(tokens uint32) (bool, bool) {
 	return b.whitelist || b.remaining <= b.capacity, b.whitelist
 }
 
-// AddWithExternalParams adds the specified number of tokens to the bucket given external
-// bucket parameters rather than the params specified in the bucket.
-// Returns true if the tokens were added; otherwise, returns false if there was insufficient
-// capacity to do so.
+// AddWithExternalParams adds the specified number of tokens to the bucket given
+// external bucket parameters rather than the params specified in the bucket.
+// Returns true if the tokens were added; otherwise, returns false if there was
+// insufficient capacity to do so.
 func (b *Bucket) AddWithExternalParams(tokens, capacity, leakedTokens uint32,
 	duration time.Duration) (bool, bool) {
 	b.Lock()
@@ -239,14 +239,17 @@ func (b *Bucket) update(leakRate float64) {
 // AddToDB isn't meaningfully serializable, so if necessary it should be
 // populated after the fact
 type bucketDisk struct {
-	Capacity   uint32  // Maximum number of tokens the bucket can hold
-	Remaining  uint32  // Current number of tokens in the bucket
-	LeakRate   float64 // Rate that the bucket leaks tokens at [tokens/ns]
-	LastUpdate int64   // Time that the bucket was most recently updated
-	Locked     bool    // When true, prevents bucket from being deleted when stale
-	Whitelist  bool    // When true, adding tokens always returns true
+	Capacity   uint32
+	Remaining  uint32
+	LeakRate   float64
+	LastUpdate int64
+	Locked     bool
+	Whitelist  bool
 }
 
+// MarshalJSON marshals the [Bucket] into valid JSON. This function adheres to
+// the [json.Marshaler] interface. Note: it does not include the database
+// function.
 func (b *Bucket) MarshalJSON() ([]byte, error) {
 	b.Lock()
 	defer b.Unlock()
@@ -260,6 +263,9 @@ func (b *Bucket) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// UnmarshalJSON unmarshalls the JSON into the [Bucket]. This function adheres
+// to the [json.Unmarshaler] interface.
+//
 // Problem: Doesn't include db func
 func (b *Bucket) UnmarshalJSON(data []byte) error {
 	var bd bucketDisk
@@ -279,7 +285,8 @@ func (b *Bucket) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// This function should be called after unmarshalling if you need a db function
+// SetAddToDB should be called after unmarshalling if you need a database
+// function.
 func (b *Bucket) SetAddToDB(dbFunc func(uint32, int64)) {
 	b.Lock()
 	b.addToDb = dbFunc

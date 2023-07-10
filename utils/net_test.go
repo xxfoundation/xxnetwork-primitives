@@ -761,7 +761,8 @@ func TestIsPortString_InvalidPorts(t *testing.T) {
 // Tests that IsEphemeralPort return true for valid ephemeral ports.
 func TestIsIsEphemeralPort_ValidPorts(t *testing.T) {
 	ports := []int{
-		minAllowablePort, minAllowablePort + 1, 49151, 23443, maxAllowablePort, maxAllowablePort - 1,
+		minAllowablePort, minAllowablePort + 1, 49151, 23443, maxAllowablePort,
+		maxAllowablePort - 1,
 	}
 
 	for i, port := range ports {

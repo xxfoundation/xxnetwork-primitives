@@ -21,108 +21,89 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests that Marshal returns the correct byte slice of an ID and that it is a
-// copy. This test ensures duplicates the test for Bytes to ensure that
-// Marshal uses Bytes().
+// Tests that ID.Marshal returns the correct marshaled byte slice of the ID and
+// that the returned data is a copy.
 func TestID_Marshal(t *testing.T) {
 	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen, t)
-	testID := NewIdFromBytes(expectedBytes, t)
+	expected := newRandomBytes(ArrIDLen, t)
+	id := NewIdFromBytes(expected, t)
 
 	// Check for the correct values
-	testVal := testID.Marshal()
-	if !bytes.Equal(expectedBytes, testVal) {
-		t.Errorf("Marshal returned the incorrect byte slice of the ID"+
-			"\nexpected: %+v\nreceived: %+v", expectedBytes, testVal)
+	idBytes := id.Marshal()
+	if !bytes.Equal(expected, idBytes) {
+		t.Errorf("Marshal returned unexpected bytes."+
+			"\nexpected: %+v\nreceived: %+v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
-	if &testID[0] == &testVal[0] {
-		t.Errorf("Marshal did not return a copy when it should have."+
-			"\nexpected: any value except %+v\nreceived: %+v",
-			&testID[0], &testVal[0])
+	if &id[0] == &idBytes[0] {
+		t.Errorf("Marshal did not return a copy of the ID data."+
+			"\nID pointer:    %+v\nbytes pointer: %+v", &id[0], &idBytes[0])
 	}
 }
 
-// Tests that Unmarshal creates a new ID with the correct contents and does
-// not return an error.
+// Tests that Unmarshal creates a new ID with the expected data.
 func TestUnmarshal(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen, t)
+	expected := newRandomBytes(ArrIDLen, t)
 
 	// Unmarshal the bytes into an ID
-	newID, err := Unmarshal(expectedBytes)
-
-	// Make sure no error occurred
+	id, err := Unmarshal(expected)
 	if err != nil {
-		t.Errorf("Unmarshal produced an unexpected error."+
-			"\nexpected: %v\nreceived: %v", nil, err)
+		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
 	// Make sure the ID contents are correct
-	if !bytes.Equal(expectedBytes, newID[:]) {
+	if !bytes.Equal(expected, id[:]) {
 		t.Errorf("Unmarshal produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedBytes, newID[:])
+			"\nexpected: %v\nreceived: %v", expected, id[:])
 	}
 }
 
-// Tests that Unmarshal produces an error when the given data length is not
-// equal to the length of an ID and that the ID returned is nil.
+// Error path: Tests that Unmarshal produces an error when the given data length
+// is not equal to the length of an ID.
 func TestUnmarshal_DataLengthError(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen+10, t)
-	expectedError := fmt.Errorf("could not marshal byte slice to ID: "+
+	invalidIdBytes := newRandomBytes(ArrIDLen+10, t)
+	expectedErr := fmt.Errorf("could not marshal byte slice to ID: "+
 		"length of data must be %d, length received was %d",
-		ArrIDLen, len(expectedBytes))
+		ArrIDLen, len(invalidIdBytes))
 
 	// Unmarshal the bytes into an ID
-	newID, err := Unmarshal(expectedBytes)
-
-	// Make sure an error occurs
+	_, err := Unmarshal(invalidIdBytes)
 	if err == nil {
 		t.Errorf("Unmarshal did not product an expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
-	}
-
-	// Make sure the returned ID is nil
-	if newID != nil {
-		t.Errorf("Unmarshal produced a non-nil ID on error."+
-			"\nexpected: %v\nreceived: %v", nil, newID)
+			"\nexpected: %v\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that Bytes returns the correct byte slice of an ID and that it is
-// a copy.
+// Tests that the byte slice returned by ID.Bytes matches the data in the
+// original ID and the data is a copy of the values and not the reference.
 func TestID_Bytes(t *testing.T) {
-	// Test values
-	expectedBytes := newRandomBytes(ArrIDLen, t)
-	testID := NewIdFromBytes(expectedBytes, t)
+	expected := newRandomBytes(ArrIDLen, t)
+	id := NewIdFromBytes(expected, t)
 
 	// Check for the correct values
-	testVal := testID.Bytes()
-	if !bytes.Equal(expectedBytes, testVal) {
-		t.Errorf("Bytes returned the incorrect byte slice of the ID"+
-			"\nexpected: %+v\nreceived: %+v", expectedBytes, testVal)
+	idBytes := id.Bytes()
+	if !bytes.Equal(expected, idBytes) {
+		t.Errorf("Bytes returned unexpected bytes."+
+			"\nexpected: %v\nreceived: %v", expected, idBytes)
 	}
 
 	// Test if the returned bytes are copies
-	if &testID[0] == &testVal[0] {
-		t.Errorf("Bytes did not return a copy when it should have."+
-			"\nexpected: any value except %+v\nreceived: %+v",
-			&testID[0], &testVal[0])
+	if &id[0] == &idBytes[0] {
+		t.Errorf("Bytes did not return a copy of the ID data."+
+			"\nID pointer:    %+v\nbytes pointer: %+v", &id[0], &idBytes[0])
 	}
 }
 
 // Tests that ID.Bytes panics when the ID is nil.
 func TestID_Bytes_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Bytes failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	_ = id.Bytes()
 }
 
@@ -198,14 +179,13 @@ func TestID_DeepCopy(t *testing.T) {
 
 // Tests that ID.DeepCopy panics when the ID is nil.
 func TestID_DeepCopy_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("DeepCopy failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	_ = id.DeepCopy()
 }
 
@@ -222,7 +202,7 @@ func TestID_String(t *testing.T) {
 	// Decode the string and check
 	newID, err := base64.StdEncoding.DecodeString(stringID)
 	if err != nil {
-		t.Fatalf("Failed to decode string returned by String():\n%v", err)
+		t.Fatalf("Failed to decode string returned by String: %+v", err)
 	}
 
 	if !bytes.Equal(expectedBytes, newID) {
@@ -232,9 +212,8 @@ func TestID_String(t *testing.T) {
 	}
 }
 
-// Tests that GetType returns the correct type for each ID type.
+// Tests that ID.GetType returns the correct type for each ID type.
 func TestID_GetType(t *testing.T) {
-	// Test values
 	testTypes := []Type{Generic, Gateway, Node, User, Group, NumTypes, 7}
 	randomBytes := [][]byte{
 		newRandomBytes(ArrIDLen-1, t), newRandomBytes(ArrIDLen-1, t),
@@ -250,30 +229,29 @@ func TestID_GetType(t *testing.T) {
 		NewIdFromBytes(append(randomBytes[5], byte(testTypes[5])), t),
 	}
 
-	for i, testID := range testIDs {
-		testVal := testID.GetType()
+	for i, id := range testIDs {
+		testVal := id.GetType()
 		if testTypes[i] != testVal {
 			t.Errorf("GetType returned the incorrect type."+
-				"\nexpected: %v\nreceived: %v", testTypes[i], testVal)
+				"\nexpected: %s\nreceived: %s", testTypes[i], testVal)
 		}
 	}
 }
 
 // Tests that ID.GetType panics when the ID is nil.
 func TestID_GetType_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("GetType failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	_ = id.GetType()
 }
 
-// Tests that SetType sets the type of the ID correctly by checking if the
-// ID's type changed after calling SetType().
+// Tests that ID.SetType sets the type of the ID correctly by checking if the
+// ID's type changed after calling SetType.
 func TestID_SetType(t *testing.T) {
 	// Test values
 	expectedType := Node
@@ -294,14 +272,13 @@ func TestID_SetType(t *testing.T) {
 
 // Tests that ID.SetType panics when the ID is nil.
 func TestID_SetType_NilError(t *testing.T) {
-	var id *ID
-
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("SetType failed to panic when the ID is nil.")
 		}
 	}()
 
+	var id *ID
 	id.SetType(Generic)
 }
 
@@ -326,12 +303,13 @@ func TestID_MarshalJSON_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-// Tests that an ID can be JSON marshaled and unmarshalled.
-func TestID_TextMarshal_TextUnmarshal(t *testing.T) {
-	testID := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
+// Tests that an ID can be JSON marshaled and unmarshalled when it is the key in
+// a map. This tests ID.MarshalText.
+func TestID_TextMarshal(t *testing.T) {
+	id := NewIdFromBytes(rngBytes(ArrIDLen, 42, t), t)
 
 	testMap := make(map[ID]int)
-	testMap[*testID] = 8675309
+	testMap[*id] = 8675309
 
 	jsonData, err := json.Marshal(testMap)
 	require.NoError(t, err)
@@ -340,7 +318,7 @@ func TestID_TextMarshal_TextUnmarshal(t *testing.T) {
 	err = json.Unmarshal(jsonData, &newMap)
 	require.NoError(t, err)
 
-	require.Equal(t, testMap[*testID], newMap[*testID])
+	require.Equal(t, testMap[*id], newMap[*id])
 }
 
 // Error path: supplied data is invalid JSON.
@@ -383,13 +361,13 @@ func TestNewRandomID_Consistency(t *testing.T) {
 	}
 
 	for i, expected := range expectedIDs {
-		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		id, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
-		if testID.String() != expected {
-			t.Errorf("NewRandomID did not generate the expected ID."+
-				"\nexpected: %s\nreceived: %s", expected, testID)
+		if id.String() != expected {
+			t.Errorf("NewRandomID did not generate the expected ID (%d)."+
+				"\nexpected: %s\nreceived: %s", i, expected, id.String())
 		}
 	}
 }
@@ -400,33 +378,34 @@ func TestNewRandomID_Unique(t *testing.T) {
 	ids := map[*ID]struct{}{}
 
 	for i := 0; i < 100; i++ {
-		testID, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
+		id, err := NewRandomID(prng, Type(prng.Intn(int(NumTypes))))
 		if err != nil {
 			t.Errorf("NewRandomID returned an error (%d): %+v", i, err)
 		}
 
-		if _, exists := ids[testID]; exists {
-			t.Errorf("NewRandomID did not generate a unique ID (%d).\nID: %s",
-				i, testID)
+		if _, exists := ids[id]; exists {
+			t.Errorf(
+				"NewRandomID did not generate a unique ID (%d).\nID: %s", i, id)
 		} else {
-			ids[testID] = struct{}{}
+			ids[id] = struct{}{}
 		}
 	}
 }
 
-// This tests uses a custom PRNG which generates an ID with a base64 encoding
+// This tests uses a custom PRNG which generates an ID with a base 64 encoding
 // starting with a special character. NewRandomID should force another call
-// to prng.Read, and this call should return an ID with encoding starting with an
-// alphanumeric character. This test fails if it hangs forever (PRNG error) or
-// the ID has an encoding beginning with a special character (NewRandomID error).
+// to prng.Read, and this call should return an ID with encoding starting with
+// an alphanumeric character. This test fails if it hangs forever (PRNG error)
+// or the ID has an encoding beginning with a special character (NewRandomID
+// error).
 func TestNewRandomID_SpecialCharacter(t *testing.T) {
 	prng := newAlphanumericPRNG()
-	testId, err := NewRandomID(prng, 0)
+	id, err := NewRandomID(prng, 0)
 	if err != nil {
 		t.Errorf("NewRandomID returned an error: %+v", err)
 	}
 
-	if !regexAlphanumeric.MatchString(string(testId.String()[0])) {
+	if !regexAlphanumeric.MatchString(string(id.String()[0])) {
 		t.Errorf("Should not have an ID starting with a special character")
 	}
 
@@ -444,15 +423,12 @@ func TestNewRandomID_ReaderError(t *testing.T) {
 
 // Tests that NewIdFromBytes creates a new ID with the correct contents.
 func TestNewIdFromBytes(t *testing.T) {
-	// Expected values
 	expectedBytes := newRandomBytes(ArrIDLen, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	// Create the ID and check its contents
-	newID := NewIdFromBytes(expectedBytes, t)
-
-	if !bytes.Equal(expectedBytes, newID[:]) {
+	if !bytes.Equal(expectedBytes, id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedBytes, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedBytes, id[:])
 	}
 }
 
@@ -465,11 +441,11 @@ func TestNewIdFromBytes_Underflow(t *testing.T) {
 	copy(expectedArr[:], expectedBytes)
 
 	// Create the ID and check its contents
-	newID := NewIdFromBytes(expectedBytes, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	if !bytes.Equal(expectedArr[:], newID[:]) {
+	if !bytes.Equal(expectedArr[:], id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, id[:])
 	}
 }
 
@@ -482,11 +458,11 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 	copy(expectedArr[:], expectedBytes)
 
 	// Create the ID and check its contents
-	newID := NewIdFromBytes(expectedBytes, t)
+	id := NewIdFromBytes(expectedBytes, t)
 
-	if !bytes.Equal(expectedArr[:], newID[:]) {
+	if !bytes.Equal(expectedArr[:], id[:]) {
 		t.Errorf("NewIdFromBytes produced an ID with the incorrect bytes."+
-			"\nexpected: %v\nreceived: %v", expectedArr, newID[:])
+			"\nexpected: %v\nreceived: %v", expectedArr, id[:])
 	}
 }
 
@@ -494,17 +470,17 @@ func TestNewIdFromBytes_Overflow(t *testing.T) {
 func TestNewIdFromBytes_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromBytes did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromBytes did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromBytes(newRandomBytes(ArrIDLen, t), nil)
 }
 
-// Tests that NewIdFromString creates a new ID from string correctly. The new
-// ID is created from a string that is 32 bytes long so that no truncation or
+// Tests that NewIdFromString creates a new ID from string correctly. The new ID
+// is created from a string that is 32 bytes long so that no truncation or
 // padding is required. The test checks that the original string is still
 // present in the data.
 func TestNewIdFromString(t *testing.T) {
@@ -515,22 +491,21 @@ func TestNewIdFromString(t *testing.T) {
 	copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
 
 	// Create the ID and check its contents
-	newID := NewIdFromString(expectedIdString, expectedType, t)
+	id := NewIdFromString(expectedIdString, expectedType, t)
 
 	// Check if the new ID matches the expected ID
-	if !expectedID.Cmp(newID) {
+	if !expectedID.Cmp(id) {
 		t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-			"\nexpected: %v\nreceived: %v", expectedID[:], newID[:])
+			"\nexpected: %v\nreceived: %v", expectedID[:], id[:])
 	}
 
 	// Check if the original string is still in the first 32 bytes
-	newIdString := string(newID.Bytes()[:ArrIDLen-1])
-	if expectedIdString != newIdString {
+	idString := string(id.Bytes()[:ArrIDLen-1])
+	if expectedIdString != idString {
 		t.Errorf("NewIdFromString did not correctly convert the original "+
-			"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
-			"\nexpected bytes: %v\nreceived bytes: %v",
-			expectedIdString, newIdString,
-			[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
+			"string to bytes.\nexpected string: %q\nreceived string: %q"+
+			"\nexpected bytes: %v\nreceived bytes: %v", expectedIdString,
+			idString, []byte(expectedIdString), id.Bytes()[:ArrIDLen-1])
 	}
 }
 
@@ -538,12 +513,12 @@ func TestNewIdFromString(t *testing.T) {
 func TestNewIdFromString_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromString did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromString did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromString("test", Generic, nil)
 }
 
@@ -551,67 +526,31 @@ func TestNewIdFromString_TestError(t *testing.T) {
 // looks similar to the passed in string.
 func TestNewIdFromBase64String(t *testing.T) {
 	tests := []struct{ base64String, expected string }{
-		{"Test 1", "Test+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"[Test  2]", "Test+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"$#%[T$%%est $#$ 3]$$%", "Test+3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"$#%[T$%%est $#$ 4+/]$$%", "Test+4+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
-		{"Test 55555555555555555555555555555555555555", "Test+55555555555555555555555555555555555555E"},
-		{"Test 66666666666666666666666666666666666666666", "Test+66666666666666666666666666666666666666E"},
+		{"Test 1",
+			"Test+1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"[Test  2]",
+			"Test+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 3]$$%",
+			"Test+3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"$#%[T$%%est $#$ 4+/]$$%",
+			"Test+4+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
+		{"Test 55555555555555555555555555555555555555",
+			"Test+55555555555555555555555555555555555555E"},
+		{"Test 66666666666666666666666666666666666666666",
+			"Test+66666666666666666666666666666666666666E"},
 		{"", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE"},
 	}
 
 	for i, tt := range tests {
-		newID := NewIdFromBase64String(tt.base64String, Group, t)
+		id := NewIdFromBase64String(tt.base64String, Group, t)
 
-		b64 := base64.StdEncoding.EncodeToString(newID.Marshal())
+		b64 := base64.StdEncoding.EncodeToString(id.Marshal())
 		if tt.expected != b64 {
 			t.Errorf("Incorrect base 64 encoding for string %q (%d)."+
 				"\nexpected: %s\nreceived: %s",
 				tt.base64String, i, tt.expected, b64)
 		}
 	}
-	//
-	//
-	// // Test values
-	// expectedIdString := "TestIDStringOfCorrectLength"
-	// expectedType := Group
-	// expectedID := new(ID)
-	// copy(expectedID[:], append([]byte(expectedIdString), byte(expectedType)))
-	//
-	// strs := []string{
-	// 	"test",
-	// 	`"test"`,
-	// 	`Question ?`,
-	// 	`open   angle bracket <`,
-	// 	`close angle bracket >`,
-	// 	`slash /`,
-	// 	`slash \`,
-	// }
-	// for i, str := range strs {
-	// 	escaped := url.QueryEscape(str)
-	// 	escaped = whitespaceRegex.ReplaceAllString(str, "+")
-	// 	escaped = nonBase64Regex.ReplaceAllString(escaped, "")
-	// 	fmt.Printf("%2d. %s\n    %s\n", i, str, escaped)
-	// }
-	//
-	// // Create the ID and check its contents
-	// newID := NewIdFromBase64String(expectedIdString, expectedType, t)
-	//
-	// // Check if the new ID matches the expected ID
-	// if !expectedID.Cmp(newID) {
-	// 	t.Errorf("NewIdFromString produced an ID with the incorrect data."+
-	// 		"\nexpected: %v\nreceived: %v", expectedID[:], newID[:])
-	// }
-	//
-	// // Check if the original string is still in the first 32 bytes
-	// newIdString := string(newID.Bytes()[:ArrIDLen-1])
-	// if expectedIdString != newIdString {
-	// 	t.Errorf("NewIdFromString did not correctly convert the original "+
-	// 		"string to bytes.\nexpected string: %#v\nreceived string: %#v"+
-	// 		"\nexpected bytes: %v\nreceived bytes: %v",
-	// 		expectedIdString, newIdString,
-	// 		[]byte(expectedIdString), newID.Bytes()[:ArrIDLen-1])
-	// }
 }
 
 // Tests that NewIdFromUInt creates a new ID with the correct contents by
@@ -621,8 +560,8 @@ func TestNewIdFromUInt(t *testing.T) {
 	expectedUint := rand.Uint64()
 
 	// Create the ID and check its contents
-	newID := NewIdFromUInt(expectedUint, Generic, t)
-	idUint := binary.BigEndian.Uint64(newID[:ArrIDLen-1])
+	id := NewIdFromUInt(expectedUint, Generic, t)
+	idUint := binary.BigEndian.Uint64(id[:ArrIDLen-1])
 
 	if expectedUint != idUint {
 		t.Errorf("NewIdFromUInt produced an ID from uint incorrectly."+
@@ -634,12 +573,12 @@ func TestNewIdFromUInt(t *testing.T) {
 func TestNewIdFromUInt_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInt did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromUInt did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	_ = NewIdFromUInt(rand.Uint64(), Generic, nil)
 }
 
@@ -648,14 +587,14 @@ func TestNewIdFromUInt_TestError(t *testing.T) {
 // original.
 func TestNewIdFromUInts(t *testing.T) {
 	// Expected values
-	expectedUints := [4]uint64{rand.Uint64(), rand.Uint64(),
-		rand.Uint64(), rand.Uint64()}
+	expectedUints := [4]uint64{
+		rand.Uint64(), rand.Uint64(), rand.Uint64(), rand.Uint64()}
 
 	// Create the ID and check its contents
-	newID := NewIdFromUInts(expectedUints, Generic, t)
+	id := NewIdFromUInts(expectedUints, Generic, t)
 	idUints := [4]uint64{}
 	for i := range idUints {
-		idUints[i] = binary.BigEndian.Uint64(newID[i*8 : (i+1)*8])
+		idUints[i] = binary.BigEndian.Uint64(id[i*8 : (i+1)*8])
 	}
 
 	if !reflect.DeepEqual(expectedUints, idUints) {
@@ -668,12 +607,12 @@ func TestNewIdFromUInts(t *testing.T) {
 func TestNewIdFromUInts_TestError(t *testing.T) {
 	defer func() {
 		if err := recover(); err == nil {
-			t.Errorf("NewIdFromUInts did not panic when it received a " +
-				"nil testing object when it should have.")
+			t.Errorf("NewIdFromUInts did not panic when it received a nil " +
+				"testing object when it should have.")
 		}
 	}()
 
-	// Call function with nil testing object
+	// Call the function with nil testing object
 	newUint64s := [4]uint64{rand.Uint64(), rand.Uint64(),
 		rand.Uint64(), rand.Uint64()}
 	_ = NewIdFromUInts(newUint64s, Generic, nil)
@@ -693,8 +632,8 @@ func newRandomBytes(length int, t *testing.T) []byte {
 	return idBytes
 }
 
-// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface. This is used for
-// testing special characters.
+// alphaNumericPRNG is a custom PRNG which adheres to the io.Reader interface.
+// This is used for testing special characters.
 type alphaNumericPRNG struct {
 	counter uint
 }
@@ -704,20 +643,32 @@ func newAlphanumericPRNG() *alphaNumericPRNG {
 	return &alphaNumericPRNG{counter: 0}
 }
 
-// Hardcoded byte array which generates a base64 string starting with a special character.
-// Expected encoding is "/ABBb6YWlbkgLmg2Ohx4f0eE4K7Zx4VkGE4THx58gR8A",
-// any other encoding output indicates that something is wrong (likely a dependency).
-var hardCodedSpecialCharacter = []byte{252, 0, 65, 111, 166, 22, 149, 185, 32, 46, 104, 54, 58, 28, 120, 127, 71, 132, 224, 174, 217, 199, 133, 100, 24, 78, 19, 31, 30, 124, 129, 31, 189}
+// Hardcoded byte array that generates a base64 string starting with a special
+// character.
+//
+// Expected encoding is "/ABBb6YWlbkgLmg2Ohx4f0eE4K7Zx4VkGE4THx58gR8A".
+// Any other encoding output indicates that something is wrong (likely a
+// dependency).
+var hardCodedSpecialCharacter = []byte{252, 0, 65, 111, 166, 22, 149, 185, 32,
+	46, 104, 54, 58, 28, 120, 127, 71, 132, 224, 174, 217, 199, 133, 100, 24,
+	78, 19, 31, 30, 124, 129, 31, 189}
 
-// Hardcoded byte array which generates a base64 string starting with an alphanumeric character.
-// Expected encoding is "6iMc/s5V6MSzD6+DDQthcfA53w7wY988cenRkjxNwIcD",
-// any other encoding output indicates that something is wrong (likely a dependency).
-var hardcodedAlphaNumeric = []byte{234, 35, 28, 254, 206, 85, 232, 196, 179, 15, 175, 131, 13, 11, 97, 113, 240, 57, 223, 14, 240, 99, 223, 60, 113, 233, 209, 146, 60, 77, 192, 135, 19}
+// Hardcoded byte array that generates a base64 string starting with an
+// alphanumeric character.
+//
+// Expected encoding is "6iMc/s5V6MSzD6+DDQthcfA53w7wY988cenRkjxNwIcD".
+// Any other encoding output indicates that something is wrong (likely a
+// dependency).
+var hardcodedAlphaNumeric = []byte{234, 35, 28, 254, 206, 85, 232, 196, 179, 15,
+	175, 131, 13, 11, 97, 113, 240, 57, 223, 14, 240, 99, 223, 60, 113, 233,
+	209, 146, 60, 77, 192, 135, 19}
 
-// Read will copy a value into byte slice p. On the first call to alphaNumericPRNG.Read()
-// a hardcoded value with a base64 encoding starting with a special character will be returned.
-// For any other call to alphaNumericPRNG.Read(), a hardcoded value with a base64 encoding starting with an
-// alphanumeric character will be returned.
+// Read will copy a value into byte slice p. On the first call to
+// alphaNumericPRNG.Read a hardcoded value with a base 64 encoding starting with
+// a special character will be returned.
+//
+// For any other call to alphaNumericPRNG.Read, a hardcoded value with a base 64
+// encoding starting with an alphanumeric character will be returned.
 func (prng *alphaNumericPRNG) Read(p []byte) (n int, err error) {
 	defer func() {
 		prng.counter++

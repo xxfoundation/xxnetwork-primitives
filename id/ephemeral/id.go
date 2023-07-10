@@ -11,7 +11,6 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"encoding/binary"
-	"fmt"
 	"hash"
 	"io"
 	"math"
@@ -21,9 +20,11 @@ import (
 	"gitlab.com/xx_network/primitives/id"
 )
 
-const Period = int64(time.Hour * 24)
-const NumOffsets int64 = 1 << 16
-const NsPerOffset = Period / NumOffsets
+const (
+	Period            = int64(time.Hour * 24)
+	NumOffsets  int64 = 1 << 16
+	NsPerOffset       = Period / NumOffsets
+)
 
 // ReservedIDs are ephemeral IDs reserved for specific actions:
 //   - All zeros denote a dummy ID
@@ -33,7 +34,7 @@ var ReservedIDs = []Id{
 	{1, 1, 1, 1, 1, 1, 1, 1}, // Payment
 }
 
-// Ephemeral ID type alias
+// Id is the ephemeral ID type alias
 type Id [8]byte
 
 // ProtoIdentity contains the ID and the start and end time for the salt window.
@@ -85,7 +86,7 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 // Marshal loads an ephemeral ID from raw bytes.
 func Marshal(data []byte) (Id, error) {
 	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return Id{}, errors.New(fmt.Sprintf("Ephemeral ID must be of size %d", len(Id{})))
+		return Id{}, errors.Errorf("Ephemeral ID must be of size %d", len(Id{}))
 	}
 	eid := Id{}
 	copy(eid[:], data)

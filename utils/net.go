@@ -183,7 +183,8 @@ func IsDomainName(address string) error {
 	case l == len(address):
 		return errors.Errorf(dnTldEndPeriodErr)
 	case len(address)-l > 63:
-		return errors.Errorf(dnTldMaxLenErr, address[l:], len(address)-l, topLevelMaxLen)
+		return errors.Errorf(dnTldMaxLenErr,
+			address[l:], len(address)-l, topLevelMaxLen)
 	case address[l] == '-':
 		return errors.Errorf(dnTldStartHyphenErr, address[l:], l)
 	case address[len(address)-1] == '-':
