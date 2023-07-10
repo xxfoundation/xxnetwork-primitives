@@ -87,8 +87,7 @@ func (id *ID) Cmp(y *ID) bool {
 // and false otherwise.
 func (id *ID) Equal(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.New(
-			"Failed to check if IDs are equal: one or both IDs are nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
 	}
 
 	return *id == *y
@@ -134,6 +133,7 @@ func (id *ID) String() string {
 func (id *ID) GetType() Type {
 	if id == nil {
 		jww.FATAL.Panicf("%+v", errors.New(""+
+			""+
 			"Failed to get ID type: ID is nil."))
 	}
 
