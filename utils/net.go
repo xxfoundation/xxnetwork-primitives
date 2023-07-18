@@ -8,10 +8,11 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	"net"
 	"strconv"
 	"unicode/utf8"
+
+	"github.com/pkg/errors"
 )
 
 // Maximum and Minimum lengths.

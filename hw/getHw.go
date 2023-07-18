@@ -11,9 +11,10 @@ package hw
 
 import (
 	"fmt"
-	jww "github.com/spf13/jwalterweatherman"
 	"os/exec"
 	"strings"
+
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (

@@ -8,9 +8,10 @@
 package region
 
 import (
-	"gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"testing"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Happy path

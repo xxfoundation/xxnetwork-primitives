@@ -8,10 +8,11 @@
 package region
 
 import (
-	"gitlab.com/xx_network/primitives/id"
 	"math/rand"
 	"testing"
 	"time"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 func TestCreateLatencyTable(t *testing.T) {

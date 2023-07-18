@@ -8,11 +8,12 @@
 package rateLimiting
 
 import (
-	"github.com/pkg/errors"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Test implementation of the database
@@ -214,7 +215,7 @@ func TestBucketMap_LookupBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number " +
+					t.Errorf("Bucket %s in the database has incorrect number "+
 						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
@@ -363,12 +364,12 @@ func TestBucketMap_AddBucket(t *testing.T) {
 						"database.", b.key)
 				}
 				if bp.Capacity != bucket.Capacity() {
-					t.Errorf("Bucket %s in the database has incorrect number " +
+					t.Errorf("Bucket %s in the database has incorrect number "+
 						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Capacity(), bp.Capacity)
 				}
 				if bp.Remaining != bucket.Remaining() {
-					t.Errorf("Bucket %s in the database has incorrect number " +
+					t.Errorf("Bucket %s in the database has incorrect number "+
 						"of tokens.\nexpected: %d\nreceived: %d",
 						b.key, bucket.Remaining(), bp.Remaining)
 				}
