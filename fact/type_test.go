@@ -11,57 +11,82 @@ import (
 	"testing"
 )
 
+// Consistency test of FactType.String.
 func TestFactType_String(t *testing.T) {
-	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone, FactType(200)}
-	Strs := []string{"Username", "Email", "Phone", "Unknown Fact FactType: 200"}
-	for i, ft := range FTs {
-		if FactType.String(ft) != Strs[i] {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.String(ft), Strs[i])
+	tests := map[FactType]string{
+		Username:      "Username",
+		Email:         "Email",
+		Phone:         "Phone",
+		Nickname:      "Nickname",
+		FactType(200): "Unknown Fact FactType: 200",
+	}
+
+	for ft, expected := range tests {
+		str := ft.String()
+		if expected != str {
+			t.Errorf("Unexpected FactType string.\nexpected: %q\nreceived: %q",
+				expected, str)
 		}
 	}
 }
 
-func TestFactType_Stringify(t *testing.T) {
-	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone}
-	Strs := []string{"U", "E", "P"}
-	for i, ft := range FTs {
-		if FactType.Stringify(ft) != Strs[i] {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.Stringify(ft), Strs[i])
-		}
+// Tests that a FactType marshalled by FactType.Stringify and unmarshalled by
+// UnstringifyFactType matches the original.
+func TestFactType_Stringify_UnstringifyFactType(t *testing.T) {
+	factTypes := []FactType{
+		Username,
+		Email,
+		Phone,
+		Nickname,
 	}
-}
 
-func TestFactType_Unstringify(t *testing.T) {
-	// FactTypes and expected strings for them
-	FTs := []FactType{Username, Email, Phone}
-	Strs := []string{"U", "E", "P"}
-	for i, ft := range FTs {
-		gotft, err := UnstringifyFactType(Strs[i])
+	for _, expected := range factTypes {
+		str := expected.Stringify()
+
+		ft, err := UnstringifyFactType(str)
 		if err != nil {
-			t.Error(err)
+			t.Fatalf("Failed to unstringify fact type %q: %+v", str, err)
 		}
-		if gotft != ft {
-			t.Errorf("Got unexpected string for FactType.\n\tGot: %s\n\tExpected: %s", FactType.Stringify(ft), Strs[i])
+		if expected != ft {
+			t.Errorf("Unexpected unstringified FactType."+
+				"\nexpected: %s\nreceived: %s", expected, str)
 		}
 	}
+}
 
-	_, err := UnstringifyFactType("x")
+// Panic path: Tests that FactType.Stringify panics for an invalid FactType
+func TestFactType_Stringify_InvalidFactTypePanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Failed to panic for invalid FactType")
+		}
+	}()
+
+	FactType(99).Stringify()
+}
+
+// Error path: Tests that FactType.UnstringifyFactType returns an error for an
+// invalid FactType.
+func TestFactType_Unstringify_UnknownFactTypeError(t *testing.T) {
+	_, err := UnstringifyFactType("invalid")
 	if err == nil {
-		t.Errorf("UnstringifyFactType did not return an error on an invalid type")
+		t.Errorf("Failed to get error for invalid FactType.")
 	}
 }
 
 func TestFactType_IsValid(t *testing.T) {
-	if !FactType.IsValid(Username) ||
-		!FactType.IsValid(Email) ||
-		!FactType.IsValid(Phone) {
-
-		t.Errorf("FactType.IsValid did not report a FactType as valid")
+	tests := map[FactType]bool{
+		Username: true,
+		Email:    true,
+		Phone:    true,
+		Nickname: true,
+		99:       false,
 	}
 
-	if FactType.IsValid(FactType(200)) {
-		t.Errorf("FactType.IsValid reported a non-valid FactType value as valid")
+	for ft, expected := range tests {
+		if ft.IsValid() != expected {
+			t.Errorf("Unexpected IsValid result for %s."+
+				"\nexpected: %t\nreceived: %t", ft, expected, ft.IsValid())
+		}
 	}
 }

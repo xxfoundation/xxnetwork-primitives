@@ -11,9 +11,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/csv"
+	"strings"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"strings"
 )
 
 type Data struct {
@@ -23,15 +24,22 @@ type Data struct {
 	MessageHash []byte
 }
 
+// BuildNotificationCSV converts the [Data] list into a CSV of the specified max
+// size and return it along with the included [Data] entries. Any [Data] entries
+// over that size are excluded.
+//
+// The CSV contains each [Data] entry on its own row with column one the
+// [Data.MessageHash] and column two having the [Data.IdentityFP], but base 64
+// encoded
 func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
-	buf := &bytes.Buffer{}
-
-	numWritten := 0
+	var buf bytes.Buffer
+	var numWritten int
 
 	for _, nd := range ndList {
-		line := &bytes.Buffer{}
-		w := csv.NewWriter(line)
-		output := []string{base64.StdEncoding.EncodeToString(nd.MessageHash),
+		var line bytes.Buffer
+		w := csv.NewWriter(&line)
+		output := []string{
+			base64.StdEncoding.EncodeToString(nd.MessageHash),
 			base64.StdEncoding.EncodeToString(nd.IdentityFP)}
 
 		if err := w.Write(output); err != nil {
@@ -53,28 +61,30 @@ func BuildNotificationCSV(ndList []*Data, maxSize int) ([]byte, []*Data) {
 	return buf.Bytes(), ndList[numWritten:]
 }
 
+// DecodeNotificationsCSV decodes the Data list CSV into a slice of Data.
 func DecodeNotificationsCSV(data string) ([]*Data, error) {
 	r := csv.NewReader(strings.NewReader(data))
-	read, err := r.ReadAll()
+	records, err := r.ReadAll()
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to decode notifications CSV")
 	}
 
-	l := make([]*Data, len(read))
-	for i, touple := range read {
-		messageHash, err := base64.StdEncoding.DecodeString(touple[0])
+	list := make([]*Data, len(records))
+	for i, tuple := range records {
+		messageHash, err := base64.StdEncoding.DecodeString(tuple[0])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed decode an element")
 		}
-		identityFP, err := base64.StdEncoding.DecodeString(touple[1])
+		identityFP, err := base64.StdEncoding.DecodeString(tuple[1])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed decode an element")
 		}
-		l[i] = &Data{
+		list[i] = &Data{
 			EphemeralID: 0,
 			IdentityFP:  identityFP,
 			MessageHash: messageHash,
 		}
 	}
-	return l, nil
+
+	return list, nil
 }

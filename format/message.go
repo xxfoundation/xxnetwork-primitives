@@ -11,8 +11,9 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"strconv"
+
+	"golang.org/x/crypto/blake2b"
 
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -47,10 +48,10 @@ const (
 |                    2*primeSize - recipientID bits                      |
 +------------------------------------------------------------------------+
 
-* size: size in bits of the data which is stored
-* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
-* Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
-* the size of the data in the two contents fields is stored within the "size" field
+   - size: size in bits of the data which is stored
+   - Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
+   - Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
+   - the size of the data in the two contents fields is stored within the "size" field
 
 /////Adherence to the group/////////////////////////////////////////////////////
 The first bits of keyFingerprint and MAC are enforced to be 0, thus ensuring
@@ -118,7 +119,7 @@ func (m *Message) Marshal() []byte {
 // MarshalImmutable marshals the message into a byte slice. Note that the
 // Ephemeral ID and the SIH both change every time a message is
 // sent. This function 0's those fields to guarantee that the same
-// message will be byte idendical with itself when Marshalled.
+// message will be byte identical with itself when Marshalled.
 func (m *Message) MarshalImmutable() []byte {
 	newM := m.Copy()
 	newM.SetEphemeralRID(make([]byte, EphemeralRIDLen))

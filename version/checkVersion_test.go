@@ -20,7 +20,7 @@ func TestNew(t *testing.T) {
 	test := New(expected.major, expected.minor, expected.patch)
 
 	if !reflect.DeepEqual(expected, test) {
-		t.Errorf("New() did not created the expected Version."+
+		t.Errorf("New did not create the expected Version."+
 			"\nexpected: %+v\nreceived: %+v", expected, test)
 	}
 }
@@ -30,7 +30,7 @@ func TestVersion_Major(t *testing.T) {
 	v := Version{1, 2, "3"}
 
 	if v.Major() != v.major {
-		t.Errorf("Major() did not return the expected value."+
+		t.Errorf("Major did not return the expected value."+
 			"\nexpected: %d\nreceived: %d", v.major, v.Major())
 	}
 }
@@ -40,7 +40,7 @@ func TestVersion_Minor(t *testing.T) {
 	v := Version{1, 2, "3"}
 
 	if v.Minor() != v.minor {
-		t.Errorf("Minor() did not return the expected value."+
+		t.Errorf("Minor did not return the expected value."+
 			"\nexpected: %d\nreceived: %d", v.minor, v.Minor())
 	}
 }
@@ -50,7 +50,7 @@ func TestVersion_Patch(t *testing.T) {
 	v := Version{1, 2, "3"}
 
 	if v.Patch() != v.patch {
-		t.Errorf("Patch() did not return the expected value."+
+		t.Errorf("Patch did not return the expected value."+
 			"\nexpected: %s\nreceived: %s", v.patch, v.Patch())
 	}
 }
@@ -68,7 +68,7 @@ func TestVersion_String(t *testing.T) {
 	for expected, ver := range testValues {
 		test := ver.String()
 		if expected != test {
-			t.Errorf("String() did not return the expected string."+
+			t.Errorf("String did not return the expected string."+
 				"\nexpected: %s\nreceived: %s", expected, test)
 		}
 	}
@@ -86,11 +86,11 @@ func TestParseVersion(t *testing.T) {
 	for versionString, expected := range testValues {
 		test, err := ParseVersion(versionString)
 		if err != nil {
-			t.Errorf("ParseVersion() produced an unexpected error: %+v", err)
+			t.Errorf("ParseVersion produced an unexpected error: %+v", err)
 		}
 
 		if expected != test {
-			t.Errorf("ParseVersion() did not return the expected Version."+
+			t.Errorf("ParseVersion did not return the expected Version."+
 				"\nexpected: %+v\nreceived: %+v", expected, test)
 		}
 	}
@@ -119,7 +119,7 @@ func TestParseVersion_Error(t *testing.T) {
 	for str, expectedErr := range testStrings {
 		_, err := ParseVersion(str)
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
-			t.Errorf("ParseVersion() did not produce the expected error for \"%s\"."+
+			t.Errorf("ParseVersion did not produce the expected error for \"%s\"."+
 				"\nexpected: %s\nreceived: %+v", str, expectedErr, err)
 		}
 	}
@@ -137,7 +137,7 @@ func TestIsCompatible(t *testing.T) {
 
 	for i, v := range testValues {
 		if !IsCompatible(v.required, v.current) {
-			t.Errorf("IsCompatible() incorectly determined the current version"+
+			t.Errorf("IsCompatible incorectly determined the current version"+
 				"is not comptabile with the required version (%d)."+
 				"\nrequired: %s\ncurrent:  %s", i, v.required, v.current)
 		}
@@ -155,7 +155,7 @@ func TestIsCompatible_Failure(t *testing.T) {
 
 	for i, v := range testValues {
 		if IsCompatible(v.required, v.current) {
-			t.Errorf("IsCompatible() incorectly determined the current version"+
+			t.Errorf("IsCompatible incorectly determined the current version"+
 				"is comptabile with the required version (%d)."+
 				"\nrequired: %s\ncurrent:  %s", i, v.required, v.current)
 		}
@@ -173,7 +173,7 @@ func TestEqual_Same(t *testing.T) {
 
 	for i, v := range testValues {
 		if !Equal(v.a, v.b) {
-			t.Errorf("Equal() determined the versions are not equal (%d)."+
+			t.Errorf("Equal determined the versions are not equal (%d)."+
 				"\na: %s\nb: %s", i, v.a, v.b)
 		}
 	}
@@ -191,7 +191,7 @@ func TestEqual_Different(t *testing.T) {
 
 	for i, v := range testValues {
 		if Equal(v.a, v.b) {
-			t.Errorf("Equal() determined the versions are equal (%d)."+
+			t.Errorf("Equal determined the versions are equal (%d)."+
 				"\na: %s\nb: %s", i, v.a, v.b)
 		}
 	}
@@ -216,7 +216,7 @@ func TestCmp(t *testing.T) {
 	for i, v := range testValues {
 		test := Cmp(v.a, v.b)
 		if v.expected != test {
-			t.Errorf("Cmp() did not return the expected value for %s and %s (%d)."+
+			t.Errorf("Cmp did not return the expected value for %s and %s (%d)."+
 				"\nexpected: %d\nreceived: %d", v.a, v.b, i, v.expected, test)
 		}
 	}

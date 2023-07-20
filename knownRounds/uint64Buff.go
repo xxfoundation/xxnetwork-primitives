@@ -10,10 +10,11 @@ package knownRounds
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"io"
 	"math"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (
@@ -108,7 +109,7 @@ func (u64b uint64Buff) copy(start, end int) uint64Buff {
 // If u64bStart is greater than u64bEnd, then the selection is inverted.
 //
 // More info on material implication:
-//   https://en.wikipedia.org/wiki/Material_conditional
+// https://en.wikipedia.org/wiki/Material_conditional
 func (u64b uint64Buff) implies(mask uint64Buff) uint64Buff {
 	if len(u64b) != len(mask) {
 		jww.FATAL.Panicf("Cannot imply two buffers of different lengths "+

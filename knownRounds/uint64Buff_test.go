@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-// Happy path of get().
+// Happy path of uint64Buff.get.
 func Test_uint64Buff_get(t *testing.T) {
 	// Generate test positions and expected value
 	testData := []struct {
@@ -32,13 +32,15 @@ func Test_uint64Buff_get(t *testing.T) {
 	for i, data := range testData {
 		value := u64b.get(data.pos)
 		if value != data.value {
-			t.Errorf("get() returned incorrect value for bit at position %d (round %d)."+
-				"\n\texpected: %v\n\treceived: %v", data.pos, i, data.value, value)
+			t.Errorf(
+				"get returned incorrect value for the bit at position %d (%d)."+
+					"\nexpected: %v\nreceived: %v",
+				data.pos, i, data.value, value)
 		}
 	}
 }
 
-// Happy path of set().
+// Happy path of uint64Buff.set.
 func Test_uint64Buff_set(t *testing.T) {
 	// Generate test positions and expected buffers
 	testData := []struct {
@@ -55,7 +57,7 @@ func Test_uint64Buff_set(t *testing.T) {
 		u64b := uint64Buff{0, ones, 0, ones, 0}
 		u64b.set(data.pos)
 		if !reflect.DeepEqual(u64b, data.buff) {
-			t.Errorf("Resulting buffer after setting bit at position %d (round %d)."+
+			t.Errorf("Resulting buffer after setting bit at position %d (%d)."+
 				"\n\texpected: %064b\n\treceived: %064b"+
 				"\n\033[38;5;59m               0123456789012345678901234567890123456789012345678901234567890123 4567890123456789012345678901234567890123456789012345678901234567 8901234567890123456789012345678901234567890123456789012345678901 2345678901234567890123456789012345678901234567890123456789012345 6789012345678901234567890123456789012345678901234567890123456789 0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n\u001B[38;5;59m               0         1         2         3         4         5         6          7         8         9         0         1         2          3         4         5         6         7         8         9          0         1         2         3         4         5          6         7         8         9         0         1          2         3         4         5         6         7         8"+
@@ -65,7 +67,7 @@ func Test_uint64Buff_set(t *testing.T) {
 	}
 }
 
-// Tests that clearRange() clears the correct bits.
+// Tests that uint64Buff.clearRange clears the correct bits.
 func Test_uint64Buff_clearRange(t *testing.T) {
 	// Generate test ranges and expected buffer
 	testData := []struct {
@@ -93,7 +95,7 @@ func Test_uint64Buff_clearRange(t *testing.T) {
 		u64b := uint64Buff{ones, ones, ones, ones, ones}
 		u64b.clearRange(data.start, data.end)
 		if !reflect.DeepEqual(u64b, data.buff) {
-			t.Errorf("Resulting buffer after clearing range %d to %d is incorrect (round %d)."+
+			t.Errorf("Resulting buffer after clearing range %d to %d is incorrect (%d)."+
 				"\n\texpected: %064b\n\treceived: %064b"+
 				"\n\033[38;5;59m               0123456789012345678901234567890123456789012345678901234567890123 4567890123456789012345678901234567890123456789012345678901234567 8901234567890123456789012345678901234567890123456789012345678901 2345678901234567890123456789012345678901234567890123456789012345 6789012345678901234567890123456789012345678901234567890123456789 0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n\u001B[38;5;59m               0         1         2         3         4         5         6          7         8         9         0         1         2          3         4         5         6         7         8         9          0         1         2         3         4         5          6         7         8         9         0         1          2         3         4         5         6         7         8"+
@@ -103,7 +105,7 @@ func Test_uint64Buff_clearRange(t *testing.T) {
 	}
 }
 
-// Tests that copy() copies the correct bits.
+// Tests that uint64Buff.copy copies the correct bits.
 func Test_uint64Buff_copy(t *testing.T) {
 	// Generate test ranges and expected copied value
 
@@ -122,47 +124,48 @@ func Test_uint64Buff_copy(t *testing.T) {
 		for j := 0; j < lenBuf; j++ {
 			buf[j] = prng.Uint64()
 		}
-		subsampleStart, subsampleEnd := 0, 0
-		for subsampleEnd-subsampleStart == 0 {
-			subsampleStart = int(prng.Uint64() % uint64(lenBuf*64))
-			subsampleDelta := int(prng.Uint64() % (uint64(lenBuf*64 - subsampleStart)))
-			subsampleEnd = subsampleStart + subsampleDelta
+		subSampleStart, subSampleEnd := 0, 0
+		for subSampleEnd-subSampleStart == 0 {
+			subSampleStart = int(prng.Uint64() % uint64(lenBuf*64))
+			subSampleDelta := int(prng.Uint64() % (uint64(lenBuf*64 - subSampleStart)))
+			subSampleEnd = subSampleStart + subSampleDelta
 		}
 
-		// delta := subsampleEnd-subsampleStart
+		copied := buf.copy(subSampleStart, subSampleEnd)
 
-		copied := buf.copy(subsampleStart, subsampleEnd)
-
-		// check edge regions
-		for j := 0; j < subsampleStart%64; j++ {
+		// Check edge regions
+		for j := 0; j < subSampleStart%64; j++ {
 			if !copied.get(j) {
-				t.Errorf("Round %v position %v < substampeStart %v(%v) is "+
-					"false when should be true", i, j, subsampleStart, subsampleStart%64)
+				t.Errorf("Round %d position %d < substampeStart %d(%d) is "+
+					"false when should be true",
+					i, j, subSampleStart, subSampleStart%64)
 			}
 		}
-		// dont test the edge case where the last element is the last in the
+
+		// Do not test the edge case where the last element is the last in the
 		// last block because nothing will have been filled in to test
-		if (subsampleEnd/64 - subsampleStart/64) != len(copied) {
-			for j := subsampleEnd % 64; j < 64; j++ {
+		if (subSampleEnd/64 - subSampleStart/64) != len(copied) {
+			for j := subSampleEnd % 64; j < 64; j++ {
 				if copied.get(((len(copied) - 1) * 64) + j) {
-					t.Errorf("Round %v position %v (%v) > substampeEnd %v(%v) is "+
-						"true when should be false", i, ((len(copied)-1)*64)+j, j,
-						subsampleEnd, subsampleEnd%64)
+					t.Errorf("Round %d position %d (%d) > substampeEnd %d(%d) "+
+						"is true when should be false", i,
+						((len(copied)-1)*64)+j, j, subSampleEnd, subSampleEnd%64)
 				}
 			}
 		}
-		// check all in between bits are correct
-		for j := subsampleStart % 64; j < subsampleEnd-subsampleStart; j++ {
-			if copied.get(j) != buf.get(j+(subsampleStart/64)*64) {
-				t.Errorf("Round %v copy position %v not the same as original"+
-					" position %v (%v + %v)", i, j%64, (j+subsampleStart)%64,
-					subsampleStart, j)
+
+		// Check all in between bits are correct
+		for j := subSampleStart % 64; j < subSampleEnd-subSampleStart; j++ {
+			if copied.get(j) != buf.get(j+(subSampleStart/64)*64) {
+				t.Errorf("Round %d copy position %d not the same as original "+
+					"position %d (%d + %d)", i, j%64, (j+subSampleStart)%64,
+					subSampleStart, j)
 			}
 		}
 	}
 }
 
-// Happy path of convertLoc().
+// Happy path of uint64Buff.convertLoc.
 func Test_uint64Buff_convertLoc(t *testing.T) {
 	// Generate test position and expected block index and offset
 	testData := []struct {
@@ -184,15 +187,15 @@ func Test_uint64Buff_convertLoc(t *testing.T) {
 	for i, data := range testData {
 		bin, offset := u64b.convertLoc(data.pos)
 		if bin != data.bin || offset != data.offset {
-			t.Errorf("convert() returned incorrect values for position %d "+
-				"(round %d).\n\texpected: bin: %3d  offset: %3d"+
-				"\n\treceived: bin: %3d  offset: %3d",
+			t.Errorf("convert returned incorrect values for position %d (%d)."+
+				"\nexpected: bin: %3d  offset: %3d"+
+				"\nreceived: bin: %3d  offset: %3d",
 				data.pos, i, data.bin, data.offset, bin, offset)
 		}
 	}
 }
 
-// Happy path of convertEnd().
+// Happy path of uint64Buff.convertEnd.
 func Test_uint64Buff_convertEnd(t *testing.T) {
 	// Generate test position and expected block index and offset
 	testData := []struct {
@@ -215,15 +218,15 @@ func Test_uint64Buff_convertEnd(t *testing.T) {
 	for i, data := range testData {
 		bin, offset := u64b.convertEnd(data.pos)
 		if bin != data.bin || offset != data.offset {
-			t.Errorf("convert() returned incorrect values for position %d "+
-				"(round %d).\n\texpected: bin: %3d  offset: %3d"+
-				"\n\treceived: bin: %3d  offset: %3d",
+			t.Errorf("convert returned incorrect values for position %d (%d)."+
+				"\nexpected: bin: %3d  offset: %3d"+
+				"\nreceived: bin: %3d  offset: %3d",
 				data.pos, i, data.bin, data.offset, bin, offset)
 		}
 	}
 }
 
-// Tests happy path of getBin().
+// Tests happy path of uint64Buff.getBin.
 func Test_uint64Buff_getBin(t *testing.T) {
 	// Generate test block indexes and the expected index in the buffer
 	testData := []struct {
@@ -241,14 +244,14 @@ func Test_uint64Buff_getBin(t *testing.T) {
 	for i, data := range testData {
 		bin := u64b.getBin(data.block)
 		if bin != data.expectedBin {
-			t.Errorf("getBin() returned incorrect block index for index %d "+
-				"(round %d).\n\texpected: %d\n\treceived: %d",
+			t.Errorf("getBin returned incorrect block index for index %d (%d)."+
+				"\nexpected: %d\nreceived: %d",
 				data.block, i, data.expectedBin, bin)
 		}
 	}
 }
 
-// Tests that delta() returns the correct delta for the given range.
+// Tests that uint64Buff.delta returns the correct delta for the given range.
 func Test_uint64Buff_delta(t *testing.T) {
 	// Generate test ranges and the expected delta
 	testData := []struct {
@@ -283,14 +286,14 @@ func Test_uint64Buff_delta(t *testing.T) {
 	for i, data := range testData {
 		delta := u64b.delta(data.start, data.end)
 		if delta != data.expectedDelta {
-			t.Errorf("delta() returned incorrect value for range %d to %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d",
+			t.Errorf("delta returned incorrect value for range %d to %d (%d)."+
+				"\nexpected: %d\nreceived: %d",
 				data.start, data.end, i, data.expectedDelta, delta)
 		}
 	}
 }
 
-// Tests that bitMaskRange() produces the correct bit mask for the range.
+// Tests that bitMaskRange produces the correct bit mask for the range.
 func Test_bitMaskRange(t *testing.T) {
 	// Generate test ranges and the expected mask
 	testData := []struct {
@@ -313,7 +316,7 @@ func Test_bitMaskRange(t *testing.T) {
 	for i, data := range testData {
 		testMask := bitMaskRange(data.start, data.end)
 		if testMask != data.expectedMask {
-			t.Errorf("Generated mask for range %d to %d is incorrect (round %d)."+
+			t.Errorf("Generated mask for range %d to %d is incorrect (%d)."+
 				"\n\texpected: %064b\n\treceived: %064b"+
 				"\n              0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n              0         1         2         3         4         5         6",
@@ -365,8 +368,10 @@ func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 		{0x7FFFFFFFFFFFFFF, ones, ones, ones, 0xFFFFFFFFFFFFFC00},
 		initU64B(0, math.MaxUint8*2),
 		initU64B(math.MaxUint64, math.MaxUint8*2),
-		append(append(uint64Buff{0xFFFFFF00F0000000}, initU64B(0, math.MaxUint8*2)...), 0x13374AFB434FF),
-		append(append(uint64Buff{0xFFFFFF00F0000000}, initU64B(math.MaxUint64, math.MaxUint8*2)...), 0x13374AFB434FF),
+		append(append(uint64Buff{0xFFFFFF00F0000000},
+			initU64B(0, math.MaxUint8*2)...), 0x13374AFB434FF),
+		append(append(uint64Buff{0xFFFFFF00F0000000},
+			initU64B(math.MaxUint64, math.MaxUint8*2)...), 0x13374AFB434FF),
 	}
 
 	for i, data := range testData {
@@ -378,7 +383,7 @@ func TestUint64Buff_marshal_unmarshal(t *testing.T) {
 		}
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 1 byte buffer (%d)."+
-				"\n\texpected: %X\n\treceived: %X", i, data, u64b)
+				"\nexpected: %X\nreceived: %X", i, data, u64b)
 		}
 	}
 }
@@ -407,12 +412,15 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 		{0x7FFFFFFFFFFFFFF, ones, ones, ones, 0xFFFFFFFFFFFFFC00},
 		initU64B(0, math.MaxUint8*2),
 		initU64B(math.MaxUint64, math.MaxUint8*2),
-		append(append(uint64Buff{0xFFFFFF00F0000000}, initU64B(0, math.MaxUint8*2)...), 0x13374AFB434FF),
-		append(append(uint64Buff{0xFFFFFF00F0000000}, initU64B(math.MaxUint64, math.MaxUint8*2)...), 0x13374AFB434FF),
+		append(append(uint64Buff{0xFFFFFF00F0000000},
+			initU64B(0, math.MaxUint8*2)...), 0x13374AFB434FF),
+		append(append(uint64Buff{0xFFFFFF00F0000000},
+			initU64B(math.MaxUint64, math.MaxUint8*2)...), 0x13374AFB434FF),
 	}
 
 	str := ""
-	str += fmt.Sprintf("%4s   %4s   %4s   %4s   %4s\n", "orig", "1B", "2B", "4B", "8B")
+	str += fmt.Sprintf(
+		"%4s   %4s   %4s   %4s   %4s\n", "orig", "1B", "2B", "4B", "8B")
 	str += fmt.Sprintln("==================================")
 	for i, data := range testData {
 
@@ -424,7 +432,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 		f1bLen := len(buff)
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 1 byte buffer (%d)."+
-				"\n\texpected: %X\n\treceived: %X", i, data, u64b)
+				"\nexpected: %X\nreceived: %X", i, data, u64b)
 		}
 
 		buff = data.marshal2BytesVer2()
@@ -435,7 +443,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 		f2bLen := len(buff)
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 2 bytes buffer (%d)."+
-				"\n\texpected: %X\n\treceived: %X", i, data, u64b)
+				"\nexpected: %X\nreceived: %X", i, data, u64b)
 		}
 
 		buff = data.marshal4BytesVer2()
@@ -446,7 +454,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 		f4bLen := len(buff)
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 4 bytes buffer (%d)."+
-				"\n\texpected: %X\n\treceived: %X", i, data, u64b)
+				"\nexpected: %X\nreceived: %X", i, data, u64b)
 		}
 
 		buff = data.marshal8BytesVer2()
@@ -457,11 +465,12 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 		f8bLen := len(buff)
 		if !reflect.DeepEqual(data, u64b) {
 			t.Errorf("Failed to marshal and unmarshal 8 bytes buffer (%d)."+
-				"\n\texpected: %X\n\treceived: %X", i, data, u64b)
+				"\nexpected: %X\nreceived: %X", i, data, u64b)
 		}
 
 		origLen := len(data) * 8
-		str += fmt.Sprintf("%4d   %4d   %4d   %4d   %4d\n", origLen, f1bLen, f2bLen, f4bLen, f8bLen)
+		str += fmt.Sprintf("%4d   %4d   %4d   %4d   %4d\n",
+			origLen, f1bLen, f2bLen, f4bLen, f8bLen)
 		str += fmt.Sprintf("       %4.0f%%  %4.0f%%  %4.0f%%  %4.0f%%\n",
 			100-float64(f1bLen)/float64(origLen)*100,
 			100-float64(f2bLen)/float64(origLen)*100,
@@ -501,7 +510,8 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 //
 // 	str := ""
 //
-// 	str += fmt.Sprintf("%4s   %4s   %4s   %4s   %4s\n", "orig", "1B", "2B", "4B", "8B")
+// 	str += fmt.Sprintf("%4s   %4s   %4s   %4s   %4s\n",
+// 	    "orig", "1B", "2B", "4B", "8B")
 // 	str += fmt.Sprintln("==================================")
 // 	for i, dataString := range testData {
 //
@@ -524,7 +534,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 // 		f1bLen := len(buff)
 // 		if !reflect.DeepEqual(kr.bitStream, u64b) {
 // 			t.Errorf("Failed to marshal and unmarshal 1 byte buffer (%d)."+
-// 				"\n\texpected: %X\n\treceived: %X", i, kr.bitStream, u64b)
+// 				"\nexpected: %X\nreceived: %X", i, kr.bitStream, u64b)
 // 		}
 //
 // 		buff = kr.bitStream.marshal2BytesVer2()
@@ -535,7 +545,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 // 		f2bLen := len(buff)
 // 		if !reflect.DeepEqual(kr.bitStream, u64b) {
 // 			t.Errorf("Failed to marshal and unmarshal 2 bytes buffer (%d)."+
-// 				"\n\texpected: %X\n\treceived: %X", i, kr.bitStream, u64b)
+// 				"\nexpected: %X\nreceived: %X", i, kr.bitStream, u64b)
 // 		}
 //
 // 		buff = kr.bitStream.marshal4BytesVer2()
@@ -546,7 +556,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 // 		f4bLen := len(buff)
 // 		if !reflect.DeepEqual(kr.bitStream, u64b) {
 // 			t.Errorf("Failed to marshal and unmarshal 4 bytes buffer (%d)."+
-// 				"\n\texpected: %X\n\treceived: %X", i, kr.bitStream, u64b)
+// 				"\nexpected: %X\nreceived: %X", i, kr.bitStream, u64b)
 // 		}
 //
 // 		buff = kr.bitStream.marshal8BytesVer2()
@@ -557,11 +567,12 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 // 		f8bLen := len(buff)
 // 		if !reflect.DeepEqual(kr.bitStream, u64b) {
 // 			t.Errorf("Failed to marshal and unmarshal buffer (%d)."+
-// 				"\n\texpected: %X\n\treceived: %X", i, kr.bitStream, u64b)
+// 				"\nexpected: %X\nreceived: %X", i, kr.bitStream, u64b)
 // 		}
 //
 // 		origLen := len(kr.bitStream) * 8
-// 		str += fmt.Sprintf("%4d   %4d   %4d   %4d   %4d\n", origLen, f1bLen, f2bLen, f4bLen, f8bLen)
+// 		str += fmt.Sprintf("%4d   %4d   %4d   %4d   %4d\n",
+// 	        origLen, f1bLen, f2bLen, f4bLen, f8bLen)
 // 		str += fmt.Sprintf("       %4.0f%%  %4.0f%%  %4.0f%%  %4.0f%%\n",
 // 			100-float64(f1bLen)/float64(origLen)*100,
 // 			100-float64(f2bLen)/float64(origLen)*100,
@@ -590,7 +601,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 //
 // 	err := kr.Unmarshal(data)
 // 	if err != nil {
-// 		t.Errorf("Unmarshal() returned an error: %+v", err)
+// 		t.Errorf("Unmarshal returned an error: %+v", err)
 // 	}
 //
 // 	t.Log(kr)
@@ -610,7 +621,7 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 //
 // 		err := kr.Unmarshal(data)
 // 		if err != nil {
-// 			t.Errorf("Unmarshal() returned an error (%d): %+v", i, err)
+// 			t.Errorf("Unmarshal returned an error (%d): %+v", i, err)
 // 		}
 //
 // 		t.Log(kr)
@@ -622,7 +633,8 @@ func TestUint64Buff_marshal_unmarshal_Bytes(t *testing.T) {
 
 // printBuff prints the buffer and mask in binary with their start and end point
 // labeled.
-func printBuff(buff, mask uint64Buff, buffStart, buffEnd, maskStart, maskEnd int) {
+func printBuff(
+	buff, mask uint64Buff, buffStart, buffEnd, maskStart, maskEnd int) {
 	fmt.Printf("\n\u001B[38;5;59m         0         0         0         0         0         0         0          0         0         0         1         1         1          1         1         1         1         1         1         1          2         2         2         2         2         2          2         2         2         2         3         3          3         3         3         3         3         3         3" +
 		"\n\u001B[38;5;59m         0         1         2         3         4         5         6          7         8         9         0         1         2          3         4         5         6         7         8         9          0         1         2         3         4         5          6         7         8         9         0         1          2         3         4         5         6         7         8" +
 		"\n\033[38;5;59m         0123456789012345678901234567890123456789012345678901234567890123 4567890123456789012345678901234567890123456789012345678901234567 8901234567890123456789012345678901234567890123456789012345678901 2345678901234567890123456789012345678901234567890123456789012345 6789012345678901234567890123456789012345678901234567890123456789 01234567890123456789012345678901234567890123456789012345678901\n")
