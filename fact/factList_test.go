@@ -13,52 +13,59 @@ import (
 	"testing"
 )
 
-func TestFactList_StringifyUnstringify(t *testing.T) {
-	expected := FactList{}
-	expected = append(expected, Fact{
-		Fact: "vivian@elixxir.io",
-		T:    Email,
-	})
-	expected = append(expected, Fact{
-		Fact: "(270) 301-5797US",
-		T:    Phone,
-	})
-
-	FlString := expected.Stringify()
-	// Manually check and verify that the string version is as expected
-	t.Log(FlString)
-
-	actual, _, err := UnstringifyFactList(FlString)
-	if err != nil {
-		t.Fatal(err)
+// Tests that a FactList marshalled by FactList.Stringify and unmarshalled by
+// UnstringifyFactList matches the original.
+func TestFactList_Stringify_UnstringifyFactList(t *testing.T) {
+	expected := FactList{
+		Fact{"vivian@elixxir.io", Email},
+		Fact{"(270) 301-5797US", Phone},
+		Fact{"invalidFact", Phone},
 	}
-	if !reflect.DeepEqual(actual, expected) {
-		t.Error("fact lists weren't equal")
+
+	flString := expected.Stringify()
+	factList, _, err := UnstringifyFactList(flString)
+	if err != nil {
+		t.Fatalf("Failed to unstringify %q: %+v", flString, err)
+	}
+
+	expected = expected[:2]
+	if !reflect.DeepEqual(factList, expected) {
+		t.Errorf("Unexpected unstringified FactList."+
+			"\nexpected: %v\nreceived: %v", expected, factList)
 	}
 }
 
-// Tests that a FactList can be JSON marshalled and unmarshalled.
-func TestFactList_JSON(t *testing.T) {
-	fl := FactList{
+// Error path: Tests that UnstringifyFactList returns an error for a malformed
+// stringified FactList.
+func Test_UnstringifyFactList_MissingFactBreakError(t *testing.T) {
+	_, _, err := UnstringifyFactList("hi")
+	if err == nil {
+		t.Errorf("Expected error for invalid stringified list.")
+	}
+}
+
+// Tests that a FactList JSON marshalled and unmarshalled matches the original.
+func TestFactList_JsonMarshalUnmarshal(t *testing.T) {
+	expected := FactList{
 		{"devUsername", Username},
 		{"devinputvalidation@elixxir.io", Email},
 		{"6502530000US", Phone},
 		{"name", Nickname},
 	}
 
-	out, err := json.Marshal(fl)
+	data, err := json.Marshal(expected)
 	if err != nil {
-		t.Errorf("Failed to marshal FactList: %+v", err)
+		t.Fatalf("Failed to JSON marshal FactList: %+v", err)
 	}
 
-	var newFactList FactList
-	err = json.Unmarshal(out, &newFactList)
+	var factList FactList
+	err = json.Unmarshal(data, &factList)
 	if err != nil {
-		t.Errorf("Failed to unmarshal FactList: %+v", err)
+		t.Errorf("Failed to JSON unmarshal FactList: %+v", err)
 	}
 
-	if !reflect.DeepEqual(fl, newFactList) {
+	if !reflect.DeepEqual(expected, factList) {
 		t.Errorf("Marshalled and unmarshalled FactList does not match original."+
-			"\nexpected: %+v\nreceived: %+v", fl, newFactList)
+			"\nexpected: %+v\nreceived: %+v", expected, factList)
 	}
 }

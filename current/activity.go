@@ -9,17 +9,19 @@ package current
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
+
 	"gitlab.com/elixxir/primitives/states"
 )
 
-//this holds the enum for the activity of the server. It is in primitives so
-//other repos such as registration/permissioning can access it
+// This holds the enum for the activity of the server. It is in primitives so
+// that other repos such as registration/permissioning can access it.
 
-// type which holds activities so they have have an associated stringer
+// Activity describes the activity a server has be doing.
 type Activity uint32
 
-// List of Activities server can be in
+// List of Activities.
 const (
 	NOT_STARTED = Activity(iota)
 	WAITING
@@ -29,11 +31,11 @@ const (
 	COMPLETED
 	ERROR
 	CRASH
+	NUM_STATES
 )
 
-const NUM_STATES = CRASH + 1
-
-// Stringer to get the name of the activity, primarily for for error prints
+// String returns the string representation of the Activity. This functions
+// adheres to the fmt.Stringer interface.
 func (a Activity) String() string {
 	switch a {
 	case NOT_STARTED:
@@ -57,7 +59,8 @@ func (a Activity) String() string {
 	}
 }
 
-// Converts an Activity to a valid Round state, or returns an error if invalid
+// ConvertToRoundState converts an Activity to a valid round state or returns an
+// error if it is invalid.
 func (a Activity) ConvertToRoundState() (states.Round, error) {
 	switch a {
 	case WAITING:

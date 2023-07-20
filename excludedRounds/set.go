@@ -10,9 +10,11 @@
 package excludedRounds
 
 import (
-	"github.com/golang-collections/collections/set"
-	"gitlab.com/xx_network/primitives/id"
 	"sync"
+
+	"github.com/golang-collections/collections/set"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 // Set struct contains a set of rounds to be excluded from cmix
@@ -22,48 +24,38 @@ type Set struct {
 }
 
 func NewSet() *Set {
-	return &Set{
-		xr:      set.New(nil),
-		RWMutex: sync.RWMutex{},
-	}
+	return &Set{xr: set.New(nil)}
 }
 
-func (e *Set) Has(rid id.Round) bool {
-	e.RLock()
-	defer e.RUnlock()
+func (s *Set) Has(rid id.Round) bool {
+	s.RLock()
+	defer s.RUnlock()
 
-	return e.xr.Has(rid)
+	return s.xr.Has(rid)
 }
 
-func (e *Set) Insert(rid id.Round) bool {
-	e.Lock()
-	defer e.Unlock()
+func (s *Set) Insert(rid id.Round) bool {
+	s.Lock()
+	defer s.Unlock()
 
-	if e.xr.Has(rid) {
+	if s.xr.Has(rid) {
 		return false
 	}
 
-	e.xr.Insert(rid)
+	s.xr.Insert(rid)
 	return true
 }
 
-func (e *Set) Remove(rid id.Round) {
-	e.Lock()
-	defer e.Unlock()
+func (s *Set) Remove(rid id.Round) {
+	s.Lock()
+	defer s.Unlock()
 
-	e.xr.Remove(rid)
+	s.xr.Remove(rid)
 }
 
-func (e *Set) Union(other *set.Set) *set.Set {
-	e.RLock()
-	defer e.RUnlock()
+func (s *Set) Len() int {
+	s.RLock()
+	defer s.RUnlock()
 
-	return e.xr.Union(other)
-}
-
-func (e *Set) Len() int {
-	e.RLock()
-	defer e.RUnlock()
-
-	return e.xr.Len()
+	return s.xr.Len()
 }

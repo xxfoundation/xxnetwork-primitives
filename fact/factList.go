@@ -8,18 +8,20 @@
 package fact
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"strings"
 )
 
-// FactList is a list of Fact. This type can be JSON marshalled and
+// FactList is a list of Fact objects. This type can be JSON marshalled and
 // unmarshalled.
 type FactList []Fact
 
 const factDelimiter = ","
 const factBreak = ";"
 
+// Stringify marshals the FactList into a portable string.
 func (fl FactList) Stringify() string {
 	stringList := make([]string, len(fl))
 	for index, f := range fl {
@@ -29,8 +31,8 @@ func (fl FactList) Stringify() string {
 	return strings.Join(stringList, factDelimiter) + factBreak
 }
 
-// unstrignifys facts followed by a facts break and with arbatrary data
-// atttached at the end
+// UnstringifyFactList unmarshalls the stringified FactList, which consists of
+// the fact list and optional arbitrary data, delimited by the factBreak.
 func UnstringifyFactList(s string) (FactList, string, error) {
 	parts := strings.SplitN(s, factBreak, 2)
 	if len(parts) != 2 {
@@ -42,8 +44,7 @@ func UnstringifyFactList(s string) (FactList, string, error) {
 	for _, fString := range factStrings {
 		fact, err := UnstringifyFact(fString)
 		if err != nil {
-			jww.WARN.Printf("Fact failed to unstringify, dropped: %s",
-				err)
+			jww.WARN.Printf("Fact failed to unstringify, dropped: %s", err)
 		} else {
 			factList = append(factList, fact)
 		}

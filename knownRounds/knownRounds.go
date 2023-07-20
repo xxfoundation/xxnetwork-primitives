@@ -5,20 +5,20 @@
 // LICENSE file.                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
-// Tracks which rounds have been checked and which are unchecked using a bit
-// stream.
+// Package knownRounds tracks which rounds have been checked and which are
+// unchecked using a bit stream.
 package knownRounds
 
 import (
 	"bytes"
 	"encoding/binary"
+	"math"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/primitives/id"
-	"math"
-)
 
-const blockSize = 64
+	"gitlab.com/xx_network/primitives/id"
+)
 
 type RoundCheckFunc func(id id.Round) bool
 
@@ -30,7 +30,7 @@ type KnownRounds struct {
 	bitStream      uint64Buff // Buffer of check/unchecked rounds
 	firstUnchecked id.Round   // ID of the first round that us unchecked
 	lastChecked    id.Round   // ID of the last round that is checked
-	fuPos          int        // Bit position of firstUnchecked in bitStream
+	fuPos          int        // The bit position of firstUnchecked in bitStream
 }
 
 // DiskKnownRounds structure is used to as an intermediary to marshal and
@@ -53,7 +53,8 @@ func NewKnownRound(roundCapacity int) *KnownRounds {
 
 // NewFromParts creates a new KnownRounds from the given firstUnchecked,
 // lastChecked, fuPos, and uint64 buffer.
-func NewFromParts(buff []uint64, firstUnchecked, lastChecked id.Round, fuPos int) *KnownRounds {
+func NewFromParts(
+	buff []uint64, firstUnchecked, lastChecked id.Round, fuPos int) *KnownRounds {
 	return &KnownRounds{
 		bitStream:      buff,
 		firstUnchecked: firstUnchecked,
@@ -104,7 +105,8 @@ func (kr *KnownRounds) Unmarshal(data []byte) error {
 	buf := bytes.NewBuffer(data)
 
 	if buf.Len() < 16 {
-		return errors.Errorf("KnownRounds Unmarshal: size of data %d < %d expected", buf.Len(), 16)
+		return errors.Errorf("KnownRounds Unmarshal: "+
+			"size of data %d < %d expected", buf.Len(), 16)
 	}
 
 	// Get firstUnchecked and lastChecked and calculate fuPos
@@ -146,7 +148,8 @@ type KrChanges map[int]uint64
 // lastChecked, fuPos, and a list of changes between the given uint64 buffer and
 // the current KnownRounds bit stream. An error is returned if the two buffers
 // are not of the same length.
-func (kr *KnownRounds) OutputBuffChanges(old []uint64) (KrChanges, id.Round, id.Round, int, error) {
+func (kr *KnownRounds) OutputBuffChanges(
+	old []uint64) (KrChanges, id.Round, id.Round, int, error) {
 
 	// Return an error if they are not the same length
 	if len(old) != len(kr.bitStream) {
@@ -196,7 +199,7 @@ func (kr *KnownRounds) Check(rid id.Round) {
 	if abs(int(kr.lastChecked-rid))/(len(kr.bitStream)*64) > 0 {
 		jww.FATAL.Panicf("Cannot check a round outside the current scope. " +
 			"Scope is KnownRounds size more rounds than last checked. A call " +
-			"to Forward() can be used to fix the scope.")
+			"to Forward can be used to fix the scope.")
 	}
 	kr.check(rid)
 }
@@ -204,7 +207,8 @@ func (kr *KnownRounds) Check(rid id.Round) {
 func (kr *KnownRounds) ForceCheck(rid id.Round) {
 	if rid < kr.firstUnchecked {
 		return
-	} else if kr.lastChecked < rid && int(rid-kr.firstUnchecked) > (len(kr.bitStream)*64) {
+	} else if kr.lastChecked < rid &&
+		int(rid-kr.firstUnchecked) > (len(kr.bitStream)*64) {
 		kr.Forward(rid - id.Round(len(kr.bitStream)*64))
 	}
 
@@ -286,7 +290,8 @@ func (kr *KnownRounds) Forward(rid id.Round) {
 // RangeUnchecked runs the passed function over all rounds starting with oldest
 // unknown and ending with
 func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
-	roundCheck func(id id.Round) bool, maxPickups int) (id.Round, []id.Round, []id.Round) {
+	roundCheck func(id id.Round) bool, maxPickups int) (
+	id.Round, []id.Round, []id.Round) {
 
 	newestRound := kr.lastChecked
 
@@ -303,19 +308,20 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 
 	has := make([]id.Round, 0, maxPickups)
 
-	// If the oldest unknown round is outside the range we attempting to check,
-	// then skip checking
+	// If the oldest unknown round is outside the range we are attempting to
+	// check, then skip checking
 	if oldestUnknown > kr.lastChecked {
-		jww.TRACE.Printf("RangeUnchecked: oldestUnknown (%d) > kr.lastChecked (%d)",
+		jww.TRACE.Printf(
+			"RangeUnchecked: oldestUnknown (%d) > kr.lastChecked (%d)",
 			oldestUnknown, kr.lastChecked)
 		return oldestUnknown, nil, nil
 	}
 
-	// loop through all rounds from the oldest unknown to the last checked round
+	// Loop through all rounds from the oldest unknown to the last checked round
 	// and check them, if possible
 	for i := oldestUnknown; i <= kr.lastChecked; i++ {
 
-		// if the source does not know about the round, set that round as
+		// If the source does not know about the round, set that round as
 		// unknown and don't check it
 		if !kr.Checked(i) {
 			if i < oldestPossibleEarliestRound {
@@ -329,14 +335,14 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 		// check the round
 		hasRound := roundCheck(i)
 
-		// if checking is not complete and the round is earlier than the
+		// If checking is not complete and the round is earlier than the
 		// earliest round, then set it to the earliest round
 		if hasRound {
 			has = append(has, i)
-			//do not pickup too many messages at once
-			if len(has)>=maxPickups{
-				nextRound := i+1
-				if (nextRound)<earliestRound{
+			// Do not pick up too many messages at once
+			if len(has) >= maxPickups {
+				nextRound := i + 1
+				if (nextRound) < earliestRound {
 					earliestRound = nextRound
 				}
 				break
@@ -344,7 +350,7 @@ func (kr *KnownRounds) RangeUnchecked(oldestUnknown id.Round, threshold uint,
 		}
 	}
 
-	// return the next round
+	// Return the next round
 	return earliestRound, has, unknown
 }
 
@@ -396,8 +402,8 @@ func (kr *KnownRounds) RangeUncheckedMaskedRange(mask *KnownRounds,
 	}
 }
 
-// subSample returns a subsample of the KnownRounds buffer from the start to end
-// round and its length.
+// subSample returns a sub sample of the KnownRounds buffer from the start to
+// end round and its length.
 func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	// Get the number of blocks spanned by the range
 	numBlocks := kr.bitStream.delta(kr.getBitStreamPos(start),
@@ -412,7 +418,7 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 		copyEnd = kr.lastChecked
 	}
 
-	// Create subsample of the buffer
+	// Create a sub sample of the buffer
 	buff := kr.bitStream.copy(kr.getBitStreamPos(start),
 		kr.getBitStreamPos(copyEnd+1))
 
@@ -420,9 +426,9 @@ func (kr *KnownRounds) subSample(start, end id.Round) (uint64Buff, int) {
 	return buff.extend(numBlocks), abs(int(end - start))
 }
 
-// Truncate returns a subsample of the KnownRounds buffer from last checked.
+// Truncate returns a subs ample of the KnownRounds buffer from last checked.
 func (kr *KnownRounds) Truncate(start id.Round) *KnownRounds {
-	if start<=kr.firstUnchecked{
+	if start <= kr.firstUnchecked {
 		return kr
 	}
 
@@ -449,8 +455,8 @@ func (kr *KnownRounds) getBitStreamPos(rid id.Round) int {
 	}
 
 	pos := (kr.fuPos + delta) % kr.Len()
-	if pos <0{
-		return kr.Len()+pos
+	if pos < 0 {
+		return kr.Len() + pos
 	}
 	return pos
 

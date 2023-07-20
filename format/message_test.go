@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func TestMessage_Version(t *testing.T) {
+func TestMessage_VersionDetection(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	// Generate message parts
@@ -106,17 +106,17 @@ func TestNewMessage(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	if !reflect.DeepEqual(expectedMsg, msg) {
-		t.Errorf("NewMessage() did not return the expected Message."+
+		t.Errorf("NewMessage did not return the expected Message."+
 			"\nexpected: %+v\nreceived: %+v", expectedMsg, msg)
 	}
 }
 
 // Error path: panics if provided prime size is too small.
 func TestNewMessage_NumPrimeBytesError(t *testing.T) {
-	// Defer to an error when NewMessage() does not panic
+	// Defer to an error when NewMessage does not panic
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("NewMessage() did not panic when the minimum prime size " +
+			t.Error("NewMessage did not panic when the minimum prime size " +
 				"is too small.")
 		}
 	}()
@@ -143,7 +143,7 @@ func TestMessage_Marshal_Unmarshal(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(m, newMsg) {
-		t.Errorf("Failed to Marshal() and Unmarshal() message."+
+		t.Errorf("Failed to Marshal and Unmarshal message."+
 			"\nexpected: %#v\nreceived: %#v", m, newMsg)
 	}
 }
@@ -179,6 +179,23 @@ func TestMessage_Marshal_UnmarshalImmutable(t *testing.T) {
 }
 
 // Happy path.
+func TestMessage_Version(t *testing.T) {
+	msg := NewMessage(MinimumPrimeSize)
+
+	if msg.Version() != 0 {
+		t.Errorf("Unexpected version for new Message."+
+			"\nexpected: %d\nreceived: %d", 0, msg.Version())
+	}
+
+	copy(msg.version, []byte{123})
+
+	if msg.Version() != 123 {
+		t.Errorf("Unexpected version."+
+			"\nexpected: %d\nreceived: %d", 123, msg.Version())
+	}
+}
+
+// Happy path.
 func TestMessage_Copy(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
@@ -189,7 +206,7 @@ func TestMessage_Copy(t *testing.T) {
 	msgCopy.SetContents(contents)
 
 	if bytes.Equal(msg.GetContents(), contents) {
-		t.Errorf("Copy() failed to make a copy of the message; modifications " +
+		t.Errorf("Copy failed to make a copy of the message; modifications " +
 			"to copy reflected in original.")
 	}
 }
@@ -200,7 +217,7 @@ func TestMessage_GetPrimeByteLen(t *testing.T) {
 	m := NewMessage(primeSize)
 
 	if m.GetPrimeByteLen() != primeSize {
-		t.Errorf("GetPrimeByteLen() returned incorrect prime size."+
+		t.Errorf("GetPrimeByteLen returned incorrect prime size."+
 			"\nexpected: %d\nreceived: %d", primeSize, m.GetPrimeByteLen())
 	}
 }
@@ -213,14 +230,14 @@ func TestMessage_GetPayloadA(t *testing.T) {
 	copy(msg.payloadA, testData)
 	payload := msg.GetPayloadA()
 	if !bytes.Equal(testData, payload[:len(testData)]) {
-		t.Errorf("GetPayloadA() did not properly retrieve payload A."+
+		t.Errorf("GetPayloadA did not properly retrieve payload A."+
 			"\nexpected: %s\nreceived: %s", testData, payload[:len(testData)])
 	}
 
 	// Ensure that the data is copied
 	payload[14] = 'x'
 	if msg.payloadA[14] == payload[14] {
-		t.Error("GetPayloadA() did not make a copy; modifications to copy " +
+		t.Error("GetPayloadA did not make a copy; modifications to copy " +
 			"reflected in original.")
 	}
 }
@@ -233,7 +250,7 @@ func TestMessage_SetPayloadA(t *testing.T) {
 	msg.SetPayloadA(payload)
 
 	if !bytes.Equal(payload, msg.payloadA) {
-		t.Errorf("SetPayloadA() failed to set payload A correctly."+
+		t.Errorf("SetPayloadA failed to set payload A correctly."+
 			"\nexpected: %s\nreceived: %s", payload, msg.payloadA)
 	}
 }
@@ -244,7 +261,7 @@ func TestMessage_SetPayloadA_LengthError(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetPayloadA() failed to panic when the length of the "+
+			t.Errorf("SetPayloadA failed to panic when the length of the "+
 				"provided payload (%d) is not the same as the message payload "+
 				"length (%d).", len(payload), len(msg.GetPayloadA()))
 		}
@@ -261,14 +278,14 @@ func TestMessage_GetPayloadB(t *testing.T) {
 	copy(msg.payloadB, testData)
 	payload := msg.GetPayloadB()
 	if !bytes.Equal(testData, payload[:len(testData)]) {
-		t.Errorf("GetPayloadB() did not properly retrieve payload B."+
+		t.Errorf("GetPayloadB did not properly retrieve payload B."+
 			"\nexpected: %s\nreceived: %s", testData, payload[:len(testData)])
 	}
 
 	// Ensure that the data is copied
 	payload[14] = 'x'
 	if msg.payloadB[14] == payload[14] {
-		t.Error("GetPayloadB() did not make a copy; modifications to copy " +
+		t.Error("GetPayloadB did not make a copy; modifications to copy " +
 			"reflected in original.")
 	}
 }
@@ -281,7 +298,7 @@ func TestMessage_SetPayloadB(t *testing.T) {
 	msg.SetPayloadB(payload)
 
 	if !bytes.Equal(payload, msg.payloadB) {
-		t.Errorf("SetPayloadB() failed to set payload B correctly."+
+		t.Errorf("SetPayloadB failed to set payload B correctly."+
 			"\nexpected: %s\nreceived: %s", payload, msg.payloadB)
 	}
 }
@@ -292,7 +309,7 @@ func TestMessage_SetPayloadB_LengthError(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetPayloadB() failed to panic when the length of the "+
+			t.Errorf("SetPayloadB failed to panic when the length of the "+
 				"provided payload (%d) is not the same as the message payload "+
 				"length (%d).", len(payload), len(msg.GetPayloadB()))
 		}
@@ -306,7 +323,7 @@ func TestMessage_ContentsSize(t *testing.T) {
 	msg := NewMessage(MinimumPrimeSize)
 
 	if msg.ContentsSize() != MinimumPrimeSize*2-AssociatedDataSize-1 {
-		t.Errorf("ContentsSize() returned the wrong content size."+
+		t.Errorf("ContentsSize returned the wrong content size."+
 			"\nexpected: %d\nreceived: %d",
 			MinimumPrimeSize*2-AssociatedDataSize-1, msg.ContentsSize())
 	}
@@ -323,7 +340,7 @@ func TestMessage_GetContents(t *testing.T) {
 	retrieved := msg.GetContents()
 
 	if !bytes.Equal(retrieved, contents) {
-		t.Errorf("GetContents() did not return the expected contents."+
+		t.Errorf("GetContents did not return the expected contents."+
 			"\nexpected: %s\nreceived: %s", contents, retrieved)
 	}
 }
@@ -336,13 +353,13 @@ func TestMessage_SetContents(t *testing.T) {
 	msg.SetContents(contents)
 
 	if !bytes.Equal(msg.contents1, contents[:len(msg.contents1)]) {
-		t.Errorf("SetContents() did not set contents1 correctly."+
+		t.Errorf("SetContents did not set contents1 correctly."+
 			"\nexpected: %s\nreceived: %s",
 			contents[:len(msg.contents1)], msg.contents1)
 	}
 
 	if !bytes.Equal(msg.contents2, contents[len(msg.contents1):]) {
-		t.Errorf("SetContents() did not set contents2 correctly."+
+		t.Errorf("SetContents did not set contents2 correctly."+
 			"\nexpected: %s\nreceived: %s",
 			contents[len(msg.contents1):], msg.contents2)
 	}
@@ -356,14 +373,15 @@ func TestMessage_SetContents_ShortContents(t *testing.T) {
 	msg.SetContents(contents)
 
 	if !bytes.Equal(msg.contents1, contents[:len(msg.contents1)]) {
-		t.Errorf("SetContents() did not set contents1 correctly."+
+		t.Errorf("SetContents did not set contents1 correctly."+
 			"\nexpected: %s\nreceived: %s",
 			contents[:len(msg.contents1)], msg.contents1)
 	}
 
-	expectedContents2 := make([]byte, MinimumPrimeSize-MacLen-EphemeralRIDLen-SIHLen)
+	expectedContents2 :=
+		make([]byte, MinimumPrimeSize-MacLen-EphemeralRIDLen-SIHLen)
 	if !bytes.Equal(msg.contents2, expectedContents2) {
-		t.Errorf("SetContents() did not set contents2 correctly."+
+		t.Errorf("SetContents did not set contents2 correctly."+
 			"\nexpected: %+v\nreceived: %+v", expectedContents2, msg.contents2)
 	}
 }
@@ -375,7 +393,7 @@ func TestMessage_SetContents_ContentsTooLargeError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetContents() failed to panic when the length of the "+
+			t.Errorf("SetContents failed to panic when the length of the "+
 				"provided contents (%d) is larger than the max content length "+
 				"(%d).", len(contents), len(msg.contents1)+len(msg.contents2))
 		}
@@ -391,7 +409,7 @@ func TestMessage_GetRawContentsSize(t *testing.T) {
 	expectedLen := (2 * MinimumPrimeSize) - RecipientIDLen
 
 	if msg.GetRawContentsSize() != expectedLen {
-		t.Errorf("GetRawContentsSize() did not return the expected size."+
+		t.Errorf("GetRawContentsSize did not return the expected size."+
 			"\nexpected: %d\nreceived: %d", expectedLen, msg.GetRawContentsSize())
 	}
 }
@@ -419,13 +437,13 @@ func TestMessage_GetRawContents(t *testing.T) {
 	copy(msg.contents1, contents1)
 	copy(msg.contents2, contents2)
 
-	//make sure the 1st and middle+1 bits are 1
+	// Make sure the 1st and middle+1 bits are 1
 	msg.payloadA[0] |= 0b10000000
 	msg.payloadB[0] |= 0b10000000
 
 	rawContents := msg.GetRawContents()
 	if !bytes.Equal(expectedRawContents, rawContents) {
-		t.Errorf("GetRawContents() did not return the expected raw contents."+
+		t.Errorf("GetRawContents did not return the expected raw contents."+
 			"\nexpected: %s\nreceived: %s", expectedRawContents, rawContents)
 	}
 
@@ -460,28 +478,36 @@ func TestMessage_SetRawContents(t *testing.T) {
 
 	msg.SetRawContents(sp)
 
-	if bytes.Contains(msg.keyFP, []byte("a")) || bytes.Contains(msg.keyFP, []byte("b")) ||
-		bytes.Contains(msg.keyFP, []byte("m")) || !bytes.Contains(msg.keyFP, []byte("f")) {
+	if bytes.Contains(msg.keyFP, []byte("a")) ||
+		bytes.Contains(msg.keyFP, []byte("b")) ||
+		bytes.Contains(msg.keyFP, []byte("m")) ||
+		!bytes.Contains(msg.keyFP, []byte("f")) {
 		t.Errorf("Setting raw payload failed, key fingerprint contains "+
 			"wrong data: %s", msg.keyFP)
 	}
 
-	if bytes.Contains(msg.mac, []byte("a")) || bytes.Contains(msg.mac, []byte("b")) ||
-		!bytes.Contains(msg.mac, []byte("m")) || bytes.Contains(msg.mac, []byte("f")) {
-		t.Errorf("Setting raw payload failed, mac contains "+
-			"wrong data: %s", msg.mac)
+	if bytes.Contains(msg.mac, []byte("a")) ||
+		bytes.Contains(msg.mac, []byte("b")) ||
+		!bytes.Contains(msg.mac, []byte("m")) ||
+		bytes.Contains(msg.mac, []byte("f")) {
+		t.Errorf(
+			"Setting raw payload failed, mac contains wrong data: %s", msg.mac)
 	}
 
-	if !bytes.Contains(msg.contents1, []byte("a")) || bytes.Contains(msg.contents1, []byte("b")) ||
-		bytes.Contains(msg.contents1, []byte("m")) || bytes.Contains(msg.contents1, []byte("f")) {
-		t.Errorf("Setting raw payload failed, contents1 contains "+
-			"wrong data: %s", msg.contents1)
+	if !bytes.Contains(msg.contents1, []byte("a")) ||
+		bytes.Contains(msg.contents1, []byte("b")) ||
+		bytes.Contains(msg.contents1, []byte("m")) ||
+		bytes.Contains(msg.contents1, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents1 contains wrong data: %s",
+			msg.contents1)
 	}
 
-	if bytes.Contains(msg.contents2, []byte("a")) || !bytes.Contains(msg.contents2, []byte("b")) ||
-		bytes.Contains(msg.contents2, []byte("m")) || bytes.Contains(msg.contents2, []byte("f")) {
-		t.Errorf("Setting raw payload failed, contents2 contains "+
-			"wrong data: %s", msg.contents2)
+	if bytes.Contains(msg.contents2, []byte("a")) ||
+		!bytes.Contains(msg.contents2, []byte("b")) ||
+		bytes.Contains(msg.contents2, []byte("m")) ||
+		bytes.Contains(msg.contents2, []byte("f")) {
+		t.Errorf("Setting raw payload failed, contents2 contains wrong data: %s",
+			msg.contents2)
 	}
 
 }
@@ -492,7 +518,7 @@ func TestMessage_SetRawContents_LengthError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("SetRawContents() failed to panic when length of the " +
+			t.Error("SetRawContents failed to panic when length of the " +
 				"provided data is incorrect.")
 		}
 	}()
@@ -508,14 +534,14 @@ func TestMessage_GetKeyFP(t *testing.T) {
 	copy(msg.keyFP, keyFP.Bytes())
 
 	if keyFP != msg.GetKeyFP() {
-		t.Errorf("GetKeyFP() failed to get the correct keyFP."+
+		t.Errorf("GetKeyFP failed to get the correct keyFP."+
 			"\nexpected: %+v\nreceived: %+v", keyFP, msg.GetKeyFP())
 	}
 
 	// Ensure that the data is copied
 	keyFP[2] = 'x'
 	if msg.sih[2] == 'x' {
-		t.Error("GetKeyFP() failed to make a copy of keyFP.")
+		t.Error("GetKeyFP failed to make a copy of keyFP.")
 	}
 
 	if msg.GetKeyFP()[0]&0b10000000 != 0 {
@@ -531,7 +557,7 @@ func TestMessage_SetKeyFP(t *testing.T) {
 	msg.SetKeyFP(fp)
 
 	if !bytes.Equal(fp.Bytes(), msg.keyFP) {
-		t.Errorf("SetKeyFP() failed to set keyFP."+
+		t.Errorf("SetKeyFP failed to set keyFP."+
 			"\nexpected: %+v\nreceived: %+v", fp, msg.keyFP)
 	}
 }
@@ -543,7 +569,7 @@ func TestMessage_SetKeyFP_FirstBitError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("SetKeyFP() failed to panic when the first bit of the " +
+			t.Error("SetKeyFP failed to panic when the first bit of the " +
 				"provided data is not 0.")
 		}
 	}()
@@ -559,14 +585,14 @@ func TestMessage_GetMac(t *testing.T) {
 	msg.mac[0] |= 0b10000000
 
 	if !bytes.Equal(mac, msg.GetMac()) {
-		t.Errorf("GetMac() failed to get the correct MAC."+
+		t.Errorf("GetMac failed to get the correct MAC."+
 			"\nexpected: %+v\nreceived: %+v", mac, msg.GetMac())
 	}
 
 	// Ensure that the data is copied
 	mac[2] = 'x'
 	if msg.mac[2] == 'x' {
-		t.Error("GetMac() failed to make a copy of mac.")
+		t.Error("GetMac failed to make a copy of mac.")
 	}
 
 	if msg.GetMac()[0]&0b10000000 != 0 {
@@ -582,7 +608,7 @@ func TestMessage_SetMac(t *testing.T) {
 	msg.SetMac(mac)
 
 	if !bytes.Equal(mac, msg.mac) {
-		t.Errorf("SetMac() failed to set the MAC."+
+		t.Errorf("SetMac failed to set the MAC."+
 			"\nexpected: %+v\nreceived: %+v", mac, msg.mac)
 	}
 }
@@ -595,7 +621,7 @@ func TestMessage_SetMac_FirstBitError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("SetMac() failed to panic when the first bit of the " +
+			t.Error("SetMac failed to panic when the first bit of the " +
 				"provided data is not 0.")
 		}
 	}()
@@ -610,7 +636,7 @@ func TestMessage_SetMac_LenError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Error("SetMac() failed to panic when the length of the provided " +
+			t.Error("SetMac failed to panic when the length of the provided " +
 				"MAC is wrong.")
 		}
 	}()
@@ -625,14 +651,14 @@ func TestMessage_GetEphemeralRID(t *testing.T) {
 	copy(msg.ephemeralRID, ephemeralRID)
 
 	if !bytes.Equal(ephemeralRID, msg.GetEphemeralRID()) {
-		t.Errorf("GetEphemeralRID() failed to get the correct ephemeralRID."+
+		t.Errorf("GetEphemeralRID failed to get the correct ephemeralRID."+
 			"\nexpected: %+v\nreceived: %+v", ephemeralRID, msg.GetEphemeralRID())
 	}
 
 	// Ensure that the data is copied
 	ephemeralRID[2] = 'x'
 	if msg.ephemeralRID[2] == 'x' {
-		t.Error("GetEphemeralRID() failed to make a copy of ephemeralRID.")
+		t.Error("GetEphemeralRID failed to make a copy of ephemeralRID.")
 	}
 }
 
@@ -644,7 +670,7 @@ func TestMessage_SetEphemeralRID(t *testing.T) {
 	// Ensure that the data is copied
 	msg.SetEphemeralRID(ephemeralRID)
 	if !bytes.Equal(ephemeralRID, msg.ephemeralRID) {
-		t.Errorf("SetEphemeralRID() failed to set the ephemeralRID."+
+		t.Errorf("SetEphemeralRID failed to set the ephemeralRID."+
 			"\nexpected: %+v\nreceived: %+v", ephemeralRID, msg.ephemeralRID)
 	}
 }
@@ -655,7 +681,7 @@ func TestMessage_SetEphemeralRID_LengthError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetEphemeralRID() failed to panic when the length of " +
+			t.Errorf("SetEphemeralRID failed to panic when the length of " +
 				"the provided data is incorrect.")
 		}
 	}()
@@ -670,14 +696,14 @@ func TestMessage_GetIdentityFP(t *testing.T) {
 	copy(msg.sih, identityFP)
 
 	if !bytes.Equal(identityFP, msg.GetSIH()) {
-		t.Errorf("GetSIH() failed to get the correct sih."+
+		t.Errorf("GetSIH failed to get the correct sih."+
 			"\nexpected: %+v\nreceived: %+v", identityFP, msg.GetSIH())
 	}
 
 	// Ensure that the data is copied
 	identityFP[2] = 'x'
 	if msg.sih[2] == 'x' {
-		t.Error("GetSIH() failed to make a copy of sih.")
+		t.Error("GetSIH failed to make a copy of sih.")
 	}
 }
 
@@ -688,7 +714,7 @@ func TestMessage_SetIdentityFP(t *testing.T) {
 
 	msg.SetSIH(identityFP)
 	if !bytes.Equal(identityFP, msg.sih) {
-		t.Errorf("SetSIH() failed to set the sih."+
+		t.Errorf("SetSIH failed to set the sih."+
 			"\nexpected: %+v\nreceived: %+v", identityFP, msg.sih)
 	}
 }
@@ -699,7 +725,7 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("SetSIH() failed to panic when the length of " +
+			t.Errorf("SetSIH failed to panic when the length of " +
 				"the provided data is incorrect.")
 		}
 	}()
@@ -707,7 +733,7 @@ func TestMessage_SetIdentityFP_LengthError(t *testing.T) {
 	msg.SetSIH(make([]byte, SIHLen*2))
 }
 
-// Tests that digests come out correctly and are diffrent
+// Tests that digests come out correctly and are different.
 func TestMessage_Digest(t *testing.T) {
 
 	expectedA := "/9SqCYEP3uUixw1ua1D7"
@@ -755,27 +781,28 @@ func TestMessage_GoString(t *testing.T) {
 	msg.SetSIH(makeAndFillSlice(SIHLen, 'f'))
 	msg.SetContents(makeAndFillSlice(MinimumPrimeSize*2-AssociatedDataSize-1, 'g'))
 
-	expected := "format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
-		"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
-		"ephemeralRID:7306357456645743973, " +
-		"sih:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
-		"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
+	expected :=
+		"format.Message{keyFP:Y2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2M=, " +
+			"MAC:ZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQ=, " +
+			"ephemeralRID:7306357456645743973, " +
+			"sih:ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZg==, " +
+			"contents:\"gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\"}"
 
 	if expected != msg.GoString() {
-		t.Errorf("GoString() returned incorrect string."+
+		t.Errorf("GoString returned incorrect string."+
 			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
 	}
 }
 
 // Unit test of Message.GoString with an empty Message.
 func TestMessage_GoString_EmptyMessage(t *testing.T) {
+	var msg Message
 
-	msg := Message{}
-
-	expected := "format.Message{keyFP:<nil>, MAC:<nil>, ephemeralRID:<nil>, sih:<nil>, contents:\"\"}"
+	expected := "format.Message{keyFP:<nil>, MAC:<nil>, " +
+		"ephemeralRID:<nil>, sih:<nil>, contents:\"\"}"
 
 	if expected != msg.GoString() {
-		t.Errorf("GoString() returned incorrect string."+
+		t.Errorf("GoString returned incorrect string."+
 			"\nexpected: %s\nreceived: %s", expected, msg.GoString())
 	}
 }
@@ -820,13 +847,13 @@ func TestSetFirstBit(t *testing.T) {
 	b := []byte{0, 0, 0}
 	setFirstBit(b, true)
 	if b[0] != 0b10000000 {
-		t.Errorf("first bit didnt set")
+		t.Errorf("first bit did not set")
 	}
 
 	b = []byte{255, 0, 0}
 	setFirstBit(b, false)
 	if b[0] != 0b01111111 {
-		t.Errorf("first bit didnt get unset set")
+		t.Errorf("first bit did not get unset set")
 	}
 }
 

@@ -7,16 +7,18 @@
 
 package states
 
-import "fmt"
+import (
+	"fmt"
+)
 
-// this holds the enum for the states of a round. It is in primitives so
+// This holds the enum for the states of a round. It is in primitives so
 // other repos such as registration/permissioning, gateway, and client can
 // access it
 
-// type which holds activities so they have have an associated stringer
+// Round describes the state of the round.
 type Round uint32
 
-// List of Activities server can be in
+// List of round states.
 const (
 	PENDING = Round(iota)
 	PRECOMPUTING
@@ -25,13 +27,13 @@ const (
 	REALTIME
 	COMPLETED
 	FAILED
+	NUM_STATES
 )
 
-const NUM_STATES = FAILED + 1
-
-// Stringer to get the name of the activity, primarily for for error prints
-func (s Round) String() string {
-	switch s {
+// String returns the string representation of the Round state. This functions
+// adheres to the fmt.Stringer interface.
+func (r Round) String() string {
+	switch r {
 	case PENDING:
 		return "PENDING"
 	case PRECOMPUTING:
@@ -47,6 +49,6 @@ func (s Round) String() string {
 	case FAILED:
 		return "FAILED"
 	default:
-		return fmt.Sprintf("UNKNOWN STATE: %d", s)
+		return fmt.Sprintf("UNKNOWN STATE: %d", r)
 	}
 }
