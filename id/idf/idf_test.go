@@ -9,433 +9,170 @@ package idf
 
 import (
 	"bytes"
-	"gitlab.com/xx_network/primitives/id"
-	"gitlab.com/xx_network/primitives/utils"
+	"encoding/json"
+	"math/rand"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/pkg/errors"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
-// Random test values
-var randomIdfJson = "{\"id\":\"Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC\",\"" +
-	"type\":\"" +
-	"node\",\"" +
-	"salt\":[133,90,216,104,29,13,134,209,233,30,0,22,121,57,203,102,148,210,196,34,172,210,8,160,7,41,57,72,127,105,153,235],\"" +
-	"idBytes\":[82,253,252,7,33,130,101,79,22,63,95,15,154,98,29,114,149,102,199,77,16,3,124,77,123,187,4,7,209,226,198,73,2],\"" +
-	"hexNodeID\":\"0x52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649\"}"
-var randomIDBytes = [id.ArrIDLen]byte{82, 253, 252, 7, 33, 130, 101, 79, 22,
-	63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123, 187,
-	4, 7, 209, 226, 198, 73, 2}
-var randomSaltBytes = [saltLen]byte{133, 90, 216, 104, 29, 13, 134, 209, 233,
-	30, 0, 22, 121, 57, 203, 102, 148, 210, 196, 34, 172, 210, 8, 160, 7, 41,
-	57, 72, 127, 105, 153, 235}
-var randomType = "node"
-var randomHexNodeId = "0x52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649"
-var randomIDF = IdFile{
-	ID:        "Uv38ByGCZU8WP18PmmIdcpVmx00QA3xNe7sEB9HixkkC",
-	Type:      randomType,
-	IdBytes:   randomIDBytes,
-	Salt:      randomSaltBytes,
-	HexNodeID: randomHexNodeId,
-}
+// Happy path.
+func Test_newIDF(t *testing.T) {
+	expectedIDF := newRandomIDF(rand.New(rand.NewSource(687468)), t)
 
-// Tests that newIdfFromJSON creates the correct IdFile object form the given
-// JSON bytes.
-func TestNewIdfFromJSON(t *testing.T) {
-	// Expected values
-	expectedIDF := &randomIDF
-	testIdfJSON := []byte(randomIdfJson)
-
-	// Create the new IDF from the known JSON
-	newIDF, err := newIdfFromJSON(testIdfJSON)
-
-	// Check that no error occurred
+	idf, err := newIDF(expectedIDF.Salt[:], expectedIDF.ID)
 	if err != nil {
-		t.Fatalf("newIdfFromJSON produced an unexpected error:\n%+v", err)
+		t.Errorf("newIDF returned an error: %+v", err)
 	}
 
-	// Check that the new IDF matches the expected IDF
-	if !reflect.DeepEqual(expectedIDF, newIDF) {
-		t.Errorf("newIdfFromJSON produced an incorrect IDF."+
-			"\nexpected: %#v\nreceived: %#v", expectedIDF, newIDF)
+	if !reflect.DeepEqual(expectedIDF, idf) {
+		t.Errorf("Unexpected IDF.\nexpected: %v\nreceived: %v", expectedIDF, idf)
 	}
 }
 
-// Tests that newIdfFromJSON creates the correct IdFile object form the given
-// JSON bytes.
-func TestNewIdfFromJSON_JsonError(t *testing.T) {
-	// Expected values
-	expectedError := "Failed to unmarshal IDF JSON: ..."
-	testIdfJSON := []byte("invalidJSON")
+// Error path: Tests that newIDF returns the expected error when the length of
+// the salt is incorrect.
+func Test_newIDF_SaltLengthError(t *testing.T) {
+	salt := make([]byte, saltLen*2)
+	expectedErr := errors.Errorf(saltSizeErr, saltLen, len(salt))
 
-	// Create the new IDF from the known JSON
-	newIDF, err := newIdfFromJSON(testIdfJSON)
-
-	// Check that the expected error occurred
-	if err == nil {
-		t.Fatalf("newIdfFromJSON did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
-	}
-
-	// Check that the new IDF is nil
-	if newIDF != nil {
-		t.Errorf("newIdfFromJSON returned a non-nil IDF on error."+
-			"\nexpected: %#v\nreceived: %#v", nil, newIDF)
+	_, err := newIDF(salt, &id.ID{})
+	if err == nil || errors.Is(err, expectedErr) {
+		t.Errorf(
+			"Incorrect error.\nexpected: %s\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that newIDF creates the correct IdFile object.
-func TestNewIDF(t *testing.T) {
-	// Expected values
-	expectedID := id.NewIdFromBytes(randomIDBytes[:], t)
-	expectedSalt := randomSaltBytes
-	expectedIDF := &randomIDF
+// Tests that an IDF that is JSON marshalled and unmarshalled matches the
+// original.
+func Test_JsonMarshalUnmarshal_IDF(t *testing.T) {
+	expectedIDF := newRandomIDF(rand.New(rand.NewSource(88465)), t)
 
-	// Create the new IDF from the expected values
-	newIDF, err := newIDF(expectedSalt[:], expectedID)
-
-	// Check that no error occurred
+	data, err := json.Marshal(expectedIDF)
 	if err != nil {
-		t.Fatalf("newIDF produced an unexpected error:\n%v", err)
+		t.Fatalf("Failed to JSON marshal %T: %+v", expectedIDF, err)
 	}
 
-	// Check that the new IDF matches the expected IDF
-	if !reflect.DeepEqual(expectedIDF, newIDF) {
-		t.Errorf("newIDF produced an incorrect IDF."+
-			"\nexpected: %#v\nreceived: %#v", expectedIDF, newIDF)
-	}
-}
-
-// Tests that newIDF returns and error when the provided salt is of the
-// incorrect length.
-func TestNewIDF_SaltLengthError(t *testing.T) {
-	// Expected values
-	expectedID := id.NewIdFromBytes(randomIDBytes[:], t)
-	expectedSalt := []byte{1, 2, 3}
-	expectedError := "Salt length must be 32, length received was %d"
-
-	// Create the new IDF from the expected values
-	newIDF, err := newIDF(expectedSalt, expectedID)
-
-	// Check that the expected error occurred
-	if err == nil {
-		t.Fatalf("newIDF did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
+	var idf IdFile
+	if err = json.Unmarshal(data, &idf); err != nil {
+		t.Fatalf("Failed to JSON unmarshal %T: %+v", idf, err)
 	}
 
-	// Check that the new IDF is nil
-	if newIDF != nil {
-		t.Errorf("newIDF returned a non-nil IDF on error."+
-			"\nexpected: %#v\nreceived: %#v", nil, newIDF)
+	if !reflect.DeepEqual(expectedIDF, idf) {
+		t.Errorf("Unexpected IDF.\nexpected: %v\nreceived: %v", expectedIDF, idf)
 	}
 }
 
-// Tests that writeIDF write the IDF data to file correctly by reading the
-// file back and comparing the contents to the original JSON.
-func TestWriteIDF(t *testing.T) {
-	// Expected values
-	expectedJSON := []byte(randomIdfJson)
-	filePath := "test_ID.json"
+// Tests that an ID and salt saved using LoadIDF is the same unloaded by
+// UnloadIDF.
+func TestUnloadIDF_LoadIDF(t *testing.T) {
+	filePath := "tempIDF.json"
 
 	// Delete the test file at the end
 	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
+		if err := os.RemoveAll(filePath); err != nil {
+			t.Fatalf("Error deleting test IDF %q: %+v", filePath, err)
 		}
 	}()
 
-	// Write the IDF
-	err := writeIDF(filePath, expectedJSON)
-
-	// Check that no error occurred
+	idf := newRandomIDF(rand.New(rand.NewSource(55412)), t)
+	err := LoadIDF(filePath, idf.Salt[:], idf.ID)
 	if err != nil {
-		t.Fatalf("writeIDF produced an unexpected error:\n%v", err)
+		t.Fatalf("Failed to load IDF: %+v", err)
 	}
 
-	// Read the contents from the file
-	jsonBytes, err := utils.ReadFile(filePath)
+	salt, newID, err := UnloadIDF(filePath)
 	if err != nil {
-		t.Fatalf("Error reading test file %#v:\n%v", filePath, err)
+		t.Fatalf("Failed to unload IDF: %+v", err)
 	}
 
-	// Check that the IDF file contents match the expected IDF bytes
-	if !bytes.Equal(expectedJSON, jsonBytes) {
-		t.Errorf("writeIDF wrote the IDF incorrectly."+
-			"\nexpected: %#v\nreceived: %#v", expectedJSON, jsonBytes)
+	if !bytes.Equal(idf.Salt[:], salt) {
+		t.Errorf("Incorrect salt.\nexpected: %X\nreceived: %X", idf.Salt, salt)
+	}
+
+	if !idf.ID.Equal(newID) {
+		t.Errorf("Incorrect ID.\nexpected: %s\nreceived: %s", idf.ID, newID)
 	}
 }
 
-// Tests that writeIDF returns an error and does not create a new file when
-// provided a bad path.
-func TestWriteIDF_BadPathError(t *testing.T) {
-	// Expected values
-	expectedJSON := []byte(randomIdfJson)
-	filePath := "~a/test_ID.json"
-	expectedError := "Failed to create IDF: ..."
+// Error path: Tests that UnloadIDF returns the expected error for invalid JSON.
+func TestUnloadIDF_InvalidJsonErr(t *testing.T) {
+	filePath := "tempIDF.json"
 
 	// Delete the test file at the end
 	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
+		if err := os.RemoveAll(filePath); err != nil {
+			t.Fatalf("Error deleting test IDF %q: %+v", filePath, err)
 		}
 	}()
 
-	// Write the IDF
-	err := writeIDF(filePath, expectedJSON)
-
-	// Check that the expected error occurred
-	if err == nil {
-		t.Fatalf("writeIDF did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
+	err := os.WriteFile(filePath, []byte("invalid JSON"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to write invalid JSON to %q: %+v", filePath, err)
 	}
 
-	// Check that the IDF was not created
-	if utils.Exists(filePath) {
-		t.Errorf("writeIDF created the test file %#v when given a bad path.",
-			filePath)
+	expectedErr := errors.New(unmarshalErr)
+
+	_, _, err = UnloadIDF(filePath)
+	if err == nil || errors.Is(err, expectedErr) {
+		t.Errorf("Incorrect error."+
+			"\nexpected: %v\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that UnloadIDF returns the expected salt and IdBytes.
-func TestUnloadIDF(t *testing.T) {
-	// Test values
-	filePath := "test_ID.json"
-	testJSON := []byte(randomIdfJson)
-
-	// Expected values
-	expectedSalt := randomSaltBytes[:]
-	expectedID := id.NewIdFromBytes(randomIDBytes[:], t)
-
-	// Create IDF at path
-	err := utils.WriteFile(filePath, testJSON, utils.FilePerms, utils.DirPerms)
-	if err != nil {
-		t.Fatalf("Error creating test IDF %#v:\n%v", filePath, err)
-	}
-
-	// Delete the test file at the end
-	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
-		}
-	}()
-
-	// Load the IDF from file
-	newSalt, newID, err := UnloadIDF(filePath)
-
-	// Check that no error occurred
-	if err != nil {
-		t.Fatalf("UnloadIDF produced an unexpected error:\n%v", err)
-	}
-
-	// Check if returned salt is correct
-	if !bytes.Equal(expectedSalt, newSalt) {
-		t.Errorf("UnloadIDF returned incorrect salt."+
-			"\nexpected: %v\nreceived: %v", expectedSalt, newSalt)
-	}
-
-	// Check if returned IdBytes is correct
-	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF returned incorrect IdBytes."+
-			"\nexpected: %v\nreceived: %v",
-			expectedID.Bytes(), newID.Bytes())
-	}
-}
-
-// Tests that UnloadIDF returns an error when provided an invalid path.
+// Error path: Tests that UnloadIDF returns the expected error for an invalid
+// file path.
 func TestUnloadIDF_FilePathError(t *testing.T) {
-	// Test values
-	filePath := "~a/test_ID.json"
-	expectedError := "Could not read IDF file " + filePath + ": ..."
+	expectedErr := errors.Errorf(ioReadErr, "")
 
 	// Load the IDF from file
-	newSalt, newID, err := UnloadIDF(filePath)
+	_, _, err := UnloadIDF("")
 
 	// Check that the expected error occurred
-	if err == nil {
-		t.Errorf("UnloadIDF did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
-	}
-
-	// Check that the returned salt is nil
-	if newSalt != nil {
-		t.Errorf("UnloadIDF returned non-nil salt on error."+
-			"\nexpected: %v\nreceived: %v", nil, newSalt)
-	}
-
-	// Check that the returned IdBytes is nil
-	if newID != nil {
-		t.Errorf("UnloadIDF returned non-nil IdBytes on error."+
-			"\nexpected: %v\nreceived: %v", nil, newID)
+	if err == nil || errors.Is(err, expectedErr) {
+		t.Errorf("Incorrect error."+
+			"\nexpected: %v\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that UnloadIDF returns an error when the provided IDF contains
-// invalid JSON.
-func TestUnloadIDF_InvalidJsonError(t *testing.T) {
-	// Test values
-	filePath := "test_ID.json"
-	testJSON := []byte("invalidJSON")
+// Error path: Tests that LoadIDF returns the expected error when the length of
+// the salt is incorrect.
+func TestLoadIDF_SaltLengthError(t *testing.T) {
+	salt := make([]byte, saltLen*2)
+	expectedErr := errors.Errorf(saltSizeErr, saltLen, len(salt))
 
-	// Expected values
-	expectedError := "Failed to unmarshal IDF JSON: ..."
-
-	// Create IDF at path
-	err := utils.WriteFile(filePath, testJSON, utils.FilePerms, utils.DirPerms)
-	if err != nil {
-		t.Fatalf("Error creating test IDF %#v:\n%v", filePath, err)
-	}
-
-	// Delete the test file at the end
-	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
-		}
-	}()
-
-	// Load the IDF from file
-	newSalt, newID, err := UnloadIDF(filePath)
-
-	// Check that the expected error occurred
-	if err == nil {
-		t.Errorf("UnloadIDF did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
-	}
-
-	// Check that the returned salt is nil
-	if newSalt != nil {
-		t.Errorf("UnloadIDF returned non-nil salt on error."+
-			"\nexpected: %v\nreceived: %v", nil, newSalt)
-	}
-
-	// Check that the returned IdBytes is nil
-	if newID != nil {
-		t.Errorf("UnloadIDF returned non-nil IdBytes on error."+
-			"\nexpected: %v\nreceived: %v", nil, newID)
+	err := LoadIDF("", salt, &id.ID{})
+	if err == nil || errors.Is(err, expectedErr) {
+		t.Errorf(
+			"Incorrect error.\nexpected: %s\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that LoadIDF writes the correct data to file.
-func TestLoadIDF(t *testing.T) {
-	// Test values
-	filePath := "test_ID.json"
-	testSalt := randomSaltBytes[:]
-	testID := id.NewIdFromBytes(randomIDBytes[:], t)
+// Error path: Tests that LoadIDF returns the expected error for an invalid file
+// path.
+func TestLoadIDF_FilePathError(t *testing.T) {
+	idf := newRandomIDF(rand.New(rand.NewSource(6541651)), t)
+	expectedErr := errors.Errorf(ioWriteErr, "")
 
-	// Expected values
-	expectedIdfJSON := []byte(randomIdfJson)
-
-	// Delete the test file at the end
-	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
-		}
-	}()
-
-	// Load IDF into a file
-	err := LoadIDF(filePath, testSalt, testID)
-
-	// Check that no error occurred
-	if err != nil {
-		t.Fatalf("LoadIDF produced an unexpected error:\n%v", err)
-	}
-
-	// Get NDF contents
-	testIdfJSON, err := utils.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("Error reading test IDF file %#v:\n%v", filePath, err)
-	}
-
-	t.Logf("received: %s", string(testIdfJSON))
-
-	// Check if returned IDF JSON is correct
-	if !bytes.Equal(expectedIdfJSON, testIdfJSON) {
-		t.Errorf("LoadIDF created incorrect IDF."+
-			"\nexpected: %v\nreceived: %v", expectedIdfJSON, testIdfJSON)
+	err := LoadIDF("", idf.Salt[:], idf.ID)
+	if err == nil || errors.Is(err, expectedErr) {
+		t.Errorf(
+			"Incorrect error.\nexpected: %s\nreceived: %v", expectedErr, err)
 	}
 }
 
-// Tests that LoadIDF returns an error when given a salt with incorrect
-// length.
-func TestLoadIDF_IdfError(t *testing.T) {
-	// Test values
-	filePath := "test_ID.json"
-	testSalt := []byte{1, 2, 3}
-	testID := id.NewIdFromBytes(randomIDBytes[:], t)
-
-	// Expected values
-	expectedError := "Failed to create new IDF: ..."
-
-	// Delete the test file at the end
-	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
-		}
-	}()
-
-	// Load IDF into a file
-	err := LoadIDF(filePath, testSalt, testID)
-
-	// Check that the expected error occurred
-	if err == nil {
-		t.Errorf("LoadIDF did not produce the expected error."+
-			"\nexpected: %v\nreceived: %v", expectedError, err)
-	}
-
-	// Check that the IDF was not created
-	if utils.Exists(filePath) {
-		t.Errorf("LoadIDF created the test file %#v when given a bad path.",
-			filePath)
-	}
-}
-
-func TestIDF_LoadUnload(t *testing.T) {
-	// Test values
-	filePath := "test_ID.json"
-
-	// Expected values
-	expectedSalt := randomSaltBytes[:]
-	expectedID := id.NewIdFromBytes(randomIDBytes[:], t)
-
-	// Delete the test file at the end
-	defer func() {
-		err := os.RemoveAll(filePath)
-		if err != nil {
-			t.Fatalf("Error deleting test IDF file %#v:\n%v", filePath, err)
-		}
-	}()
-
-	// Load IDF into a file
-	err := LoadIDF(filePath, expectedSalt, expectedID)
-
-	// Check that no error occurred
+// newRandomIDF creates an IDF with randomly generated ID and salt.
+func newRandomIDF(prng *rand.Rand, t *testing.T) IdFile {
+	newID := id.NewRandomTestID(prng, id.Node, t)
+	var salt [saltLen]byte
+	prng.Read(salt[:])
+	idf, err := newIDF(salt[:], newID)
 	if err != nil {
-		t.Fatalf("LoadIDF produced an unexpected error:\n%v", err)
+		t.Fatalf("Failed to create new IDF: %+v", err)
 	}
-
-	// Unload the IDF
-	newSalt, newID, err := UnloadIDF(filePath)
-
-	// Check that no error occurred
-	if err != nil {
-		t.Fatalf("UnloadIDF produced an unexpected error:\n%v", err)
-	}
-
-	// Check if returned salt is correct
-	if !bytes.Equal(expectedSalt, newSalt) {
-		t.Errorf("UnloadIDF returned incorrect salt."+
-			"\nexpected: %v\nreceived: %v", expectedSalt, newSalt)
-	}
-
-	// Check if returned IdBytes is correct
-	if !expectedID.Cmp(newID) {
-		t.Errorf("UnloadIDF returned incorrect IdBytes."+
-			"\nexpected: %v\nreceived: %v",
-			expectedID.Bytes(), newID.Bytes())
-	}
+	return idf
 }

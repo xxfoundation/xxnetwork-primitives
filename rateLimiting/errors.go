@@ -7,7 +7,8 @@
 
 package rateLimiting
 
-// Error messages to return once a user has hit the rate limtit.
-const (
-	ClientRateLimitErr = "Too many messages sent from ID %v with IP address %s in a specific time frame by a user"
-)
+// Note: Do not remove the error below. It is used in client and gateway.
+
+// ClientRateLimitErr is returned once a user has hit the rate limit.
+const ClientRateLimitErr = "Too many messages sent from ID %v with IP address " +
+	"%s in a specific time frame by a user"

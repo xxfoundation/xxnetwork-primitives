@@ -12,10 +12,11 @@ package rateLimiting
 // backed up for retrieval on restart.
 
 import (
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 // BucketMap structure is a collection of buckets in a map, each with the same
@@ -261,7 +262,7 @@ func (bm *BucketMap) staleBucketWorker(quit chan struct{}) {
 	ticker := time.NewTicker(bm.pollDuration)
 
 	jww.DEBUG.Printf("Starting StaleBucketWorker in separate thread polling "+
-		"every %v.", bm.pollDuration)
+		"every %s.", bm.pollDuration)
 
 	for {
 		select {

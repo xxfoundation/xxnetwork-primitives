@@ -18,9 +18,9 @@ func TestGetHardCodedIDs(t *testing.T) {
 		&TempGateway, &ZeroUser, &DummyUser, &UDB, &ClientRegistration}
 
 	for i, testID := range GetHardCodedIDs() {
-		if !expectedIDs[i].Cmp(testID) {
+		if !expectedIDs[i].Equal(testID) {
 			t.Errorf("GetHardCodedIDs did not return the expected ID (%d)."+
-				"\nexepcted: %v\nrecieved: %v", i, expectedIDs[i], testID)
+				"\nexepcted: %s\nrecieved: %s", i, expectedIDs[i], testID)
 		}
 	}
 }

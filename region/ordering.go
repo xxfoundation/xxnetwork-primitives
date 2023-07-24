@@ -9,11 +9,13 @@ package region
 
 import (
 	"encoding/binary"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/primitives/id"
 	"io"
 	"math"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
 func OrderNodeTeam(nodes []*id.ID, countries map[id.ID]string,

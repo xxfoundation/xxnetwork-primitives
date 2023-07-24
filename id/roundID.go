@@ -12,6 +12,7 @@ import (
 	"strconv"
 )
 
+// Round is the round ID for each round run in cMix.
 type Round uint64
 
 // Marshal serialises the Round ID into a byte slice.

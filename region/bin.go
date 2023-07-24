@@ -9,9 +9,10 @@ package region
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"math"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // GeoBin is the numerical representation of a geographical regional.
