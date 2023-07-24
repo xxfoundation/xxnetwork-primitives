@@ -8,11 +8,12 @@
 package rateLimiting
 
 import (
-	"github.com/pkg/errors"
 	"math/rand"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Test implementation of the database
@@ -133,23 +134,23 @@ func TestCreateBucketMapFromParams(t *testing.T) {
 
 	if bm.capacity != testParams.Capacity {
 		t.Errorf("CreateBucketMap returned incorrect capacity."+
-			"\nexpected: %v\nreceived: %v", testParams.Capacity, bm.capacity)
+			"\nexpected: %d\nreceived: %d", testParams.Capacity, bm.capacity)
 	}
 
 	if bm.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketMap returned incorrect leakRate."+
-			"\nexpected: %v\nreceived: %v", expectedLeakRate, bm.leakRate)
+			"\nexpected: %f\nreceived: %f", expectedLeakRate, bm.leakRate)
 	}
 
 	if bm.pollDuration != testParams.PollDuration {
 		t.Errorf("CreateBucketMap returned incorrect pollDuration."+
-			"\nexpected: %v\nreceived: %v",
+			"\nexpected: %s\nreceived: %s",
 			testParams.PollDuration, bm.pollDuration)
 	}
 
 	if bm.bucketMaxAge != testParams.BucketMaxAge {
 		t.Errorf("CreateBucketMap returned incorrect bucketMaxAge."+
-			"\nexpected: %v\nreceived: %v",
+			"\nexpected: %s\nreceived: %s",
 			testParams.BucketMaxAge, bm.bucketMaxAge)
 	}
 }

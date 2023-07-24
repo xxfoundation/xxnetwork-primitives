@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"crypto"
 	"encoding/binary"
+	"encoding/json"
 	"math"
 	"strconv"
 	"testing"
@@ -79,7 +80,7 @@ func TestGetIntermediaryId(t *testing.T) {
 		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
 	if iid == nil || len(iid) == 0 {
-		t.Errorf("iid returned with no data: %+v", iid)
+		t.Errorf("iid returned with no data: %v", iid)
 	}
 }
 
@@ -93,8 +94,8 @@ func TestGetIdFromIntermediary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get ID from intermediary: %+v", err)
 	}
-	if eid[2] != 0 && eid[3] != 0 && eid[4] != 0 && eid[5] != 0 && eid[6] != 0 && eid[7] != 0 {
-		t.Errorf("Id was not cleared to proper size: %+v", eid)
+	if !bytes.Equal(eid[:6], make([]byte, 6)) {
+		t.Errorf("Id was not cleared to proper size: %v", eid)
 	}
 }
 
@@ -186,18 +187,18 @@ func TestId_Clear(t *testing.T) {
 	newEid := eid.Clear(uint(64))
 	var ok bool
 	if bytes.Map(func(r rune) rune { ok = ok || r == 0; return r }, eid[:]); ok {
-		t.Errorf("Bytes were cleared from max size ID: %+v", newEid)
+		t.Errorf("Bytes were cleared from max size ID: %v", newEid)
 	}
 
 	newEid = eid.Clear(16)
-	if newEid[0] != 0 || newEid[1] != 0 || newEid[2] != 0 || newEid[3] != 0 || newEid[4] != 0 || newEid[5] != 0 {
-		t.Errorf("Proper bits were not cleared from size 16 ID: %+v", newEid)
+	if !bytes.Equal(newEid[:6], make([]byte, 6)) {
+		t.Errorf("Proper bits were not cleared from size 16 ID: %v", newEid)
 	}
-	if eid[0] == 0 && eid[1] == 0 && eid[2] == 0 && eid[3] == 0 && eid[4] == 0 && eid[5] == 0 {
-		t.Errorf("Bits were cleared from original ID: %+v", eid)
+	if bytes.Equal(eid[:6], make([]byte, 6)) {
+		t.Errorf("Bits were cleared from original ID: %v", eid)
 	}
-	if newEid[6] != eid[6] && newEid[7] != eid[7] {
-		t.Errorf("Proper bits do not match in IDs.\noriginal: %+v\ncleared:  %+v",
+	if !bytes.Equal(eid[6:8], newEid[6:8]) {
+		t.Errorf("Proper bits do not match in IDs.\noriginal: %v\ncleared:  %v",
 			eid, newEid)
 	}
 }
@@ -214,8 +215,8 @@ func TestId_Fill(t *testing.T) {
 	}
 	for i, r := range newEid[:] {
 		if r != eid[i] {
-			t.Errorf("Fill changed bits in max size ID."+
-				"\noriginal: %+v\nnew:      %+v", eid, newEid)
+			t.Errorf("Fill changed bits in max size ID (%d)."+
+				"\noriginal: %v\nnew:      %v", i, eid, newEid)
 		}
 	}
 
@@ -224,12 +225,11 @@ func TestId_Fill(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to fill ID: %+v", err)
 	}
-	if newEid[0] == eid[0] || newEid[1] == eid[1] || newEid[2] == eid[2] || newEid[3] == eid[3] ||
-		newEid[4] == eid[4] || newEid[5] == eid[5] {
-		t.Errorf("Proper bits were not filled from size 16 ID: %+v", newEid)
+	if bytes.Equal(newEid[:6], eid[:6]) {
+		t.Errorf("Proper bits were not filled from size 16 ID %v", newEid)
 	}
-	if newEid[6] != eid[6] && newEid[7] != eid[7] {
-		t.Errorf("Proper bits do not match in IDs.\noriginal: %+v\ncleared:  %+v",
+	if !bytes.Equal(newEid[6:8], eid[6:8]) {
+		t.Errorf("Proper bits do not match in IDs.\noriginal: %v\ncleared:  %v",
 			eid, newEid)
 	}
 }
@@ -248,7 +248,7 @@ func TestGetRotationSalt(t *testing.T) {
 	if bytes.Compare(salt1, salt2) == 0 && bytes.Compare(salt2, salt3) == 0 {
 		t.Error("Salt did not change as timestamp increased w/ Period of one day")
 	}
-	t.Logf("First: %+v\tSecond: %+v\nThird: %+v\n", salt1, salt2, salt3)
+	t.Logf("First:  %v\tSecond: %v\nThird:  %v\n", salt1, salt2, salt3)
 }
 
 // Unit test for UInt64 method on ephemeral ID
@@ -309,7 +309,7 @@ func TestMarshal(t *testing.T) {
 	}
 	if bytes.Compare(eid[:], eid2[:]) != 0 {
 		t.Errorf("Failed to load ephermeral ID from bytes."+
-			"\noriginal: %+v\nloaded:   %+v", eid, eid2)
+			"\noriginal: %v\nloaded:   %v", eid, eid2)
 	}
 
 	_, err = Marshal(nil)
@@ -320,5 +320,27 @@ func TestMarshal(t *testing.T) {
 	_, err = Marshal([]byte("Test"))
 	if err == nil {
 		t.Error("Data < size 8 should return an error when marshalled")
+	}
+}
+
+// Tests that an Id can be JSON marshalled and unmarshalled.
+func TestId_JSONMarshalUnmarshal(t *testing.T) {
+	testID := id.NewIdFromString("zezima", id.User, t)
+	expected, _, _, err := GetId(testID, 16, time.Now().Unix())
+
+	data, err := json.Marshal(expected)
+	if err != nil {
+		t.Errorf("Failed to JSON marshal %T: %+v", expected, err)
+	}
+
+	var eid Id
+	err = json.Unmarshal(data, &eid)
+	if err != nil {
+		t.Errorf("Failed to JSON umarshal %T: %+v", eid, err)
+	}
+
+	if expected != eid {
+		t.Errorf("Marshalled and unamrshalled Id does not match expected."+
+			"\nexpected: %s\nreceived: %s", expected, eid)
 	}
 }

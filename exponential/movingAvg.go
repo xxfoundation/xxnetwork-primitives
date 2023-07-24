@@ -8,9 +8,10 @@
 package exponential
 
 import (
+	"sync"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
-	"sync"
 )
 
 // MovingAvg tracks the exponential moving average across a number of events and
@@ -49,13 +50,16 @@ func NewMovingAvg(p MovingAvgParams) *MovingAvg {
 // returning true if it is over the cutoff and false otherwise.
 //
 // The moving average is calculated by:
-//  A(n) = a × (S/E) + A(n-1) × (1 − S/E)
+//
+//	A(n) = a × (S/E) + A(n-1) × (1 − S/E)
+//
 // Where:
-//  A(n) is the current exponential moving average
-//  A(n-1) is the previous exponential moving average
-//  a is the intake value
-//  S is the smoothing factor
-//  E is the number of events the average is over
+//
+//	A(n) is the current exponential moving average
+//	A(n-1) is the previous exponential moving average
+//	a is the intake value
+//	S is the smoothing factor
+//	E is the number of events the average is over
 func (m *MovingAvg) Intake(a float32) error {
 	m.Mutex.Lock()
 	defer m.Mutex.Unlock()

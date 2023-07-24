@@ -14,12 +14,14 @@ package ndf
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	jww "github.com/spf13/jwalterweatherman"
-	"gitlab.com/xx_network/primitives/id"
-	"gitlab.com/xx_network/primitives/region"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
+	jww "github.com/spf13/jwalterweatherman"
+
+	"gitlab.com/xx_network/primitives/id"
+	"gitlab.com/xx_network/primitives/region"
 )
 
 // NO_NDF is a string that the permissioning server responds with when a member

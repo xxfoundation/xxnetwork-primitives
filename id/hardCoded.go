@@ -14,54 +14,57 @@ package id
 // GetHardCodedIDs with the changes.
 
 var (
-	// ID for permissioning (ID data is the string "Permissioning")
+	// Permissioning is the ID for the permissioning server (data is the string
+	// "Permissioning").
 	Permissioning = ID{80, 101, 114, 109, 105, 115, 115, 105, 111, 110, 105,
 		110, 103, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		byte(Generic)}
 
-	// ID for authorizer (ID data is the string "authorizer")
+	// Authorizer is the ID for the authorizer (data is the string "authorizer").
 	Authorizer = ID{97, 117, 116, 104, 111, 114, 105, 122, 101, 114, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Generic)}
 
-	// ID for authorizer (ID data is the string "client-registration")
+	// ClientRegistration is the ID for client registration (ID data is the
+	// string "client-registration")
 	ClientRegistration = ID{99, 108, 105, 101, 110, 116, 45, 114, 101, 103, 105,
 		115, 116, 114, 97, 116, 105, 111, 110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, byte(Generic)}
 
-	// ID for notification bot (ID data is the string "notification-bot")
+	// NotificationBot is the ID for the notification bot (data is the string
+	// "notification-bot").
 	NotificationBot = ID{110, 111, 116, 105, 102, 105, 99, 97, 116, 105, 111,
 		110, 45, 98, 111, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		byte(Generic)}
 
-	// ID for a temporary gateway (ID data is the string "tmp")
+	// TempGateway is the ID for a temporary gateway (data is the string "tmp").
 	TempGateway = ID{116, 109, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(Gateway)}
 
-	// ID for a user with the ID data all zeroes
+	// ZeroUser is the ID for a user with the ID data set to all zeroes.
 	ZeroUser = ID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 
-	// ID for a dummy user (ID data is the string "dummy")
+	// DummyUser is the ID for a dummy user (data is the string "dummy").
 	DummyUser = ID{100, 117, 109, 109, 121, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 
-	// ID for UDB (ID data is in the range of dummy IDs)
+	// UDB is the ID for user discovery (data is in the range of dummy IDs).
 	UDB = ID{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte(User)}
 )
 
 // GetHardCodedIDs returns an array of all the hard coded IDs.
-func GetHardCodedIDs() (ids []*ID) {
-	ids = append(ids, &Permissioning)
-	ids = append(ids, &Authorizer)
-	ids = append(ids, &NotificationBot)
-	ids = append(ids, &TempGateway)
-	ids = append(ids, &ZeroUser)
-	ids = append(ids, &DummyUser)
-	ids = append(ids, &UDB)
-	ids = append(ids, &ClientRegistration)
-
-	return
+func GetHardCodedIDs() []*ID {
+	return []*ID{
+		&Permissioning,
+		&Authorizer,
+		&NotificationBot,
+		&TempGateway,
+		&ZeroUser,
+		&DummyUser,
+		&UDB,
+		&ClientRegistration,
+	}
 }
 
 // CollidesWithHardCodedID searches if the given ID collides with any hard coded
@@ -69,7 +72,7 @@ func GetHardCodedIDs() (ids []*ID) {
 // false.
 func CollidesWithHardCodedID(testID *ID) bool {
 	for _, hardCodedID := range GetHardCodedIDs() {
-		if testID.Cmp(hardCodedID) {
+		if testID.Equal(hardCodedID) {
 			return true
 		}
 	}

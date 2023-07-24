@@ -11,6 +11,7 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"encoding/binary"
+	"encoding/json"
 	"hash"
 	"io"
 	"math"
@@ -21,9 +22,16 @@ import (
 )
 
 const (
+	// IdLen is the length of an ephemeral [Id].
+	IdLen = 8
+
 	Period            = int64(time.Hour * 24)
 	NumOffsets  int64 = 1 << 16
 	NsPerOffset       = Period / NumOffsets
+
+	// Minimum and maximum size for new Id.
+	maxSize = 64
+	minSize = 1
 )
 
 // ReservedIDs are ephemeral IDs reserved for specific actions:
@@ -34,8 +42,8 @@ var ReservedIDs = []Id{
 	{1, 1, 1, 1, 1, 1, 1, 1}, // Payment
 }
 
-// Id is the ephemeral ID type alias
-type Id [8]byte
+// Id is the ephemeral ID type.
+type Id [IdLen]byte
 
 // ProtoIdentity contains the ID and the start and end time for the salt window.
 type ProtoIdentity struct {
@@ -59,17 +67,17 @@ func (eid *Id) Int64() int64 {
 	return x
 }
 
-// Clear an ID down to the correct size
+// Clear clears all the bits in the ID outside of the given size.
 func (eid Id) Clear(size uint) Id {
-	newId := Id{}
+	var newId Id
 	var mask uint64 = math.MaxUint64 >> (64 - size)
 	maskedId := binary.BigEndian.Uint64(eid[:]) & mask
 	binary.BigEndian.PutUint64(newId[:], maskedId)
 	return newId
 }
 
-// Fill cleared bits of an ID with random data from passed in rng
-// Accepts the size of the ID in bits & an RNG reader
+// Fill sets the bits of an ID with random data from passed in rng. The size of
+// the ID is in bits.
 func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 	var newId, rand Id
 	_, err := rng.Read(rand[:])
@@ -85,10 +93,10 @@ func (eid Id) Fill(size uint, rng io.Reader) (Id, error) {
 
 // Marshal loads an ephemeral ID from raw bytes.
 func Marshal(data []byte) (Id, error) {
-	if len(data) > len(Id{}) || len(data) < len(Id{}) || data == nil {
-		return Id{}, errors.Errorf("Ephemeral ID must be of size %d", len(Id{}))
+	if data == nil || len(data) != IdLen {
+		return Id{}, errors.Errorf("Ephemeral ID must be of size %d", IdLen)
 	}
-	eid := Id{}
+	var eid Id
 	copy(eid[:], data)
 	return eid, nil
 }
@@ -99,8 +107,9 @@ func Marshal(data []byte) (Id, error) {
 func GetIdsByRange(id *id.ID, size uint, timestamp time.Time,
 	timeRange time.Duration) ([]ProtoIdentity, error) {
 
-	if size > 64 {
-		return []ProtoIdentity{}, errors.New("Cannot generate ID with size > 64")
+	if size > maxSize {
+		return []ProtoIdentity{},
+			errors.Errorf("Cannot generate ID with size > %d", maxSize)
 	}
 
 	iid, err := GetIntermediaryId(id)
@@ -161,9 +170,9 @@ func GetIntermediaryId(id *id.ID) ([]byte, error) {
 func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
 	Id, time.Time, time.Time, error) {
 	b2b := crypto.BLAKE2b_256.New()
-	if size > 64 || size < 1 {
-		return Id{}, time.Time{}, time.Time{},
-			errors.New("Cannot generate ID, size must be between 1 and 64")
+	if size > maxSize || size < minSize {
+		return Id{}, time.Time{}, time.Time{}, errors.Errorf("Cannot generate "+
+			"ID, size must be between %d and %d", minSize, maxSize)
 	}
 	salt, start, end := getRotationSalt(iid, timestamp)
 
@@ -184,7 +193,7 @@ func GetIdFromIntermediary(iid []byte, size uint, timestamp int64) (
 // salt using the provided hash.
 func getIdFromIntermediary(
 	b2b hash.Hash, iid, salt []byte, size uint) (Id, error) {
-	eid := Id{}
+	var eid Id
 
 	_, err := b2b.Write(iid)
 	if err != nil {
@@ -254,4 +263,29 @@ func HandleQuantization(start time.Time) (int64, int32) {
 	currentOffset := (start.UnixNano() / NsPerOffset) % NumOffsets
 	epoch := start.UnixNano() / NsPerOffset
 	return currentOffset, int32(epoch)
+}
+
+// MarshalJSON marshals the ephemeral [Id] into valid JSON. This function
+// adheres to the [json.Marshaler] interface.
+func (eid Id) MarshalJSON() ([]byte, error) {
+	return json.Marshal(eid[:])
+}
+
+// UnmarshalJSON unmarshalls the JSON into the ephemeral [Id]. This function
+// adheres to the [json.Unmarshaler] interface.
+func (eid *Id) UnmarshalJSON(data []byte) error {
+	var idBytes []byte
+	err := json.Unmarshal(data, &idBytes)
+	if err != nil {
+		return err
+	}
+
+	newEid, err := Marshal(idBytes)
+	if err != nil {
+		return err
+	}
+
+	*eid = newEid
+
+	return nil
 }

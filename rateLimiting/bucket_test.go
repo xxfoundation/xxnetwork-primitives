@@ -29,30 +29,30 @@ func TestCreateBucketWithLeakRate(t *testing.T) {
 	// Test fields for expected results
 	if b.capacity != expectedCapacity {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"capacity.\nexpected: %v\nreceived: %v",
+			"capacity.\nexpected: %d\nreceived: %d",
 			expectedCapacity, b.capacity)
 	}
 
 	if b.remaining != 0 {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"remaining.\nexpected: %v\nreceived: %v", 0, b.remaining)
+			"remaining.\nexpected: %d\nreceived: %d", 0, b.remaining)
 	}
 
 	if b.leakRate != expectedLeakRate {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"leak rate.\nexpected: %v\nreceived: %v",
+			"leak rate.\nexpected: %f\nreceived: %f",
 			expectedLeakRate, b.leakRate)
 	}
 
 	// Check that the lastUpdate occurred recently
 	if time.Now().UnixNano()-b.lastUpdate > time.Second.Nanoseconds() {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with old "+
-			"lastUpdate.\nreceived: %v", b.lastUpdate)
+			"lastUpdate.\nreceived: %d", b.lastUpdate)
 	}
 
 	if b.locked {
 		t.Errorf("CreateBucketFromLeakRatio generated Bucket with incorrect "+
-			"lock.\nexpected: %v\nreceived: %v", expectedLeakRate, b.leakRate)
+			"lock.\nexpected: %t\nreceived: %t", false, b.locked)
 	}
 }
 
@@ -67,7 +67,7 @@ func TestCreateBucket(t *testing.T) {
 
 	if b.leakRate != expectedLeakRate {
 		t.Errorf("New Bucket has incorrect leak rate."+
-			"\nexpected: %v\nreceived: %v", expectedLeakRate, b.leakRate)
+			"\nexpected: %f\nreceived: %f", expectedLeakRate, b.leakRate)
 	}
 }
 
@@ -79,10 +79,10 @@ func TestCreateBucketFromDB(t *testing.T) {
 	expectedLeakDuration := time.Duration(rand.Uint32())
 	expectedInBucket := rand.Uint32()
 	timestamp := time.Now().UnixNano()
-	addToDb := func(a uint32, b int64) {}
+	updateDB := func(uint32, int64) {}
 
 	testBucket := CreateBucketFromDB(expectedCapacity, expectedLeaked,
-		expectedLeakDuration, expectedInBucket, timestamp, addToDb)
+		expectedLeakDuration, expectedInBucket, timestamp, updateDB)
 
 	expectedBucket := &Bucket{
 		capacity:   expectedCapacity,
@@ -91,7 +91,7 @@ func TestCreateBucketFromDB(t *testing.T) {
 		lastUpdate: timestamp,
 		locked:     false,
 		whitelist:  false,
-		addToDb:    addToDb,
+		updateDB:   updateDB,
 	}
 
 	expectedJson, err := expectedBucket.MarshalJSON()
@@ -149,7 +149,7 @@ func TestBucket_Capacity(t *testing.T) {
 
 	if b.Capacity() != expectedCapacity {
 		t.Errorf("Capacity returned incorrect capacity."+
-			"\nexpected: %v\nreceived: %v", expectedCapacity, b.Capacity())
+			"\nexpected: %d\nreceived: %d", expectedCapacity, b.Capacity())
 	}
 }
 
@@ -160,7 +160,7 @@ func TestBucket_Remaining(t *testing.T) {
 
 	if b.Remaining() != 0 {
 		t.Errorf("Remaining returned incorrect remaining for the bucket."+
-			"\nexpected: %v\nreceived: %v", 0, b.Remaining())
+			"\nexpected: %d\nreceived: %d", 0, b.Remaining())
 	}
 }
 
@@ -171,7 +171,7 @@ func TestBucket_IsLocked(t *testing.T) {
 
 	if b.IsLocked() {
 		t.Errorf("IsLocked returned incorrect locked status."+
-			"\nexpected: %v\nreceived: %v", false, b.IsLocked())
+			"\nexpected: %t\nreceived: %t", false, b.IsLocked())
 	}
 }
 
@@ -182,7 +182,7 @@ func TestBucket_IsWhitelisted(t *testing.T) {
 
 	if b.IsWhitelisted() {
 		t.Errorf("IsWhitelisted returned incorrect whitelist status."+
-			"\nexpected: %v\nreceived: %v", false, b.IsWhitelisted())
+			"\nexpected: %t\nreceived: %t", false, b.IsWhitelisted())
 	}
 }
 
@@ -194,14 +194,14 @@ func TestBucket_IsFull(t *testing.T) {
 
 	if b.IsFull() {
 		t.Errorf("IsFull returned incorrect value for new bucket."+
-			"\nexpected: %v\nreceived: %v", false, b.IsFull())
+			"\nexpected: %t\nreceived: %t", false, b.IsFull())
 	}
 
 	b.Add(b.capacity * 2)
 
 	if !b.IsFull() {
 		t.Errorf("IsFull returned incorrect value for a filled bucket."+
-			"\nexpected: %v\nreceived: %v", true, b.IsFull())
+			"\nexpected: %t\nreceived: %t", true, b.IsFull())
 	}
 }
 
@@ -213,14 +213,14 @@ func TestBucket_IsEmpty(t *testing.T) {
 
 	if !b.IsEmpty() {
 		t.Errorf("IsEmpty returned incorrect value for new bucket."+
-			"\nexpected: %v\nreceived: %v", true, b.IsFull())
+			"\nexpected: %t\nreceived: %t", true, b.IsFull())
 	}
 
 	b.Add(b.capacity / 2)
 
 	if b.IsEmpty() {
 		t.Errorf("IsEmpty returned incorrect value for a filled bucket."+
-			"\nexpected: %v\nreceived: %v", false, b.IsEmpty())
+			"\nexpected: %t\nreceived: %t", false, b.IsEmpty())
 	}
 }
 
@@ -254,7 +254,7 @@ func TestBucket_Add(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -290,7 +290,7 @@ func TestBucket_Add_OverCapacity(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -325,7 +325,7 @@ func TestBucket_Add_DB(t *testing.T) {
 		Whitelist:  b.whitelist,
 	}
 
-	b.addToDb = func(remaining uint32, lastUpdate int64) {
+	b.updateDB = func(remaining uint32, lastUpdate int64) {
 		db.Remaining = remaining
 		db.LastUpdate = lastUpdate
 	}
@@ -341,18 +341,18 @@ func TestBucket_Add_DB(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 
 		if b.remaining != db.Remaining {
 			t.Errorf("Incorrect number of tokens remaining in database bucket "+
-				"(round %d).\nexpected: %v\nreceived: %v",
+				"(round %d).\nexpected: %d\nreceived: %d",
 				i, b.remaining, db.Remaining)
 		}
 
 		if b.lastUpdate != db.LastUpdate {
 			t.Errorf("Incorrect LastUpdate in database bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, b.lastUpdate, db.LastUpdate)
+				"\nexpected: %d\nreceived: %d", i, b.lastUpdate, db.LastUpdate)
 		}
 	}
 }
@@ -388,7 +388,7 @@ func TestBucket_Add_Whitelist(t *testing.T) {
 
 		if b.remaining != r.expectedRem {
 			t.Errorf("Incorrect number of tokens remaining in bucket (round %d)."+
-				"\nexpected: %v\nreceived: %v", i, r.expectedRem, b.remaining)
+				"\nexpected: %d\nreceived: %d", i, r.expectedRem, b.remaining)
 		}
 	}
 }
@@ -442,7 +442,7 @@ func TestBucket_addToDB(t *testing.T) {
 	b2.SetAddToDB(func(u uint32, i int64) {
 		called = true
 	})
-	b2.addToDb(0, 0)
+	b2.updateDB(0, 0)
 	if !called {
 		t.Error("addToDb should have been called")
 	}

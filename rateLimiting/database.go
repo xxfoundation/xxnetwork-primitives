@@ -7,6 +7,7 @@
 
 package rateLimiting
 
+// Storage is the generic interface used by the BucketMap for permanent storage.
 type Storage interface {
 	// UpsertBucket inserts the BucketParams into Storage with the unique
 	// BucketParams key. If a bucket already exists with the same key, its

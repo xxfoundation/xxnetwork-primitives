@@ -13,7 +13,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -98,7 +97,7 @@ func WriteFile(path string, data []byte, filePerm, dirPerm os.FileMode) error {
 	}
 
 	// Write to the specified file
-	err = ioutil.WriteFile(path, data, filePerm)
+	err = os.WriteFile(path, data, filePerm)
 	return err
 }
 
@@ -119,7 +118,7 @@ func ReadFile(path string) ([]byte, error) {
 	}
 
 	// Read the file and return the contents
-	return ioutil.ReadFile(path)
+	return os.ReadFile(path)
 }
 
 // Exists checks if a file or directory exists at the specified path.

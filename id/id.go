@@ -13,6 +13,7 @@
 package id
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -32,12 +33,12 @@ const (
 	// ArrIDLen is the length of the full ID array.
 	ArrIDLen = dataLen + 1
 
-	// Alphanumeric contains the regular expression to search for an alphanumeric string.
-	Alphanumeric string = "^[a-zA-Z0-9]+$"
+	// Contains the regular expression to search for an alphanumeric string.
+	alphanumeric string = "^[a-zA-Z0-9]+$"
 )
 
 // regexAlphanumeric is the regex for searching for an alphanumeric string.
-var regexAlphanumeric = regexp.MustCompile(Alphanumeric)
+var regexAlphanumeric = regexp.MustCompile(alphanumeric)
 
 // ID is a fixed-length array containing data that services as an identifier for
 // entities. The first 32 bytes hold the ID data while the last byte holds the
@@ -64,7 +65,7 @@ func Unmarshal(data []byte) (*ID, error) {
 // Marshal and any changes made here will affect how Marshal functions.
 func (id *ID) Bytes() []byte {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to get bytes of ID: ID is nil."))
 	}
 
@@ -76,34 +77,63 @@ func (id *ID) Bytes() []byte {
 
 // Cmp determines whether two IDs are equal. Returns true if they are equal and
 // false otherwise.
+//
+// Deprecated: Use ID.Equal instead.
 func (id *ID) Cmp(y *ID) bool {
+	return id.Equal(y)
+}
+
+// Equal determines whether two IDs are equal. Returns true if they are equal
+// and false otherwise.
+func (id *ID) Equal(y *ID) bool {
 	if id == nil || y == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: "+
-			"one or both IDs are nil."))
+		jww.FATAL.Panicf("%+v", errors.Errorf("Failed to compare IDs: one or both IDs are nil."))
 	}
 
 	return *id == *y
 }
 
+// Compare returns an integer comparing the two IDs lexicographically.
+// The result will be 0 if id == y, -1 if id < y, and +1 if id > y.
+func (id *ID) Compare(y *ID) int {
+	if id == nil || y == nil {
+		jww.FATAL.Panicf("%+v", errors.New(
+			"Failed to compare IDs: one or both IDs are nil."))
+	}
+
+	return bytes.Compare(id[:], y[:])
+}
+
+// Less returns true if id is less than y.
+func (id *ID) Less(y *ID) bool {
+	return id.Compare(y) == -1
+}
+
 // DeepCopy creates a copy of an ID.
 func (id *ID) DeepCopy() *ID {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to create a copy of ID: ID is nil."))
 	}
 
-	return copyID(id.Bytes())
+	return copyID(id[:])
 }
 
 // String converts an ID to a string via base64 encoding.
 func (id *ID) String() string {
-	return base64.StdEncoding.EncodeToString(id.Bytes())
+	if id == nil {
+		jww.FATAL.Panicf("%+v", errors.New(
+			"Failed to create string of ID: ID is nil."))
+	}
+
+	return base64.StdEncoding.EncodeToString(id[:])
 }
 
 // GetType returns the ID's type. It is the last byte of the array.
 func (id *ID) GetType() Type {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(""+
+		jww.FATAL.Panicf("%+v", errors.New(""+
+			""+
 			"Failed to get ID type: ID is nil."))
 	}
 
@@ -113,7 +143,7 @@ func (id *ID) GetType() Type {
 // SetType changes the ID type by setting the last byte to the specified type.
 func (id *ID) SetType(idType Type) {
 	if id == nil {
-		jww.FATAL.Panicf("%+v", errors.Errorf(
+		jww.FATAL.Panicf("%+v", errors.New(
 			"Failed to set ID type: ID is nil."))
 	}
 
@@ -154,10 +184,19 @@ func (id ID) MarshalText() (text []byte, err error) {
 // UnmarshalText unmarshalls the text into an [ID]. This function adheres to the
 // [encoding.TextUnmarshaler] interface. This allows for the JSON unmarshalling
 // of non-referenced IDs in maps (e.g., map[ID]int).
-func (id ID) UnmarshalText(text []byte) error {
+func (id *ID) UnmarshalText(text []byte) error {
 	idBytes, err := base64.RawStdEncoding.DecodeString(string(text))
-	copy(id[:], idBytes)
-	return err
+	if err != nil {
+		return err
+	}
+
+	newID, err := Unmarshal(idBytes)
+	if err != nil {
+		return err
+	}
+
+	copy(id[:], newID[:])
+	return nil
 }
 
 // HexEncode encodes the ID without the 33rd type byte.
@@ -174,8 +213,8 @@ func NewRandomID(r io.Reader, t Type) (*ID, error) {
 		// Generate random bytes
 		idBytes := make([]byte, ArrIDLen)
 		if _, err := r.Read(idBytes); err != nil {
-			return nil, errors.Errorf("failed to generate random bytes for new "+
-				"ID: %+v", err)
+			return nil, errors.Errorf(
+				"failed to generate random bytes for new ID: %+v", err)
 		}
 
 		// Create ID from bytes
@@ -190,7 +229,30 @@ func NewRandomID(r io.Reader, t Type) (*ID, error) {
 			return id, nil
 		}
 	}
+}
 
+// NewRandomTestID generates a random ID using the passed in io.Reader r and
+// sets the ID to Type t. If the base64 string of the generated ID does not
+// begin with an alphanumeric character, then another ID is generated until the
+// encoding begins with an alphanumeric character.
+//
+// This function is intended for testing purposes.
+func NewRandomTestID(r io.Reader, t Type, x interface{}) *ID {
+	// Ensure that this function is only run in testing environments
+	switch x.(type) {
+	case *testing.T, *testing.M, *testing.B:
+		break
+	default:
+		jww.FATAL.Panicf("NewRandomTestID can only be used for testing.")
+	}
+
+	id, err := NewRandomID(r, t)
+	if err != nil {
+		jww.FATAL.Panicf(
+			"failed to generate random bytes for new ID: %+v", err)
+	}
+
+	return id
 }
 
 // NewIdFromBytes creates a new ID from the supplied byte slice. It is similar
@@ -203,7 +265,7 @@ func NewIdFromBytes(data []byte, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromBytes can only be used for testing.")
+		jww.FATAL.Panicf("NewIdFromBytes can only be used for testing.")
 	}
 
 	return copyID(data)
@@ -219,7 +281,7 @@ func NewIdFromString(idString string, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromString can only be used for testing.")
+		jww.FATAL.Panicf("NewIdFromString can only be used for testing.")
 	}
 
 	// Convert the string to bytes and create new ID from it
@@ -255,7 +317,7 @@ func NewIdFromBase64String(base64String string, idType Type, x interface{}) *ID 
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromBase64String can only be used for testing.")
+		jww.FATAL.Panicf("NewIdFromBase64String can only be used for testing.")
 	}
 
 	// Convert the string to bytes and create new ID from it
@@ -296,7 +358,7 @@ func NewIdFromUInt(idUInt uint64, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromUInt can only be used for testing.")
+		jww.FATAL.Panicf("NewIdFromUInt can only be used for testing.")
 	}
 
 	// Create the new ID
@@ -321,7 +383,7 @@ func NewIdFromUInts(idUInts [4]uint64, idType Type, x interface{}) *ID {
 	case *testing.T, *testing.M, *testing.B:
 		break
 	default:
-		panic("NewIdFromUInts can only be used for testing.")
+		jww.FATAL.Panicf("NewIdFromUInts can only be used for testing.")
 	}
 
 	// Create the new ID

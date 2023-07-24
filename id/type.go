@@ -8,7 +8,6 @@
 package id
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -42,6 +41,6 @@ func (t Type) String() string {
 	case NumTypes:
 		return strconv.Itoa(int(NumTypes))
 	default:
-		return fmt.Sprintf("UNKNOWN ID TYPE: %d", t)
+		return "UNKNOWN ID TYPE: " + strconv.Itoa(int(t))
 	}
 }

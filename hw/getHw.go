@@ -11,9 +11,10 @@ package hw
 
 import (
 	"fmt"
-	jww "github.com/spf13/jwalterweatherman"
 	"os/exec"
 	"strings"
+
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 const (
@@ -23,8 +24,6 @@ const (
 	// Beginning and ending headers for hardware information.
 	begin = "Printing Hardware Information"
 	end   = "End of Hardware Information"
-
-	path = "."
 
 	// All info headers to be printed.
 	cpu       = "CPU INFO"

@@ -20,7 +20,7 @@ func NewIDListFromBytes(topology [][]byte) ([]*ID, error) {
 		id, err := Unmarshal(idBytes)
 		if err != nil {
 			return nil, errors.Errorf(
-				"unable to marshal ID for index %d: %+v", i, err)
+				"unable to unmarshal ID at index %d: %+v", i, err)
 		}
 
 		list[i] = id

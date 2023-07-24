@@ -11,7 +11,6 @@ package utils
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -22,7 +21,7 @@ import (
 // GenerateVersionFile is for version file generation consumed by higher-level
 // repos.
 func GenerateVersionFile(version string) {
-	gitversion := GenerateGitVersion()
+	gitVersion := GenerateGitVersion()
 	deps := ReadGoMod()
 
 	f, err := os.Create("version_vars.go")
@@ -37,7 +36,7 @@ func GenerateVersionFile(version string) {
 		VERSION      string
 	}{
 		Timestamp:    time.Now(),
-		GITVER:       gitversion,
+		GITVER:       gitVersion,
 		DEPENDENCIES: deps,
 		VERSION:      version,
 	})
@@ -67,7 +66,7 @@ func GenerateGitVersion() string {
 
 // ReadGoMod return the go modules file.
 func ReadGoMod() string {
-	r, err := ioutil.ReadFile("go.mod")
+	r, err := os.ReadFile("go.mod")
 	if err != nil {
 		panic(err)
 	}
