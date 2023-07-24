@@ -10,6 +10,7 @@ package format
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"math/rand"
 	"testing"
 )
@@ -64,5 +65,28 @@ func TestFingerprint_String(t *testing.T) {
 	if expectedString != fp.String() {
 		t.Errorf("String failed to return the expected string."+
 			"\nexpected: %s\nreceived: %s", expectedString, fp.String())
+	}
+}
+
+func Test_Fingerprint_JSON_Marshal_Unmarshal(t *testing.T) {
+	prng := rand.New(rand.NewSource(74043))
+	fpBytes := make([]byte, KeyFPLen)
+	prng.Read(fpBytes)
+
+	expected := NewFingerprint(fpBytes)
+
+	data, err := json.Marshal(expected)
+	if err != nil {
+		t.Errorf("Failed to marshal %T: %+v", expected, err)
+	}
+
+	var fp Fingerprint
+	if err = json.Unmarshal(data, &fp); err != nil {
+		t.Errorf("Failed to unmarshal %T: %+v", fp, err)
+	}
+
+	if expected != fp {
+		t.Errorf("Unexpected fingerprint.\nexpected: %s\nreceived: %s",
+			expected, fp)
 	}
 }

@@ -139,7 +139,7 @@ func TestUnstringifyFact_Error(t *testing.T) {
 		expectedErr string
 	}{
 		{"", "stringified facts must at least have a type at the start"},
-		{longFact, fmt.Sprintf("Fact (%s) exceeds maximum character limitfor "+
+		{longFact, fmt.Sprintf("Fact (%s) exceeds maximum character limit for "+
 			"a fact (%d characters)", longFact, maxFactLen)},
 		{"P", "stringified facts must be at least 1 character long"},
 		{"QA", `Failed to unstringify fact type for "QA"`},
@@ -221,8 +221,8 @@ func Test_validateNumber_Error(t *testing.T) {
 		{"5", "", "Number or input are of length 0"},
 		{"", "US", "Number or input are of length 0"},
 		// {"020 8743 8000135", "UK", `Could not parse number "020 8743 8000135"`},
-		{"8005559486", "UK", `Could not parse number [8005559486]`},
-		{"+343511234567", "ES", `Could not validate number [+343511234567]`},
+		{"8005559486", "UK", `Could not parse number "8005559486"`},
+		{"+343511234567", "ES", `Could not validate number "+343511234567"`},
 	}
 
 	for i, tt := range tests {

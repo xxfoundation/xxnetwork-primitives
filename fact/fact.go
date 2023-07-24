@@ -42,7 +42,7 @@ type Fact struct {
 // validation error.
 func NewFact(ft FactType, fact string) (Fact, error) {
 	if len(fact) > maxFactLen {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit " +
 			"for a fact (%d characters)", fact, maxFactLen)
 	}
 
@@ -71,7 +71,7 @@ func UnstringifyFact(s string) (Fact, error) {
 	}
 
 	if len(s) > maxFactLen {
-		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit"+
+		return Fact{}, errors.Errorf("Fact (%s) exceeds maximum character limit " +
 			"for a fact (%d characters)", s, maxFactLen)
 	}
 
@@ -111,7 +111,7 @@ func ValidateFact(fact Fact) error {
 	case Nickname:
 		return validateNickname(fact.Fact)
 	default:
-		return errors.Errorf("Unknown fact type: %v", fact.T)
+		return errors.Errorf("Unknown fact type: %d", fact.T)
 	}
 }
 
@@ -130,8 +130,7 @@ func extractNumberInfo(fact string) (number, countryCode string) {
 func validateEmail(email string) error {
 	// Check that the input is validly formatted
 	if err := checkmail.ValidateFormat(email); err != nil {
-		return errors.Errorf(
-			"Could not validate format for email [%s]: %v", email, err)
+		return errors.Wrapf(err, "Could not validate format for email %q", email)
 	}
 
 	return nil
@@ -140,30 +139,32 @@ func validateEmail(email string) error {
 // Checks if the number and country code passed in is parse-able
 // and is a valid phone number with that information
 func validateNumber(number, countryCode string) error {
-	errCh := make(chan error)
-
-	go func() {
+	catchPanic := func(number, countryCode string) (err error) {
 		defer func() {
 			if r := recover(); r != nil {
-				errCh <- errors.Errorf("Crash occured on phone "+
-					"validation of: number: %s, country code: %s", number,
-					countryCode)
+				err = errors.Errorf("Crash occured on phone validation of: "+
+					"number: %s, country code: %s: %+v", number, countryCode, r)
 			}
 		}()
 
 		if len(number) == 0 || len(countryCode) == 0 {
-			errCh <- errors.New("Number or input are of length 0")
+			err = errors.New("Number or input are of length 0")
+			return err
 		}
 		num, err := libphonenumber.Parse(number, countryCode)
 		if err != nil || num == nil {
-			errCh <- errors.Errorf("Could not parse number [%s]: %v", number, err)
+			err = errors.Wrapf(err, "Could not parse number %q", number)
+			return err
 		}
 		if !libphonenumber.IsValidNumber(num) {
-			errCh <- errors.Errorf("Could not validate number [%s]: %v", number, err)
+			err = errors.Errorf("Could not validate number %q", number)
+			return err
 		}
-		errCh <- nil
-	}()
-	return <-errCh
+
+		return nil
+	}
+
+	return catchPanic(number, countryCode)
 }
 
 func validateNickname(nickname string) error {

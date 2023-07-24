@@ -8,7 +8,7 @@
 package current
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 
@@ -55,7 +55,7 @@ func (a Activity) String() string {
 	case CRASH:
 		return "CRASH"
 	default:
-		return fmt.Sprintf("UNKNOWN STATE: %d", a)
+		return "UNKNOWN ACTIVITY: " + strconv.FormatUint(uint64(a), 10)
 	}
 }
 
@@ -78,6 +78,6 @@ func (a Activity) ConvertToRoundState() (states.Round, error) {
 	default:
 		// Unsupported conversion. Return an arbitrary round and error
 		return states.Round(99), errors.Errorf(
-			"unable to convert activity %+v to valid state", a)
+			"unable to convert activity %s (%d) to a valid state", a, a)
 	}
 }

@@ -141,7 +141,7 @@ GsvgcJsHWAg/YdN1vAK0HfT5GSnhj9qeb4LlTnSOgec=,nku9b+NM3LqEPujWPoxP/hzr6lRtj6wT3Q=
 func TestDecodeNotificationsCSV_InvalidMessageHashError(t *testing.T) {
 	invalidCSV := `U4x/lrFkvxuXu59LtHLonnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==
 `
-	expectedErr := "Failed decode an element"
+	expectedErr := "Failed to decode MessageHash for record 0 of 1"
 	_, err := DecodeNotificationsCSV(invalidCSV)
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("Unexpected error for invalid MessageHash."+
@@ -154,7 +154,7 @@ func TestDecodeNotificationsCSV_InvalidMessageHashError(t *testing.T) {
 func TestDecodeNotificationsCSV_InvalididentityFPError(t *testing.T) {
 	invalidCSV := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ1hRMiIU1hA==
 `
-	expectedErr := "Failed decode an element"
+	expectedErr := "Failed to decode IdentityFP for record 0 of 1"
 	_, err := DecodeNotificationsCSV(invalidCSV)
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("Unexpected error for invalid identityFP."+
@@ -166,7 +166,7 @@ func TestDecodeNotificationsCSV_InvalididentityFPError(t *testing.T) {
 // an invalid identityFP.
 func TestDecodeNotificationsCSV_NoEofError(t *testing.T) {
 	invalidCSV := `U4x/lrFkvxuXu59LtHLon1sUhPJSCcnZND6SugndnVI=,39ebTXZCm2F6DJ+fDTulWwzA1hRMiIU1hA==,"`
-	expectedErr := "Failed to decode notifications CSV"
+	expectedErr := "Failed to read notifications CSV records."
 	_, err := DecodeNotificationsCSV(invalidCSV)
 	if err == nil || !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("Unexpected error for invalid identityFP."+

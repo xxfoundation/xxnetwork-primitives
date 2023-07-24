@@ -37,14 +37,17 @@ func UnstringifyFactList(s string) (FactList, string, error) {
 	parts := strings.SplitN(s, factBreak, 2)
 	if len(parts) != 2 {
 		return nil, "", errors.New("Invalid fact string passed")
+	} else if parts[0] == "" {
+		return nil, parts[1], nil
 	}
 	factStrings := strings.Split(parts[0], factDelimiter)
 
-	var factList []Fact
+	factList := make([]Fact, 0, len(factStrings))
 	for _, fString := range factStrings {
 		fact, err := UnstringifyFact(fString)
 		if err != nil {
-			jww.WARN.Printf("Fact failed to unstringify, dropped: %s", err)
+			jww.WARN.Printf(
+				"Fact %q failed to unstringify, dropped: %s", fString, err)
 		} else {
 			factList = append(factList, fact)
 		}

@@ -7,9 +7,7 @@
 
 package states
 
-import (
-	"fmt"
-)
+import "strconv"
 
 // This holds the enum for the states of a round. It is in primitives so
 // other repos such as registration/permissioning, gateway, and client can
@@ -49,6 +47,6 @@ func (r Round) String() string {
 	case FAILED:
 		return "FAILED"
 	default:
-		return fmt.Sprintf("UNKNOWN STATE: %d", r)
+		return "UNKNOWN STATE: " + strconv.FormatUint(uint64(r), 10)
 	}
 }

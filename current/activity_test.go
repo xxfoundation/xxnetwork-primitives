@@ -18,7 +18,7 @@ import (
 // Consistency test of Activity.String.
 func TestActivity_String(t *testing.T) {
 	expected := []string{"NOT_STARTED", "WAITING", "PRECOMPUTING", "STANDBY",
-		"REALTIME", "COMPLETED", "ERROR", "CRASH", "UNKNOWN STATE: 8"}
+		"REALTIME", "COMPLETED", "ERROR", "CRASH", "UNKNOWN ACTIVITY: 8"}
 
 	for st := NOT_STARTED; st <= NUM_STATES; st++ {
 		if st.String() != expected[st] {
