@@ -27,7 +27,7 @@ var ErrNicknameTooLong = errors.Errorf("nicknames must be %d "+
 func IsValid(nick string) error {
 	if nick == "" {
 		jww.INFO.Printf(
-			"empty nickname passed, treating like no nickname")
+			"Empty nickname passed; treating it as if no nickname was set.")
 		return nil
 	}
 

@@ -8,7 +8,7 @@
 package fact
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
@@ -36,7 +36,7 @@ func (t FactType) String() string {
 	case Nickname:
 		return "Nickname"
 	default:
-		return fmt.Sprintf("Unknown Fact FactType: %d", t)
+		return "Unknown Fact FactType: " + strconv.FormatUint(uint64(t), 10)
 	}
 }
 
@@ -68,10 +68,15 @@ func UnstringifyFactType(s string) (FactType, error) {
 	case "N":
 		return Nickname, nil
 	}
-	return 3, errors.Errorf("Unknown Fact FactType: %s", s)
+	return 99, errors.Errorf("Unknown Fact FactType: %s", s)
 }
 
 // IsValid determines if the FactType is one of the defined types.
 func (t FactType) IsValid() bool {
-	return t == Username || t == Email || t == Phone || t == Nickname
+	switch t {
+	case Username, Email, Phone, Nickname:
+		return true
+	default:
+		return false
+	}
 }

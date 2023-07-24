@@ -35,6 +35,23 @@ func TestFactList_Stringify_UnstringifyFactList(t *testing.T) {
 	}
 }
 
+// Tests that a nil FactList marshalled by FactList.Stringify and unmarshalled
+// by UnstringifyFactList matches the original.
+func TestUnstringifyFactList_NilFactList(t *testing.T) {
+	var expected FactList
+
+	flString := expected.Stringify()
+	factList, _, err := UnstringifyFactList(flString)
+	if err != nil {
+		t.Fatalf("Failed to unstringify %q: %+v", flString, err)
+	}
+
+	if !reflect.DeepEqual(factList, expected) {
+		t.Errorf("Unexpected unstringified FactList."+
+			"\nexpected: %v\nreceived: %v", expected, factList)
+	}
+}
+
 // Error path: Tests that UnstringifyFactList returns an error for a malformed
 // stringified FactList.
 func Test_UnstringifyFactList_MissingFactBreakError(t *testing.T) {

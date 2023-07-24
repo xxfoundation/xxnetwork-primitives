@@ -9,7 +9,6 @@ package authorizer
 
 import (
 	"encoding/hex"
-	"fmt"
 )
 
 const (
@@ -32,5 +31,5 @@ func GetGatewayDns(gwID []byte) string {
 	if len(encoded) > maxGwIdLength {
 		encoded = encoded[:maxGwIdLength]
 	}
-	return fmt.Sprintf("%s.%s", encoded, DomainName)
+	return encoded + "." + DomainName
 }
