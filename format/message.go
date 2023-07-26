@@ -1,17 +1,19 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                                       //
-//                                                                                        //
-// Use of this source code is governed by a license that can be found in the LICENSE file //
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2022 xx foundation                                             //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file.                                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 package format
 
 import (
-	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"strconv"
+
+	"golang.org/x/crypto/blake2b"
 
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -20,8 +22,8 @@ const (
 	KeyFPLen        = 32
 	MacLen          = 32
 	EphemeralRIDLen = 8
-	IdentityFPLen   = 25
-	RecipientIDLen  = EphemeralRIDLen + IdentityFPLen
+	SIHLen          = 25
+	RecipientIDLen  = EphemeralRIDLen + SIHLen
 
 	MinimumPrimeSize = 2*MacLen + RecipientIDLen
 
@@ -39,17 +41,17 @@ const (
 |                 payloadA                 |                         payloadB                        |
 |              primeSize bits              |                     primeSize bits                      |
 +---------+----------+---------------------+---------+-------+-----------+--------------+------------+
-| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID | identityFP |
+| grpBitA |  keyFP   |version| Contents1   | grpBitB |  MAC  | Contents2 | ephemeralRID |    SIH     |
 |  1 bit  | 255 bits |1 byte |  *below*    |  1 bit  | 255 b |  *below*  |   64 bits    |  200 bits  |
 + --------+----------+---------------------+---------+-------+-----------+--------------+------------+
 |                              Raw Contents                              |
 |                    2*primeSize - recipientID bits                      |
 +------------------------------------------------------------------------+
 
-* size: size in bits of the data which is stored
-* Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
-* Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
-* the size of the data in the two contents fields is stored within the "size" field
+   - size: size in bits of the data which is stored
+   - Contents1 size = primeSize - grpBitASize - KeyFPLen - sizeSize - 1
+   - Contents2 size = primeSize - grpBitBSize - MacLen - RecipientIDLen - timestampSize
+   - the size of the data in the two contents fields is stored within the "size" field
 
 /////Adherence to the group/////////////////////////////////////////////////////
 The first bits of keyFingerprint and MAC are enforced to be 0, thus ensuring
@@ -71,7 +73,7 @@ type Message struct {
 	mac          []byte
 	contents2    []byte
 	ephemeralRID []byte // Ephemeral reception ID
-	identityFP   []byte // Identity fingerprint
+	sih          []byte // Service Identification Hash
 
 	rawContents []byte
 }
@@ -99,16 +101,30 @@ func NewMessage(numPrimeBytes int) Message {
 
 		mac:          data[numPrimeBytes : numPrimeBytes+MacLen],
 		contents2:    data[numPrimeBytes+MacLen : 2*numPrimeBytes-RecipientIDLen],
-		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-IdentityFPLen],
-		identityFP:   data[2*numPrimeBytes-IdentityFPLen:],
+		ephemeralRID: data[2*numPrimeBytes-RecipientIDLen : 2*numPrimeBytes-SIHLen],
+		sih:          data[2*numPrimeBytes-SIHLen:],
 
 		rawContents: data[:2*numPrimeBytes-RecipientIDLen],
 	}
 }
 
-// Marshal marshals the message into a byte slice.
+// Marshal marshals the message into a byte slice. Use this when
+// sending over the wire or other socket connection. Do not use this
+// if you ever want to compare a marshalled message with itself, because
+// both the Ephemeral ID and SIH are modified on each send attempt.
 func (m *Message) Marshal() []byte {
 	return copyByteSlice(m.data)
+}
+
+// MarshalImmutable marshals the message into a byte slice. Note that the
+// Ephemeral ID and the SIH both change every time a message is
+// sent. This function 0's those fields to guarantee that the same
+// message will be byte identical with itself when Marshalled.
+func (m *Message) MarshalImmutable() []byte {
+	newM := m.Copy()
+	newM.SetEphemeralRID(make([]byte, EphemeralRIDLen))
+	newM.SetSIH(make([]byte, SIHLen))
+	return newM.data
 }
 
 // Unmarshal unmarshalls a byte slice into a new Message.
@@ -298,26 +314,31 @@ func (m Message) SetEphemeralRID(ephemeralRID []byte) {
 	copy(m.ephemeralRID, ephemeralRID)
 }
 
-// GetIdentityFP return the identity fingerprint.
-func (m Message) GetIdentityFP() []byte {
-	return copyByteSlice(m.identityFP)
+// GetSIH return the Service Identification Hash.
+func (m Message) GetSIH() []byte {
+	return copyByteSlice(m.sih)
 }
 
-// SetIdentityFP sets the identity fingerprint, which should be generated via
+// SetSIH sets the Service Identification Hash, which should be generated via
 // fingerprint.IdentityFP.
-func (m Message) SetIdentityFP(identityFP []byte) {
-	if len(identityFP) != IdentityFPLen {
-		jww.ERROR.Panicf("Failed to set Message identity fingerprint: length "+
+func (m Message) SetSIH(identityFP []byte) {
+	if len(identityFP) != SIHLen {
+		jww.ERROR.Panicf("Failed to set Service Identification Hash: length "+
 			"must be %d, length of received data is %d.",
-			IdentityFPLen, len(identityFP))
+			SIHLen, len(identityFP))
 	}
-	copy(m.identityFP, identityFP)
+	copy(m.sih, identityFP)
 }
 
-// gets a digest of the message contents, primarily used for debugging
+// Digest gets a digest of the message contents, primarily used for debugging
 func (m Message) Digest() string {
-	h := md5.New()
-	h.Write(m.GetContents())
+	return DigestContents(m.GetContents())
+}
+
+// DigestContents - message.Digest that works without the message format
+func DigestContents(c []byte) string {
+	h, _ := blake2b.New256(nil)
+	h.Write(c)
 	d := h.Sum(nil)
 	digest := base64.StdEncoding.EncodeToString(d[:15])
 	return digest[:20]
@@ -346,16 +367,16 @@ func (m Message) GoString() string {
 	if len(m.ephemeralRID) > 0 {
 		ephID = strconv.FormatUint(binary.BigEndian.Uint64(m.GetEphemeralRID()), 10)
 	}
-	identityFP := "<nil>"
-	if len(m.identityFP) > 0 {
-		identityFP = base64.StdEncoding.EncodeToString(m.GetIdentityFP())
+	sih := "<nil>"
+	if len(m.sih) > 0 {
+		sih = base64.StdEncoding.EncodeToString(m.GetSIH())
 	}
 
 	return "format.Message{" +
 		"keyFP:" + keyFP +
 		", MAC:" + mac +
 		", ephemeralRID:" + ephID +
-		", identityFP:" + identityFP +
+		", sih:" + sih +
 		", contents:" + fmt.Sprintf("%q", m.GetContents()) + "}"
 }
 

@@ -1,14 +1,15 @@
-///////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                          //
-//                                                                           //
-// Use of this source code is governed by a license that can be found in the //
-// LICENSE file                                                              //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2022 xx foundation                                             //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file.                                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 package fact
 
 import (
-	"fmt"
+	"strconv"
+
 	"github.com/pkg/errors"
 	jww "github.com/spf13/jwalterweatherman"
 )
@@ -22,6 +23,8 @@ const (
 	Nickname FactType = 3
 )
 
+// String returns the string representation of the FactType. This functions
+// adheres to the fmt.Stringer interface.
 func (t FactType) String() string {
 	switch t {
 	case Username:
@@ -33,10 +36,11 @@ func (t FactType) String() string {
 	case Nickname:
 		return "Nickname"
 	default:
-		return fmt.Sprintf("Unknown Fact FactType: %d", t)
+		return "Unknown Fact FactType: " + strconv.FormatUint(uint64(t), 10)
 	}
 }
 
+// Stringify marshals the FactType into a portable string.
 func (t FactType) Stringify() string {
 	switch t {
 	case Username:
@@ -52,6 +56,7 @@ func (t FactType) Stringify() string {
 	return "error"
 }
 
+// UnstringifyFactType unmarshalls the stringified FactType.
 func UnstringifyFactType(s string) (FactType, error) {
 	switch s {
 	case "U":
@@ -63,9 +68,15 @@ func UnstringifyFactType(s string) (FactType, error) {
 	case "N":
 		return Nickname, nil
 	}
-	return 3, errors.Errorf("Unknown Fact FactType: %s", s)
+	return 99, errors.Errorf("Unknown Fact FactType: %s", s)
 }
 
+// IsValid determines if the FactType is one of the defined types.
 func (t FactType) IsValid() bool {
-	return t == Username || t == Email || t == Phone || t == Nickname
+	switch t {
+	case Username, Email, Phone, Nickname:
+		return true
+	default:
+		return false
+	}
 }

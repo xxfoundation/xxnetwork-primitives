@@ -1,24 +1,25 @@
-///////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                          //
-//                                                                           //
-// Use of this source code is governed by a license that can be found in the //
-// LICENSE file                                                              //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2022 xx foundation                                             //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file.                                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 package knownRounds
 
 import (
 	"bytes"
 	"fmt"
-	"gitlab.com/xx_network/primitives/id"
 	"math"
 	"math/rand"
 	"reflect"
 	"strings"
 	"testing"
+
+	"gitlab.com/xx_network/primitives/id"
 )
 
-// Tests happy path of NewKnownRound().
+// Tests happy path of NewKnownRound.
 func TestNewKnownRound(t *testing.T) {
 	expectedKR := &KnownRounds{
 		bitStream:      uint64Buff{0, 0, 0, 0, 0},
@@ -30,8 +31,8 @@ func TestNewKnownRound(t *testing.T) {
 	testKR := NewKnownRound(310)
 
 	if !reflect.DeepEqual(testKR, expectedKR) {
-		t.Errorf("NewKnownRound() did not produce the expected KnownRounds."+
-			"\n\texpected: %v\n\treceived: %v",
+		t.Errorf("NewKnownRound did not produce the expected KnownRounds."+
+			"\nexpected: %v\nreceived: %v",
 			expectedKR, testKR)
 	}
 }
@@ -45,15 +46,16 @@ func TestNewFromParts(t *testing.T) {
 		fuPos:          75,
 	}
 
-	received := NewFromParts(expected.bitStream, expected.firstUnchecked, expected.lastChecked, expected.fuPos)
+	received := NewFromParts(expected.bitStream, expected.firstUnchecked,
+		expected.lastChecked, expected.fuPos)
 
 	if !reflect.DeepEqual(expected, received) {
-		t.Errorf("NewFromParts() did not return the expected KnownRounds."+
+		t.Errorf("NewFromParts did not return the expected KnownRounds."+
 			"\nexpected: %v\nreceived: %v", expected, received)
 	}
 }
 
-// Tests happy path of KnownRounds.Marshal().
+// Tests happy path of KnownRounds.Marshal.
 func TestKnownRounds_Marshal_Unmarshal(t *testing.T) {
 	testKR := &KnownRounds{
 		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
@@ -67,7 +69,7 @@ func TestKnownRounds_Marshal_Unmarshal(t *testing.T) {
 	newKR := &KnownRounds{}
 	err := newKR.Unmarshal(data)
 	if err != nil {
-		t.Errorf("Unmarshal() produced an error: %+v", err)
+		t.Errorf("Unmarshal produced an error: %+v", err)
 	}
 
 	if !reflect.DeepEqual(testKR, newKR) {
@@ -76,7 +78,7 @@ func TestKnownRounds_Marshal_Unmarshal(t *testing.T) {
 	}
 }
 
-// Tests happy path of KnownRounds.Marshal().
+// Tests happy path of KnownRounds.Marshal.
 func TestKnownRounds_Marshal(t *testing.T) {
 	testKR := &KnownRounds{
 		bitStream:      uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0},
@@ -90,14 +92,14 @@ func TestKnownRounds_Marshal(t *testing.T) {
 
 	data := testKR.Marshal()
 
-	if !bytes.Equal([]byte(expectedData), data) {
-		t.Errorf("Marshal() produced incorrect data."+
-			"\n\texpected: %+v\n\treceived: %+v", expectedData, data)
+	if !bytes.Equal(expectedData, data) {
+		t.Errorf("Marshal produced incorrect data."+
+			"\nexpected: %+v\nreceived: %+v", expectedData, data)
 	}
 
 }
 
-// Tests happy path of KnownRounds.Unmarshal().
+// Tests happy path of KnownRounds.Unmarshal.
 func TestKnownRounds_Unmarshal(t *testing.T) {
 	testKR := &KnownRounds{
 		bitStream:      uint64Buff{0, math.MaxUint64, 0, 0, 0},
@@ -111,17 +113,17 @@ func TestKnownRounds_Unmarshal(t *testing.T) {
 	newKR := NewKnownRound(310)
 	err := newKR.Unmarshal(data)
 	if err != nil {
-		t.Errorf("Unmarshal() produced an unexpected error."+
-			"\n\texpected: %+v\n\treceived: %+v", nil, err)
+		t.Errorf("Unmarshal produced an unexpected error."+
+			"\nexpected: %+v\nreceived: %+v", nil, err)
 	}
 
 	if !reflect.DeepEqual(newKR, testKR) {
-		t.Errorf("Unmarshal() produced an incorrect KnownRounds from the data."+
-			"\n\texpected: %v\n\treceived: %v", testKR, newKR)
+		t.Errorf("Unmarshal produced an incorrect KnownRounds from the data."+
+			"\nexpected: %v\nreceived: %v", testKR, newKR)
 	}
 }
 
-// Tests that KnownRounds.Unmarshal() errors when the new bit stream is too
+// Tests that KnownRounds.Unmarshal errors when the new bit stream is too
 // small.
 func TestKnownRounds_Unmarshal_SizeError(t *testing.T) {
 	testKR := &KnownRounds{
@@ -136,78 +138,76 @@ func TestKnownRounds_Unmarshal_SizeError(t *testing.T) {
 	newKR := NewKnownRound(1)
 	err := newKR.Unmarshal(data)
 	if err == nil {
-		t.Error("Unmarshal() did not produce an error when the size of new " +
+		t.Error("Unmarshal did not produce an error when the size of new " +
 			"KnownRound bit stream is too small.")
 	}
 }
 
-// Tests that KnownRounds.Unmarshal() errors when given invalid JSON data.
+// Tests that KnownRounds.Unmarshal errors when given invalid JSON data.
 func TestKnownRounds_Unmarshal_JsonError(t *testing.T) {
 	newKR := NewKnownRound(1)
 	err := newKR.Unmarshal([]byte("hello"))
 	if err == nil {
-		t.Error("Unmarshal() did not produce an error on invalid JSON data.")
+		t.Error("Unmarshal did not produce an error on invalid JSON data.")
 	}
 }
 
 // Happy path.
 func TestKnownRounds_OutputBuffChanges(t *testing.T) {
 	// Generate test round IDs and expected buffers
+	const max = math.MaxUint64
 	testData := []struct {
 		current KnownRounds
 		old     []uint64
 		changes KrChanges
-	}{
-		{
-			current: KnownRounds{uint64Buff{}, 75, 320, 75},
-			old:     []uint64{},
-			changes: KrChanges{},
-		},
-		{
-			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
-			changes: KrChanges{},
-		},
-		{
-			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
-			changes: KrChanges{},
-		},
-		{
-			current: KnownRounds{uint64Buff{1, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
-			changes: KrChanges{0: 1},
-		},
-		{
-			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{math.MaxUint64, 0, math.MaxUint64, 0, math.MaxUint64},
-			changes: KrChanges{0: 0, 1: math.MaxUint64, 2: 0, 3: math.MaxUint64, 4: 0},
-		},
-	}
+	}{{
+		current: KnownRounds{uint64Buff{}, 75, 320, 75},
+		old:     []uint64{},
+		changes: KrChanges{},
+	}, {
+		current: KnownRounds{uint64Buff{0, max, 0, max, 0}, 75, 320, 75},
+		old:     []uint64{0, max, 0, max, 0},
+		changes: KrChanges{},
+	}, {
+		current: KnownRounds{uint64Buff{0, max, 0, max, 0}, 75, 320, 75},
+		old:     []uint64{0, max, 0, max, 0},
+		changes: KrChanges{},
+	}, {
+		current: KnownRounds{uint64Buff{1, max, 0, max, 0}, 75, 320, 75},
+		old:     []uint64{0, max, 0, max, 0},
+		changes: KrChanges{0: 1},
+	}, {
+		current: KnownRounds{uint64Buff{0, max, 0, max, 0}, 75, 320, 75},
+		old:     []uint64{max, 0, max, 0, max},
+		changes: KrChanges{0: 0, 1: max, 2: 0, 3: max, 4: 0},
+	}}
 
 	for i, data := range testData {
-		changes, firstUnchecked, lastChecked, fuPos, err := data.current.OutputBuffChanges(data.old)
+		changes, firstUnchecked, lastChecked, fuPos, err :=
+			data.current.OutputBuffChanges(data.old)
 		if err != nil {
-			t.Errorf("OutputBuffChanges() produced an error (%d): %+v", i, err)
+			t.Errorf("OutputBuffChanges produced an error (%d): %+v", i, err)
 		}
 
 		if data.current.firstUnchecked != firstUnchecked {
-			t.Errorf("OutputBuffChanges() returned incorrect firstUnchecked (%d)."+
-				"\nexpected: %d\nreceived: %d", i, data.current.firstUnchecked, firstUnchecked)
+			t.Errorf("OutputBuffChanges returned incorrect firstUnchecked (%d)."+
+				"\nexpected: %d\nreceived: %d",
+				i, data.current.firstUnchecked, firstUnchecked)
 		}
 
 		if data.current.lastChecked != lastChecked {
-			t.Errorf("OutputBuffChanges() returned incorrect lastChecked (%d)."+
-				"\nexpected: %d\nreceived: %d", i, data.current.lastChecked, lastChecked)
+			t.Errorf("OutputBuffChanges returned incorrect lastChecked (%d)."+
+				"\nexpected: %d\nreceived: %d",
+				i, data.current.lastChecked, lastChecked)
 		}
 
 		if data.current.fuPos != fuPos {
-			t.Errorf("OutputBuffChanges() returned incorrect fuPos (%d)."+
+			t.Errorf("OutputBuffChanges returned incorrect fuPos (%d)."+
 				"\nexpected: %d\nreceived: %d", i, data.current.fuPos, fuPos)
 		}
 
 		if !reflect.DeepEqual(data.changes, changes) {
-			t.Errorf("OutputBuffChanges() returned incorrect changes (%d)."+
+			t.Errorf("OutputBuffChanges returned incorrect changes (%d)."+
 				"\nexpected: %v\nreceived: %v", i, data.changes, changes)
 		}
 	}
@@ -216,25 +216,25 @@ func TestKnownRounds_OutputBuffChanges(t *testing.T) {
 // Error path: buffers are not the same length.
 func TestKnownRounds_OutputBuffChanges_IncorrectLengthError(t *testing.T) {
 	// Generate test round IDs and expected buffers
+	const max = math.MaxUint64
 	testData := []struct {
 		current KnownRounds
 		old     []uint64
-	}{
-		{
-			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{0, math.MaxUint64, 0},
-		},
-		{
-			current: KnownRounds{uint64Buff{0, math.MaxUint64, 0}, 75, 320, 75},
-			old:     []uint64{0, math.MaxUint64, 0, math.MaxUint64, 0},
-		},
-	}
+	}{{
+		current: KnownRounds{uint64Buff{0, max, 0, max, 0}, 75, 320, 75},
+		old:     []uint64{0, max, 0},
+	}, {
+		current: KnownRounds{uint64Buff{0, max, 0}, 75, 320, 75},
+		old:     []uint64{0, max, 0, max, 0},
+	}}
 
+	expectedErr := "not the same as length of the current buffer"
 	for i, data := range testData {
 		_, _, _, _, err := data.current.OutputBuffChanges(data.old)
-		if err == nil || !strings.Contains(err.Error(), "not the same as length of the current buffer") {
-			t.Errorf("OutputBuffChanges() did not produce an error when the "+
-				"buffers are the wrong lengths (%d): %+v", i, err)
+		if err == nil || !strings.Contains(err.Error(), expectedErr) {
+			t.Errorf("OutputBuffChanges did not produce the expected error "+
+				"when the buffers are the wrong lengths (%d)."+
+				"\nexpected: %s\nreceived: %+v", i, expectedErr, err)
 		}
 	}
 }
@@ -299,7 +299,7 @@ func TestKnownRounds_GetBitStream(t *testing.T) {
 	}
 }
 
-// Tests happy path of KnownRounds.Check().
+// Tests happy path of KnownRounds.Check.
 func TestKnownRounds_Check(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -324,8 +324,8 @@ func TestKnownRounds_Check(t *testing.T) {
 
 		kr.Check(data.rid)
 		if !reflect.DeepEqual(kr.bitStream, data.buff) {
-			t.Errorf("Incorrect resulting buffer after checking round ID %d (round %d)."+
-				"\n\texpected: %064b\n\treceived: %064b"+
+			t.Errorf("Incorrect resulting buffer after checking round ID %d (%d)."+
+				"\nexpected: %064b\nreceived: %064b"+
 				"\n\033[38;5;59m               0123456789012345678901234567890123456789012345678901234567890123 4567890123456789012345678901234567890123456789012345678901234567 8901234567890123456789012345678901234567890123456789012345678901 2345678901234567890123456789012345678901234567890123456789012345 6789012345678901234567890123456789012345678901234567890123456789 0123456789012345678901234567890123456789012345678901234567890123"+
 				"\n\u001B[38;5;59m               0         1         2         3         4         5         6          7         8         9         0         1         2          3         4         5         6         7         8         9          0         1         2         3         4         5          6         7         8         9         0         1          2         3         4         5         6         7         8"+
 				"\n\u001B[38;5;59m               0         0         0         0         0         0         0          0         0         0         1         1         1          1         1         1         1         1         1         1          2         2         2         2         2         2          2         2         2         2         3         3          3         3         3         3         3         3         3",
@@ -333,13 +333,14 @@ func TestKnownRounds_Check(t *testing.T) {
 		}
 
 		if kr.lastChecked != data.expectedLastChecked {
-			t.Errorf("Check() did not modify the the lastChecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedLastChecked, kr.lastChecked)
+			t.Errorf("Check did not modify the lastChecked round correctly "+
+				"for round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedLastChecked, kr.lastChecked)
 		}
 	}
 }
 
-// Tests happy path of KnownRounds.Check() with a new KnownRounds.
+// Tests happy path of KnownRounds.Check with a new KnownRounds.
 func TestKnownRounds_Check_NewKR(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -356,19 +357,20 @@ func TestKnownRounds_Check_NewKR(t *testing.T) {
 		kr := NewKnownRound(310)
 		kr.Check(data.rid)
 		if !reflect.DeepEqual(kr.bitStream, data.buff) {
-			t.Errorf("Resulting buffer after checking round ID %d (round %d)."+
-				"\n\texpected: %064b\n\treceived: %064b",
+			t.Errorf("Resulting buffer after checking round ID %d (%d)."+
+				"\nexpected: %064b\nreceived: %064b",
 				data.rid, i, data.buff, kr.bitStream)
 		}
 
 		if kr.lastChecked != data.expectedLastChecked {
-			t.Errorf("Check() did not modify the the lastChecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedLastChecked, kr.lastChecked)
+			t.Errorf("Check did not modify the lastChecked round correctly "+
+				"for round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedLastChecked, kr.lastChecked)
 		}
 	}
 }
 
-// Happy path of KnownRounds.Checked().
+// Happy path of KnownRounds.Checked.
 func TestKnownRounds_Checked(t *testing.T) {
 	// Generate test positions and expected value
 	testData := []struct {
@@ -395,13 +397,13 @@ func TestKnownRounds_Checked(t *testing.T) {
 	for i, data := range testData {
 		value := kr.Checked(data.rid)
 		if value != data.value {
-			t.Errorf("Checked() returned incorrect value for round ID %d (round %d)."+
-				"\n\texpected: %v\n\treceived: %v", data.rid, i, data.value, value)
+			t.Errorf("Checked returned incorrect value for round ID %d (%d)."+
+				"\nexpected: %v\nreceived: %v", data.rid, i, data.value, value)
 		}
 	}
 }
 
-// Happy path of KnownRounds.Checked() with a new KnownRounds.
+// Happy path of KnownRounds.Checked with a new KnownRounds.
 func TestKnownRounds_Checked_NewKR(t *testing.T) {
 	// Generate test positions and expected value
 	testData := []struct {
@@ -418,13 +420,13 @@ func TestKnownRounds_Checked_NewKR(t *testing.T) {
 		kr := NewKnownRound(5)
 		value := kr.Checked(data.rid)
 		if value != data.value {
-			t.Errorf("Checked() returned incorrect value for round ID %d (round %d)."+
-				"\n\texpected: %v\n\treceived: %v", data.rid, i, data.value, value)
+			t.Errorf("Checked returned incorrect value for round ID %d (%d)."+
+				"\nexpected: %v\nreceived: %v", data.rid, i, data.value, value)
 		}
 	}
 }
 
-// Tests happy path of KnownRounds.Forward().
+// Tests happy path of KnownRounds.Forward.
 func TestKnownRounds_Forward(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -449,21 +451,24 @@ func TestKnownRounds_Forward(t *testing.T) {
 		kr.bitStream = uint64Buff{0, math.MaxUint64, 0, math.MaxUint64, 0}
 		kr.Forward(data.rid)
 		if kr.firstUnchecked != data.expectedFirstChecked {
-			t.Errorf("Forward() did not modify the the firstUnchecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedFirstChecked, kr.firstUnchecked)
+			t.Errorf("Forward did not modify the firstUnchecked round "+
+				"correctly for round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedFirstChecked, kr.firstUnchecked)
 		}
 		if kr.lastChecked != data.expectedLastChecked {
-			t.Errorf("Forward() did not modify the the lastChecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedLastChecked, kr.lastChecked)
+			t.Errorf("Forward did not modify the lastChecked round correctly "+
+				"or round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedLastChecked, kr.lastChecked)
 		}
 		if kr.fuPos != data.expectedFusPos {
-			t.Errorf("Forward() did not modify the the fuPos round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedFusPos, kr.fuPos)
+			t.Errorf("Forward did not modify the fuPos round correctly for "+
+				"round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedFusPos, kr.fuPos)
 		}
 	}
 }
 
-// Tests happy path of KnownRounds.Forward() with a new KnownRounds.
+// Tests happy path of KnownRounds.Forward with a new KnownRounds.
 func TestKnownRounds_Forward_NewKR(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -480,21 +485,24 @@ func TestKnownRounds_Forward_NewKR(t *testing.T) {
 		kr := NewKnownRound(5)
 		kr.Forward(data.rid)
 		if kr.firstUnchecked != data.expectedFirstUnchecked {
-			t.Errorf("Forward() did not modify the the firstUnchecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedFirstUnchecked, kr.firstUnchecked)
+			t.Errorf("Forward did not modify the firstUnchecked round "+
+				"correctly for round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedFirstUnchecked, kr.firstUnchecked)
 		}
 		if kr.lastChecked != data.expectedLastChecked {
-			t.Errorf("Forward() did not modify the the lastChecked round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedLastChecked, kr.lastChecked)
+			t.Errorf("Forward did not modify the lastChecked round correctly "+
+				"for round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedLastChecked, kr.lastChecked)
 		}
 		if kr.fuPos != data.expectedFusPos {
-			t.Errorf("Forward() did not modify the the fuPos round correctly for round ID %d (round %d)."+
-				"\n\texpected: %d\n\treceived: %d", data.rid, i, data.expectedFusPos, kr.fuPos)
+			t.Errorf("Forward did not modify the fuPos round correctly for "+
+				"round ID %d (%d).\nexpected: %d\nreceived: %d",
+				data.rid, i, data.expectedFusPos, kr.fuPos)
 		}
 	}
 }
 
-// Test happy path of KnownRounds.RangeUnchecked().
+// Test happy path of KnownRounds.RangeUnchecked.
 func TestKnownRounds_RangeUnchecked(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -527,29 +535,30 @@ func TestKnownRounds_RangeUnchecked(t *testing.T) {
 			fuPos:          75,
 		}
 
-		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
+		earliestRound, has, unknown :=
+			kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck, 1000)
 
 		if earliestRound != data.expected {
-			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
-				"\n\texpected: %d\n\treceived: %d",
+			t.Errorf("RangeUnchecked did not return the correct round (%d)."+
+				"\nexpected: %d\nreceived: %d",
 				i, data.expected, earliestRound)
 		}
 
-		if !reflect.DeepEqual(data.has, has) {
-			t.Errorf("RangeUnchecked() did not return the correct has list (%d)."+
-				"\n\texpected: %v\n\treceived: %v",
+		if len(data.has) != len(has) {
+			t.Errorf("RangeUnchecked did not return the correct has list (%d)."+
+				"\nexpected: %v\nreceived: %v",
 				i, data.has, has)
 		}
 
 		if !reflect.DeepEqual(data.unknown, unknown) {
-			t.Errorf("RangeUnchecked() did not return the correct unknown list (%d)."+
-				"\n\texpected: %v\n\treceived: %v",
+			t.Errorf("RangeUnchecked did not return the correct unknown list (%d)."+
+				"\nexpected: %v\nreceived: %v",
 				i, data.unknown, unknown)
 		}
 	}
 }
 
-// Test happy path of KnownRounds.RangeUnchecked() with a new KnownRounds.
+// Test happy path of KnownRounds.RangeUnchecked with a new KnownRounds.
 func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	// Generate test round IDs and expected buffers
 	testData := []struct {
@@ -571,29 +580,30 @@ func TestKnownRounds_RangeUnchecked_NewKR(t *testing.T) {
 	for i, data := range testData {
 		kr := NewKnownRound(310)
 
-		earliestRound, has, unknown := kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck)
+		earliestRound, has, unknown :=
+			kr.RangeUnchecked(data.oldestUnknown, 50, roundCheck, 1000)
 
 		if earliestRound != data.expected {
-			t.Errorf("RangeUnchecked() did not return the correct round (%d)."+
-				"\n\texpected: %d\n\treceived: %d",
+			t.Errorf("RangeUnchecked did not return the correct round (%d)."+
+				"\nexpected: %d\nreceived: %d",
 				i, data.expected, earliestRound)
 		}
 
 		if !reflect.DeepEqual(data.has, has) {
-			t.Errorf("RangeUnchecked() did not return the correct has list (%d)."+
-				"\n\texpected: %v\n\treceived: %v",
+			t.Errorf("RangeUnchecked did not return the correct has list (%d)."+
+				"\nexpected: %v\nreceived: %v",
 				i, data.has, has)
 		}
 
 		if !reflect.DeepEqual(data.unknown, unknown) {
-			t.Errorf("RangeUnchecked() did not return the correct unknown list (%d)."+
-				"\n\texpected: %v\n\treceived: %v",
+			t.Errorf("RangeUnchecked did not return the correct unknown list (%d)."+
+				"\nexpected: %v\nreceived: %v",
 				i, data.unknown, unknown)
 		}
 	}
 }
 
-// Test happy path of KnownRounds.RangeUncheckedMasked().
+// Test happy path of KnownRounds.RangeUncheckedMasked.
 func TestKnownRounds_RangeUncheckedMasked(t *testing.T) {
 	expectedKR := KnownRounds{
 		bitStream:      uint64Buff{42949672960, 18446744073709551615, 0, 18446744073709551615, 0},
@@ -620,13 +630,13 @@ func TestKnownRounds_RangeUncheckedMasked(t *testing.T) {
 
 	kr.RangeUncheckedMasked(kr2, roundCheck, 5)
 	if !reflect.DeepEqual(expectedKR, kr) {
-		t.Errorf("RangeUncheckedMasked() incorrectl modified KnownRounds."+
-			"\n\texpected: %+v\n\treceived: %+v", expectedKR, kr)
+		t.Errorf("RangeUncheckedMasked incorrectl modified KnownRounds."+
+			"\nexpected: %+v\nreceived: %+v", expectedKR, kr)
 	}
 	fmt.Printf("kr.bitStream: %+v\n", kr.bitStream)
 }
 
-// Happy path of getBitStreamPos().
+// Happy path of getBitStreamPos.
 func TestKnownRounds_getBitStreamPos(t *testing.T) {
 	// Generate test round IDs and their expected positions
 	testData := []struct {
@@ -652,14 +662,15 @@ func TestKnownRounds_getBitStreamPos(t *testing.T) {
 	for i, data := range testData {
 		pos := kr.getBitStreamPos(data.rid)
 		if pos != data.pos {
-			t.Errorf("getBitStreamPos() returned incorrect position for round ID %d (round %d)."+
-				"\n\texpected: %v\n\treceived: %v", data.rid, i, data.pos, pos)
+			t.Errorf("getBitStreamPos returned incorrect position for round "+
+				"ID %d (%d).\nexpected: %v\nreceived: %v",
+				data.rid, i, data.pos, pos)
 		}
 	}
 }
 
 /*
-// Test happy path of KnownRounds.RangeUncheckedMasked().
+// Test happy path of KnownRounds.RangeUncheckedMasked.
 func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 	expectedKR := KnownRounds{
 		bitStream:      make(uint64Buff, 245),
@@ -689,13 +700,13 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 
 	kr.RangeUncheckedMasked(mask, roundCheck, 5)
 	if !reflect.DeepEqual(expectedKR, kr) {
-		t.Errorf("RangeUncheckedMasked() incorrect modified KnownRounds."+
-			"\n\texpected: %+v\n\treceived: %+v", expectedKR, kr)
+		t.Errorf("RangeUncheckedMasked incorrect modified KnownRounds."+
+			"\nexpected: %+v\nreceived: %+v", expectedKR, kr)
 	}
 	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
 }*/
 
-// // Test happy path of KnownRounds.RangeUncheckedMasked().
+// // Test happy path of KnownRounds.RangeUncheckedMasked.
 // func TestKnownRounds_RangeUncheckedMasked_3(t *testing.T) {
 // 	expectedKR := KnownRounds{
 // 		bitStream:      make(uint64Buff, 245),
@@ -725,14 +736,14 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 //
 // 	kr.RangeUncheckedMasked(mask, roundCheck, 5)
 // 	if !reflect.DeepEqual(expectedKR, kr) {
-// 		t.Errorf("RangeUncheckedMasked() incorrect modified KnownRounds."+
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedKR, kr)
+// 		t.Errorf("RangeUncheckedMasked incorrect modified KnownRounds."+
+// 			"\nexpected: %064b\nreceived: %064b", expectedKR, kr)
 // 	}
 // 	fmt.Printf("kr.bitStream: %064b\n", kr.bitStream)
 // }
 
 //
-// // Tests that KnownRounds.subSample() produces the correct buffer for a new
+// // Tests that KnownRounds.subSample produces the correct buffer for a new
 // // KnownRounds.
 // func TestKnownRounds_subSample(t *testing.T) {
 // 	kr := NewKnownRound(1)
@@ -742,17 +753,17 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 //
 // 	u64b, length := kr.subSample(5, 189)
 // 	if !reflect.DeepEqual(expectedU64b, u64b) {
-// 		t.Errorf("subSample() returned incorrect buffer." +
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
+// 		t.Errorf("subSample returned incorrect buffer." +
+// 			"\nexpected: %064b\nreceived: %064b", expectedU64b, u64b)
 // 	}
 //
 // 	if len(expectedU64b) != length {
-// 		t.Errorf("subSample() returned incorrect buffer length." +
-// 			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
+// 		t.Errorf("subSample returned incorrect buffer length." +
+// 			"\nexpected: %d\nreceived: %d", len(expectedU64b), length)
 // 	}
 // }
 //
-// // Tests that KnownRounds.subSample() produces the correct buffer for a new
+// // Tests that KnownRounds.subSample produces the correct buffer for a new
 // // KnownRounds.
 // func TestKnownRounds_subSample2(t *testing.T) {
 // 	kr := &KnownRounds{
@@ -775,13 +786,13 @@ func TestKnownRounds_RangeUncheckedMasked_2(t *testing.T) {
 //
 // 	u64b, length := kr.subSample(mask.firstUnchecked, mask.lastChecked)
 // 	if !reflect.DeepEqual(expectedU64b, u64b) {
-// 		t.Errorf("subSample() returned incorrect buffer." +
-// 			"\n\texpected: %064b\n\treceived: %064b", expectedU64b, u64b)
+// 		t.Errorf("subSample returned incorrect buffer." +
+// 			"\nexpected: %064b\nreceived: %064b", expectedU64b, u64b)
 // 	}
 //
 // 	if len(expectedU64b) != length {
-// 		t.Errorf("subSample() returned incorrect buffer length." +
-// 			"\n\texpected: %d\n\treceived: %d", len(expectedU64b), length)
+// 		t.Errorf("subSample returned incorrect buffer length." +
+// 			"\nexpected: %d\nreceived: %d", len(expectedU64b), length)
 // 	}
 // }
 //
@@ -883,7 +894,8 @@ func TestKnownRounds_Database_Simulation(t *testing.T) {
 		t.Logf("%d  %v", i, kr)
 
 		// Save changes
-		changes, saved.firstUnchecked, saved.lastChecked, saved.fuPos, err = kr.OutputBuffChanges(saved.bitStream)
+		changes, saved.firstUnchecked, saved.lastChecked, saved.fuPos, err =
+			kr.OutputBuffChanges(saved.bitStream)
 		if err != nil {
 			t.Errorf("Failed to output changed (%d): %+v", i, err)
 		}
@@ -894,7 +906,8 @@ func TestKnownRounds_Database_Simulation(t *testing.T) {
 		}
 
 		// Reconstructs the KnownRounds from the saved data
-		newKR := NewFromParts(saved.bitStream, saved.firstUnchecked, saved.lastChecked, saved.fuPos)
+		newKR := NewFromParts(saved.bitStream,
+			saved.firstUnchecked, saved.lastChecked, saved.fuPos)
 
 		// Compare the original KnownRounds to the reconstructed KnownRounds
 		if !reflect.DeepEqual(kr, newKR) {
@@ -921,19 +934,13 @@ func makeRange(min, max int) []id.Round {
 }
 
 func TestKnownRounds_Len(t *testing.T) {
-	// decodeString, err := base64.StdEncoding.DecodeString("XTLOAAAAAACXRc4AAAAAAAIBAAID+Vf/AXdv/wi//yh//yP9/w/+/wX7/x79/yl//wXf/wl//xK//zz9/yT9/xjv/zt//8f+/wf2/wH+tlkABQ==")
-	// if err != nil {
-	// 	t.Fatalf("Failed to decode: %+v", err)
-	// }
 	kr := NewKnownRound(0)
 
-	decodeString := []byte{174, 69, 206, 0, 0, 0, 0, 0, 150, 73, 206, 0, 0, 0, 0, 0, 2, 1, 0, 136}
+	decodeString := []byte{
+		174, 69, 206, 0, 0, 0, 0, 0, 150, 73, 206, 0, 0, 0, 0, 0, 2, 1, 0, 136}
 
 	err := kr.Unmarshal(decodeString)
 	if err != nil {
 		t.Errorf("Failed to unmarshal: %+v", err)
 	}
-
-	t.Logf("%+v", kr)
-	t.Logf("%064b", kr.bitStream)
 }

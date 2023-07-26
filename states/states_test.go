@@ -1,24 +1,23 @@
-////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2020 xx network SEZC                                                       //
-//                                                                                        //
-// Use of this source code is governed by a license that can be found in the LICENSE file //
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Copyright © 2022 xx foundation                                             //
+//                                                                            //
+// Use of this source code is governed by a license that can be found in the  //
+// LICENSE file.                                                              //
+////////////////////////////////////////////////////////////////////////////////
 
 package states
 
 import "testing"
 
-//tests the test stringer is correct
-func TestActivity_String(t *testing.T) {
-	//define some states to check
-	expectedStateStringer := []string{"PENDING", "PRECOMPUTING", "STANDBY", "QUEUED",
+// Consistency test of Round.String.
+func TestRound_String(t *testing.T) {
+	expected := []string{"PENDING", "PRECOMPUTING", "STANDBY", "QUEUED",
 		"REALTIME", "COMPLETED", "FAILED", "UNKNOWN STATE: 7"}
 
-	//check if states give the correct return
 	for st := PENDING; st <= NUM_STATES; st++ {
-		if st.String() != expectedStateStringer[st] {
-			t.Errorf("Round %d did not string correctly: expected: %s,"+
-				"received: %s", uint8(st), expectedStateStringer[st], st.String())
+		if st.String() != expected[st] {
+			t.Errorf("Incorrect string for Round state %d."+
+				"\nexpected: %s\nreceived: %s", st, expected[st], st.String())
 		}
 	}
 }
