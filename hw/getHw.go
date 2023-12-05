@@ -85,5 +85,4 @@ func LogHardware() {
 
 	jww.INFO.Printf(header, end)
 
-	return
 }
