@@ -10,6 +10,7 @@ package ephemeral
 import (
 	"bytes"
 	"crypto"
+	"crypto/rand"
 	"encoding/binary"
 	"encoding/json"
 	"math"
@@ -19,18 +20,17 @@ import (
 
 	_ "golang.org/x/crypto/blake2b"
 
-	"gitlab.com/xx_network/crypto/csprng"
 	"gitlab.com/xx_network/primitives/id"
 )
 
 // Unit test for GetId
 func TestGetId(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eid, _, _, err := GetId(testId, 99, time.Now().UnixNano())
+	_, _, _, err := GetId(testId, 99, time.Now().UnixNano())
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
-	eid, _, _, err = GetId(testId, 16, time.Now().Unix())
+	eid, _, _, err := GetId(testId, 16, time.Now().Unix())
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
@@ -40,13 +40,13 @@ func TestGetId(t *testing.T) {
 // Unit test for GetIdsByRange
 func TestGetIdByRange(t *testing.T) {
 	testId := id.NewIdFromString("zezima", id.User, t)
-	eids, err := GetIdsByRange(testId, 99, time.Now(), 25)
+	_, err := GetIdsByRange(testId, 99, time.Now(), 25)
 	if err == nil {
 		t.Error("Should error with size > 64")
 	}
 	duration := 7 * 24 * time.Hour
 
-	eids, err = GetIdsByRange(testId, 16, time.Now(), duration)
+	eids, err := GetIdsByRange(testId, 16, time.Now(), duration)
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
@@ -79,7 +79,7 @@ func TestGetIntermediaryId(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to get intermediary ID: %+v", err)
 	}
-	if iid == nil || len(iid) == 0 {
+	if len(iid) == 0 {
 		t.Errorf("iid returned with no data: %v", iid)
 	}
 }
@@ -209,7 +209,7 @@ func TestId_Fill(t *testing.T) {
 	copy(eid[:], dummyData)
 
 	eid = eid.Clear(uint(64))
-	newEid, err := eid.Fill(uint(64), csprng.NewSystemRNG())
+	newEid, err := eid.Fill(uint(64), rand.Reader)
 	if err != nil {
 		t.Errorf("Failed to fill ID: %+v", err)
 	}
@@ -221,7 +221,7 @@ func TestId_Fill(t *testing.T) {
 	}
 
 	eid = eid.Clear(16)
-	newEid, err = eid.Fill(16, csprng.NewSystemRNG())
+	newEid, err = eid.Fill(16, rand.Reader)
 	if err != nil {
 		t.Errorf("Failed to fill ID: %+v", err)
 	}
@@ -273,7 +273,7 @@ func TestId_Int64(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
-	eid, err = eid.Fill(16, csprng.NewSystemRNG())
+	eid, err = eid.Fill(16, rand.Reader)
 	if err != nil {
 		t.Errorf("Failed to fill ephemeral ID: %+v", err)
 	}
@@ -299,7 +299,7 @@ func TestMarshal(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create ephemeral ID: %+v", err)
 	}
-	eid, err = eid.Fill(16, csprng.NewSystemRNG())
+	eid, err = eid.Fill(16, rand.Reader)
 	if err != nil {
 		t.Errorf("Failed to fill ephemeral ID: %+v", err)
 	}
