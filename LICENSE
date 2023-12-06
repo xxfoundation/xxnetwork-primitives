@@ -1,4 +1,4 @@
-Copyright (c) 2020, xx network SEZC
+Copyright © 2024 xx foundation
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
