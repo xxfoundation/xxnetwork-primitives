@@ -9,7 +9,7 @@ package region
 
 import (
 	"bytes"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"fmt"
 	"math"
 	"strconv"

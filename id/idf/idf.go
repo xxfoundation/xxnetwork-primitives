@@ -12,7 +12,7 @@
 package idf
 
 import (
-	"encoding/json"
+	json "github.com/goccy/go-json"
 
 	"github.com/pkg/errors"
 

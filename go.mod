@@ -3,6 +3,7 @@ module gitlab.com/xx_network/primitives
 go 1.19
 
 require (
+	github.com/goccy/go-json v0.10.5
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/jwalterweatherman v1.1.0

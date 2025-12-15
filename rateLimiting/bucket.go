@@ -10,7 +10,7 @@
 package rateLimiting
 
 import (
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"sync"
 	"time"
 )

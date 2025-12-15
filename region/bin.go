@@ -8,7 +8,7 @@
 package region
 
 import (
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"math"
 	"strconv"
 

@@ -11,7 +11,7 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"encoding/binary"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"hash"
 	"io"
 	"math"

@@ -12,7 +12,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"encoding/binary"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"math"
 	"strconv"
 	"testing"

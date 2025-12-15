@@ -9,7 +9,7 @@ package rateLimiting
 
 import (
 	"bytes"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"math/rand"
 	"reflect"
 	"testing"

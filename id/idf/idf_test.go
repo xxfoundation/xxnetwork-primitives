@@ -9,7 +9,7 @@ package idf
 
 import (
 	"bytes"
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"math/rand"
 	"os"
 	"reflect"

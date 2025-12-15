@@ -12,7 +12,7 @@
 package ndf
 
 import (
-	"encoding/json"
+	json "github.com/goccy/go-json"
 	"fmt"
 	"strconv"
 	"time"
